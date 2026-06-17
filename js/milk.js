@@ -50,13 +50,14 @@ function renderMilkPage(wrap){
     milkOwnershipTable()+
     '</div></div>'+
     '<div class="card"><div class="card-header"><div class="card-title">سجل الحليب اليومي</div></div><div class="card-body p0">'+
-    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الفترة</th>'+lactCows.map(c=>'<th>'+esc(c.name)+'</th>').join('')+'<th>الإجمالي</th><th></th></tr></thead>'+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الفترة</th><th>طريقة الإدخال</th>'+lactCows.map(c=>'<th>'+esc(c.name)+'</th>').join('')+'<th>الإجمالي</th><th></th></tr></thead>'+
     '<tbody>'+(logs.length?logs.slice(0,40).map(l=>{
       const total=Object.values(l.qtys||{}).reduce((s,v)=>s+Number(v||0),0);
-      return '<tr><td>'+l.date+'</td><td><span class="tag tag-gray">'+(SESSION_LABELS[l.session]||'يوم كامل')+'</span></td>'+lactCows.map(c=>'<td class="amt">'+(l.qtys&&l.qtys[c.id]!=null?fN(l.qtys[c.id]):'-')+'</td>').join('')+
+      const modeLabel=l.entryMode==='total'?'<span class="tag tag-gold">إجمالي موزّع</span>':l.entryMode==='single'?'<span class="tag tag-blue">بقرة واحدة</span>':'<span class="tag tag-green">تفصيلي</span>';
+      return '<tr><td>'+l.date+'</td><td><span class="tag tag-gray">'+(SESSION_LABELS[l.session]||'يوم كامل')+'</span></td><td>'+modeLabel+'</td>'+lactCows.map(c=>'<td class="amt">'+(l.qtys&&l.qtys[c.id]!=null?fN(l.qtys[c.id]):'-')+'</td>').join('')+
         '<td class="amt-green">'+fN(total)+'</td>'+
         '<td><div style="display:flex;gap:4px"><button class="btn-icon" onclick="openMilkModal('+l.id+')"><i class="fas fa-pen" style="font-size:11px"></i></button><button class="btn-icon danger" onclick="deleteMilkLog('+l.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
-    }).join(''):'<tr><td colspan="'+(3+lactCows.length)+'" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد سجلات بعد</td></tr>')+
+    }).join(''):'<tr><td colspan="'+(4+lactCows.length)+'" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد سجلات بعد</td></tr>')+
     '</tbody></table></div></div></div>';
 }
 
@@ -98,15 +99,23 @@ function milkOwnershipTable(){
 }
 
 // ---------- Modal ----------
-let milkEntryMode='batch'; // 'batch' = all cows together, 'single' = one cow at a time
+let milkEntryMode='batch'; // 'batch' = each cow separately, 'single' = one cow only, 'total' = one overall number split across all lactating cows
 function openMilkModal(editId){
   const l=editId?(S.milkLogs||[]).find(x=>x.id===editId):null;
   document.getElementById('ml-edit-id').value=editId||'';
   document.getElementById('ml-date').value=l?l.date:TODAY;
   document.getElementById('ml-notes').value=l?(l.notes||''):'';
   document.getElementById('m-milk-title').textContent=l?'تعديل سجل حليب':'تسجيل إنتاج الحليب';
-  // default to batch mode unless editing a log that has exactly one cow (then show single mode for convenience)
-  milkEntryMode = (l && Object.keys(l.qtys||{}).length===1) ? 'single' : 'batch';
+  // restore the mode this log was originally entered with, when known; otherwise infer a sensible default
+  if(l && l.entryMode){
+    milkEntryMode=l.entryMode;
+  } else if(l && Object.keys(l.qtys||{}).length===1){
+    milkEntryMode='single';
+  } else if(!l){
+    milkEntryMode='total'; // most common real-world case: one combined number for the whole herd
+  } else {
+    milkEntryMode='batch';
+  }
   setMilkEntryMode(milkEntryMode);
   setMilkSession(l?l.session:'full', l);
   openModal('m-milk');
@@ -137,6 +146,13 @@ function buildMilkCowsList(existing){
     document.getElementById('ml-single-cow').innerHTML=ac.map(c=>'<option value="'+c.id+'">'+esc(c.name)+(c.breed?' ('+esc(c.breed)+')':'')+'</option>').join('');
     document.getElementById('ml-single-cow').onchange=renderSingleCowQtyInput;
     renderSingleCowQtyInput();
+  } else if(milkEntryMode==='total'){
+    const existingTotal=Object.values(qtys).reduce((s,v)=>s+Number(v||0),0);
+    wrap.innerHTML=
+      '<div class="fg"><label>إجمالي الكمية لكل القطيع الحلوب (كيلو)</label>'+
+      '<input type="number" id="mlq-total" placeholder="مثال: 11" min="0" step="0.25" style="direction:ltr" value="'+(existingTotal>0?existingTotal:'')+'"></div>'+
+      '<div class="hint"><i class="fas fa-circle-info"></i> سيتم توزيع هذه الكمية بالتساوي تلقائياً على عدد الأبقار الحلوب ('+ac.length+' بقرة) — لا حاجة لمعرفة نصيب كل بقرة بدقة.</div>'+
+      '<div style="margin-top:10px;font-size:12px;color:var(--txt3)">الأبقار الحلوب المشمولة: '+ac.map(c=>esc(c.name)).join('، ')+'</div>';
   } else {
     wrap.innerHTML=ac.map(c=>'<div class="fg"><label>'+esc(c.name)+(c.breed?' ('+esc(c.breed)+')':'')+'</label><input type="number" id="mlq-'+c.id+'" placeholder="0 كيلو" min="0" step="0.25" style="direction:ltr" value="'+(qtys[c.id]!=null?qtys[c.id]:'')+'"></div>').join('');
   }
@@ -164,6 +180,17 @@ function saveMilkLog(){
   if(milkEntryMode==='single'){
     persistSingleCowQty();
     qtys=Object.assign({},window._milkQtysCache||{});
+  } else if(milkEntryMode==='total'){
+    const total=parseFloat(document.getElementById('mlq-total')?.value)||0;
+    if(total<=0){toast('⚠ أدخل الكمية الإجمالية');return;}
+    const ac=activeLactatingCows();
+    if(!ac.length){toast('⚠ لا توجد أبقار حلوب حالياً');return;}
+    const share=total/ac.length;
+    ac.forEach(c=>{ qtys[c.id]=Math.round(share*1000)/1000; });
+    // fix rounding drift: adjust the first cow so the sum exactly equals the entered total
+    const sum=Object.values(qtys).reduce((s,v)=>s+v,0);
+    const drift=total-sum;
+    if(Math.abs(drift)>0.001) qtys[ac[0].id]=Math.round((qtys[ac[0].id]+drift)*1000)/1000;
   } else {
     activeLactatingCows().forEach(c=>{
       const v=parseFloat(document.getElementById('mlq-'+c.id)?.value);
@@ -174,11 +201,11 @@ function saveMilkLog(){
   S.milkLogs=S.milkLogs||[];
   if(editId){
     const l=S.milkLogs.find(x=>x.id===Number(editId));
-    if(l){l.date=date;l.session=session;l.qtys=qtys;l.notes=document.getElementById('ml-notes').value.trim();}
+    if(l){l.date=date;l.session=session;l.qtys=qtys;l.notes=document.getElementById('ml-notes').value.trim();l.entryMode=milkEntryMode;}
   } else {
     // replace any existing entry for same date+session (avoid duplicates)
     S.milkLogs=S.milkLogs.filter(x=>!(x.date===date&&(x.session||'full')===session));
-    S.milkLogs.push({id:uid(),date,session,qtys,notes:document.getElementById('ml-notes').value.trim()});
+    S.milkLogs.push({id:uid(),date,session,qtys,notes:document.getElementById('ml-notes').value.trim(),entryMode:milkEntryMode});
   }
   schedSave();closeModal('m-milk');renderPage(currentPage);toast('تم حفظ سجل الحليب');
 }
