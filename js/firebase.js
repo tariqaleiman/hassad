@@ -52,7 +52,17 @@ function fbPush(data){
   fbSyncing=true;
   return fbRef.set(data)
     .then(()=>{ fbSyncing=false; return true; })
-    .catch(err=>{ console.error('Firebase write error:',err); fbSyncing=false; return false; });
+    .catch(err=>{
+      console.error('Firebase write error:',err);
+      fbSyncing=false;
+      // Surface permission errors clearly instead of silently falling back —
+      // this is almost always caused by Realtime Database Security Rules
+      // blocking writes (default rules require auth, or are fully locked).
+      if(err && (err.code==='PERMISSION_DENIED' || /permission/i.test(err.message||''))){
+        toast('⚠ Firebase رفض الحفظ بسبب قواعد الأمان (Security Rules) — البيانات محفوظة محلياً فقط حالياً. راجع Realtime Database → Rules.');
+      }
+      return false;
+    });
 }
 
 // Listen for changes made from other devices/sessions and merge them in live.

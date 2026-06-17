@@ -296,7 +296,8 @@
 <div class="modal-body">
   <div class="box" id="fri-summary-box"></div>
   <input type="hidden" id="fri-qty-raw">
-  <div class="fg"><label>اسم التاجر</label><input type="text" id="fri-trader" placeholder="اسم التاجر"></div>
+  <div class="fg"><label>اسم التاجر</label><input type="text" id="fri-trader" list="fri-trader-list" placeholder="اسم التاجر" oninput="refreshTraderAdvanceBox()"><datalist id="fri-trader-list"></datalist><div class="hint">يُحفظ الاسم تلقائياً ويُقترح في المرة القادمة</div></div>
+  <div id="fri-advance-box"></div>
   <div class="frow">
     <div class="fg"><label>تاريخ المحاسبة</label><input type="date" id="fri-date"></div>
     <div class="fg"><label>الكمية الإجمالية (كيلو)</label><input type="text" id="fri-qty" readonly></div>
@@ -305,12 +306,29 @@
     <div class="fg"><label>سعر الكيلو (ج)</label><input type="number" id="fri-price" placeholder="0" step="0.01" oninput="calcFriday()"></div>
     <div class="fg"><label>إجمالي المستحق (ج)</label><input type="number" id="fri-total" placeholder="يحسب تلقائياً" readonly></div>
   </div>
-  <div class="fg"><label>المبلغ المقبوض فعلياً (ج)</label><input type="number" id="fri-received" placeholder="0"></div>
+  <div class="fg"><label>المبلغ المقبوض فعلياً (ج)</label><input type="number" id="fri-received" placeholder="0"><div class="hint">يُملأ تلقائياً ليطابق المستحق (بعد خصم السلفة إن وُجدت) — يمكنك تعديله لو اختلف</div></div>
   <div class="fg"><label>ملاحظات</label><textarea id="fri-notes" rows="2"></textarea></div>
 </div>
 <div class="modal-footer">
   <button class="btn btn-outline" onclick="closeModal('m-friday')">إلغاء</button>
   <button class="btn btn-primary" onclick="saveFriday()"><i class="fas fa-check"></i> حفظ المحاسبة</button>
+</div></div></div>
+
+<!-- TRADER ADVANCE MODAL -->
+<div class="ov" id="m-traderadvance" onclick="ovClick(event,'m-traderadvance')">
+<div class="modal" style="max-width:440px"><div class="modal-header"><h3><i class="fas fa-hand-holding-usd"></i> تسجيل سلفة لتاجر الحليب</h3><button class="modal-close" onclick="closeModal('m-traderadvance')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>السلفة تُخصم تلقائياً (كلها أو جزء منها) عند محاسبة هذا التاجر الأسبوعية القادمة، ويمكن تكرار الخصم على عدة مرات حتى تُسدد بالكامل.</span></div>
+  <div class="fg"><label>اسم التاجر</label><input type="text" id="adv-trader" list="fri-trader-list" placeholder="اسم التاجر"></div>
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="adv-date"></div>
+    <div class="fg"><label>قيمة السلفة (ج)</label><input type="number" id="adv-amount" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><input type="text" id="adv-notes" placeholder="اختياري"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-traderadvance')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveTraderAdvance()"><i class="fas fa-check"></i> حفظ</button>
 </div></div></div>
 
 <!-- INSEMINATION MODAL -->
@@ -802,6 +820,15 @@
     <div class="fg"><label>الجهة (بائع / دائن)</label><input type="text" id="dt-vendor" placeholder="اسم الجهة الدائنة"></div>
   </div>
   <div class="fg"><label>السبب / الوصف</label><input type="text" id="dt-reason" placeholder="مثال: شراء أسمدة — صيانة جرار..."></div>
+  <div class="fg"><label>نوع الدين</label>
+    <select id="dt-linktype" onchange="toggleDebtLinkSel()">
+      <option value="none">دين عام للمزرعة (غير مرتبط بعنصر محدد)</option>
+      <option value="crop">مرتبط بمحصول محدد</option>
+      <option value="cattle">مرتبط بحيوان محدد</option>
+      <option value="personal">دين شخصي (خارج المزرعة بالكامل)</option>
+    </select>
+  </div>
+  <div class="fg" id="dt-linkid-fg" style="display:none"><label>اختر العنصر</label><select id="dt-linkid"></select></div>
   <div class="frow">
     <div class="fg"><label>القيمة الإجمالية (ج)</label><input type="number" id="dt-amount" placeholder="0" min="0"></div>
     <div class="fg"><label>المدفوع مقدماً (ج)</label><input type="number" id="dt-paid" placeholder="0" min="0"></div>
@@ -810,6 +837,39 @@
 <div class="modal-footer">
   <button class="btn btn-outline" onclick="closeModal('m-debt')">إلغاء</button>
   <button class="btn btn-primary" onclick="saveDebt()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- GENERAL PAY-OFF MODAL -->
+<div class="ov" id="m-generalpay" onclick="ovClick(event,'m-generalpay')">
+<div class="modal wide"><div class="modal-header"><h3><i class="fas fa-hand-holding-usd"></i> سداد ديون</h3><button class="modal-close" onclick="closeModal('m-generalpay')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>اختر المورد و/أو العنصر المرتبط بالدين، وسيظهر لك كل الديون المفتوحة المطابقة. السداد الواحد يُوزَّع تلقائياً على الديون الأقدم أولاً حتى تنتهي القيمة المدخلة.</span></div>
+  <div class="frow">
+    <div class="fg"><label>المورد / الجهة (اختياري)</label><input type="text" id="gp-vendor" list="gp-vendor-list" placeholder="كل الموردين" oninput="refreshGeneralPayList()"><datalist id="gp-vendor-list"></datalist></div>
+    <div class="fg"><label>نوع العنصر (اختياري)</label>
+      <select id="gp-linktype" onchange="toggleGeneralPayLinkSel()">
+        <option value="">كل العناصر</option>
+        <option value="crop">محصول محدد</option>
+        <option value="cattle">حيوان محدد</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg" id="gp-linkid-fg" style="display:none"><label>اختر العنصر</label><select id="gp-linkid" onchange="refreshGeneralPayList()"></select></div>
+  <div class="form-divider">الديون المفتوحة المطابقة</div>
+  <div id="gp-list-box" style="margin-top:8px"></div>
+  <div class="hint" id="gp-total-remaining" style="margin-top:6px"></div>
+  <div class="form-divider">تنفيذ السداد</div>
+  <div class="frow" style="margin-top:8px">
+    <div class="fg"><label>التاريخ</label><input type="date" id="gp-date"></div>
+    <div class="fg"><label>قيمة السداد (ج)</label><input type="number" id="gp-amount" placeholder="0" min="0">
+      <button type="button" class="link-btn" style="margin-top:4px" onclick="fillGeneralPayFullAmount()">سدّد كل المتبقي دفعة واحدة</button>
+    </div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><input type="text" id="gp-notes" placeholder="اختياري"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-generalpay')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveGeneralPayment()"><i class="fas fa-check"></i> تنفيذ السداد</button>
 </div></div></div>
 
 <!-- PAY DEBT MODAL -->
@@ -861,9 +921,25 @@
 <div class="modal-body">
   <input type="hidden" id="ex-edit-id">
   <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>المصروف منفصل تماماً عن تاريخ العملية الزراعية — يمكنك تسجيل شراء مادة في تاريخ، واستخدامها في عملية بتاريخ آخر.</span></div>
+  <div class="fg"><label>مصدر التكلفة</label>
+    <div class="seg" id="ex-source-seg">
+      <select id="ex-source" onchange="toggleExpenseSource()" style="width:100%;padding:9px;border:1.5px solid var(--brd);border-radius:var(--r2);font-family:'Cairo',sans-serif">
+        <option value="direct">مصروف مباشر (نقدي أو آجل)</option>
+        <option value="inventory">استخدام من مخزون موجود (بنزين، قطع غيار، مدخلات...)</option>
+      </select>
+    </div>
+  </div>
   <div class="frow">
     <div class="fg"><label>التاريخ</label><input type="date" id="ex-date"></div>
-    <div class="fg"><label>المبلغ (ج)</label><input type="number" id="ex-amount" placeholder="0" min="0"></div>
+    <div class="fg" id="ex-direct-box"><label>المبلغ (ج)</label><input type="number" id="ex-amount" placeholder="0" min="0"></div>
+  </div>
+  <div id="ex-inventory-box" style="display:none">
+    <div class="alert alert-info"><i class="fas fa-warehouse"></i><span>سيُحسب المصروف تلقائياً من متوسط تكلفة العنصر في المخزون، وتُخصم الكمية من المتاح. مفيد للبنزين أو قطع الغيار التي تشتريها دفعة واحدة وتستخدمها في أكثر من عملية.</span></div>
+    <div class="frow">
+      <div class="fg"><label>العنصر</label><select id="ex-invitem" onchange="calcInventoryExpenseAmount()"></select></div>
+      <div class="fg"><label>الكمية المستخدمة</label><input type="number" id="ex-invqty" placeholder="0" min="0" step="0.1" oninput="calcInventoryExpenseAmount()"></div>
+    </div>
+    <div class="hint" id="ex-inv-preview"></div>
   </div>
   <div class="fg"><label>التصنيف</label><select id="ex-category"></select></div>
   <div class="fg"><label>ربط اختياري بـ</label>
@@ -875,7 +951,7 @@
     </select>
   </div>
   <div class="fg" id="ex-link-fg" style="display:none"><label>اختر العنصر المرتبط</label><select id="ex-linkid"></select></div>
-  <div class="frow">
+  <div class="frow" id="ex-paytype-row">
     <div class="fg"><label>المورد / الجهة</label><input type="text" id="ex-vendor" placeholder="اسم المورد (اختياري)"></div>
     <div class="fg"><label>طريقة الدفع</label>
       <select id="ex-paytype">

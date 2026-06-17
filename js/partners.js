@@ -7,7 +7,7 @@ const PARTNER_COLORS=['#2E7D32','#1565C0','#C62828','#E65100','#6A1B9A','#00838F
 function renderPartnersPage(wrap){
   document.getElementById('topbar-actions').innerHTML='<button class="btn btn-primary" onclick="openPartnerModal(null)"><i class="fas fa-user-plus"></i> إضافة شريك</button>';
   const partners=S.partners||[];
-  const activeCattle=(S.cattle||[]).filter(c=>c.status!=='sold'&&c.status!=='dead');
+  const activeCattle=(S.cattle||[]).filter(c=>!isOut(c));
 
   wrap.innerHTML=
     '<div class="alert alert-info"><i class="fas fa-circle-info"></i><span>هذه الصفحة تتحكم في الشركاء المستخدمين عند تحديد نسب ملكية الأبقار، نصيب المواليد، ونصيب الأرباح عند البيع. يمكن إضافة أي عدد من الشركاء ودعم أي تركيبة نسب (50/50، 25/75، 0/100 مع نصيب أرباح ثابت...إلخ).</span></div>'+
@@ -17,9 +17,8 @@ function renderPartnersPage(wrap){
     '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-cow"></i> تفاصيل ملكية كل رأس</div></div><div class="card-body p0">'+
     '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الحيوان</th><th>الحالة</th><th>ملكية رأس المال</th><th>نصيب البيع</th><th>نصيب المواليد</th><th></th></tr></thead><tbody>'+
     (activeCattle.length?activeCattle.map(c=>{
-      const statusLabels={lactating:'حلوب',pregnant:'حامل',dry:'جافة',calf:'عجل/عجلة',fattening:'تسمين'};
       return '<tr><td style="font-weight:700">'+esc(c.name)+'</td>'+
-        '<td><span class="tag tag-gray">'+(statusLabels[c.status]||c.status)+'</span></td>'+
+        '<td>'+cowBadges(c)+'</td>'+
         '<td>'+ownerPillsHTML(c.owners)+'</td>'+
         '<td>'+ownerPillsHTML(c.saleShares)+'</td>'+
         '<td>'+ownerPillsHTML(c.birthShares)+'</td>'+

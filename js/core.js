@@ -15,7 +15,7 @@ function emptyDB(){
     partners: JSON.parse(JSON.stringify(DEFAULT_PARTNERS)),
     // Cattle & related
     cattle:[], milkLogs:[], fridays:[], healthLogs:[], insems:[], pregChecks:[],
-    births:[], calfLogs:[], heatPrograms:[],
+    births:[], calfLogs:[], heatPrograms:[], traderAdvances:[], lastMilkTrader:'',
     // Crops & agricultural ops
     cropTypes: JSON.parse(JSON.stringify(DEFAULT_CROP_TYPES)),
     crops:[], ops:[], harvests:[], cuttings:[],
@@ -178,6 +178,31 @@ function migrateData(){
 
   (S.cattle||[]).forEach(c=>{
     // ---- Data integrity repair: never let a malformed record crash rendering ----
+    // First, translate any legacy 'status' field (used before the lifecycle/gender model existed)
+    // into the correct lifecycle + gender BEFORE applying generic defaults, so calves/fattening
+    // animals from old data are never silently miscategorized as adult 'active' cattle.
+    if(!c.lifecycle && c.status){
+      const legacyMap={
+        lactating:{lifecycle:'active',milkStatus:'lactating'},
+        dry:{lifecycle:'active',milkStatus:'dry'},
+        pregnant:{lifecycle:'active',milkStatus:c.milkStatus||'dry',pregnant:true},
+        calf:{lifecycle:'calf'},
+        fattening:{lifecycle:'fattening'},
+        sold:{lifecycle:'sold'},
+        dead:{lifecycle:'dead'},
+      };
+      const m=legacyMap[c.status];
+      if(m){
+        c.lifecycle=m.lifecycle;
+        if(m.milkStatus!==undefined && c.milkStatus===undefined) c.milkStatus=m.milkStatus;
+        if(m.pregnant!==undefined && c.pregnant===undefined) c.pregnant=m.pregnant;
+      }
+      // If this legacy record came from the calf/fattening status and gender wasn't yet
+      // in the new calf_f/calf_m format, infer it so it correctly shows up as a calf, not an adult.
+      if((c.status==='calf'||c.status==='fattening') && c.gender && c.gender!=='calf_f' && c.gender!=='calf_m'){
+        c.gender = c.gender==='male' ? 'calf_m' : 'calf_f';
+      }
+    }
     if(!c.gender) c.gender='female';
     if(!c.lifecycle) c.lifecycle='active';
     if(c.name==null||c.name==='') c.name='بدون اسم #'+c.id;
@@ -228,7 +253,12 @@ function migrateData(){
   });
 
   // ---- Expenses: ensure structure exists ----
+  (S.debts||[]).forEach(d=>{ if(d.linkType===undefined) d.linkType=d.refType==='cattle'?'cattle':(d.refType==='cropop'?'crop':'none'); if(d.linkId===undefined) d.linkId=null; });
+  (S.payments||[]).forEach(p=>{ if(p.method===undefined) p.method='cash'; });
   if(!S.expenses) S.expenses=[];
+  if(!S.traderAdvances) S.traderAdvances=[];
+  if(S.lastMilkTrader===undefined) S.lastMilkTrader='';
+  (S.fridays||[]).forEach(f=>{ if(f.advanceDeducted===undefined) f.advanceDeducted=0; });
   (S.expenses||[]).forEach(e=>{
     if(e.linkType===undefined) e.linkType='none'; // 'none' | 'crop' | 'cropop' | 'cattle'
     if(e.linkId===undefined) e.linkId=null;

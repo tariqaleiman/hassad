@@ -64,7 +64,52 @@ function openExpenseModal(editId,presetLink){
     if(sel) sel.value=e?(e.linkId||''):(presetLink&&presetLink.linkId)||'';
   },10);
   toggleExpenseLink();
+
+  // ---- Source: new direct expense vs. consume from existing inventory (fuel, spare parts, fertilizer...) ----
+  const source = e?(e.source||'direct'):'direct';
+  document.getElementById('ex-source').value=source;
+  populateExpenseInventorySel();
+  if(e&&e.source==='inventory'){
+    setTimeout(()=>{
+      const isel=document.getElementById('ex-invitem');
+      if(isel) isel.value=e.invItemId||'';
+      const qel=document.getElementById('ex-invqty');
+      if(qel) qel.value=e.invQty||'';
+    },10);
+  } else {
+    document.getElementById('ex-invqty').value='';
+  }
+  toggleExpenseSource();
   openModal('m-expense');
+}
+function toggleExpenseSource(){
+  const src=document.getElementById('ex-source').value;
+  document.getElementById('ex-direct-box').style.display=src==='direct'?'block':'none';
+  document.getElementById('ex-inventory-box').style.display=src==='inventory'?'block':'none';
+  const payRow=document.getElementById('ex-paytype-row');
+  if(payRow) payRow.style.display=src==='inventory'?'none':'flex';
+  if(src==='inventory') populateExpenseInventorySel();
+}
+function populateExpenseInventorySel(){
+  const sel=document.getElementById('ex-invitem');
+  if(!sel) return;
+  const items=(S.inventoryItems||[]).filter(it=>Number(it.qty||0)>0);
+  sel.innerHTML=items.length?items.map(it=>'<option value="'+it.id+'">'+esc(it.name)+' — متاح '+fN(it.qty)+' '+esc(it.unit)+' (متوسط '+fMoney(it.avgCost)+'/'+esc(it.unit)+')</option>').join('')
+    :'<option value="">لا توجد عناصر مخزون متاحة — أضف بنزين/قطع غيار من صفحة المخزون أولاً</option>';
+  calcInventoryExpenseAmount();
+}
+function calcInventoryExpenseAmount(){
+  const itemId=Number(document.getElementById('ex-invitem').value)||null;
+  const qty=parseFloat(document.getElementById('ex-invqty').value)||0;
+  const item=(S.inventoryItems||[]).find(it=>it.id===itemId);
+  const preview=document.getElementById('ex-inv-preview');
+  if(!item||!qty){ preview.textContent=''; return; }
+  const cost=qty*Number(item.avgCost||0);
+  if(qty>Number(item.qty||0)){
+    preview.innerHTML='<span style="color:var(--red)">⚠ الكمية المطلوبة ('+fN(qty)+') أكبر من المتاح ('+fN(item.qty)+' '+esc(item.unit)+')</span>';
+  } else {
+    preview.innerHTML='التكلفة المحسوبة: <strong>'+fMoney(cost)+'</strong> (بمتوسط '+fMoney(item.avgCost)+'/'+esc(item.unit)+')';
+  }
 }
 function toggleExpenseLink(){
   const lt=document.getElementById('ex-linktype').value;
@@ -83,23 +128,52 @@ function populateExpenseLinkSel(linkType){
   }
 }
 function saveExpense(){
-  const date=document.getElementById('ex-date').value,amount=parseFloat(document.getElementById('ex-amount').value)||0;
-  if(!date||amount<=0){toast('⚠ أدخل التاريخ والمبلغ');return;}
+  const date=document.getElementById('ex-date').value;
+  if(!date){toast('⚠ أدخل التاريخ');return;}
   const editId=document.getElementById('ex-edit-id').value;
   const category=document.getElementById('ex-category').value;
   const linkType=document.getElementById('ex-linktype').value;
   const linkId=linkType!=='none'?Number(document.getElementById('ex-linkid').value)||null:null;
+  const source=document.getElementById('ex-source').value;
+
+  let amount, invItemId=null, invQty=null;
+  if(source==='inventory'){
+    invItemId=Number(document.getElementById('ex-invitem').value)||null;
+    invQty=parseFloat(document.getElementById('ex-invqty').value)||0;
+    const item=(S.inventoryItems||[]).find(it=>it.id===invItemId);
+    if(!item||invQty<=0){toast('⚠ اختر عنصر المخزون وأدخل الكمية المستخدمة');return;}
+    if(invQty>Number(item.qty||0)){toast('⚠ الكمية المطلوبة أكبر من المتاح في المخزون ('+fN(item.qty)+' '+item.unit+')');return;}
+    amount = invQty*Number(item.avgCost||0);
+  } else {
+    amount=parseFloat(document.getElementById('ex-amount').value)||0;
+    if(amount<=0){toast('⚠ أدخل المبلغ');return;}
+  }
+
   const data={date,amount,category,accountCode:guessExpenseAccount(category),
     linkType,linkId,vendor:document.getElementById('ex-vendor').value.trim(),
-    paytype:document.getElementById('ex-paytype').value,worker:document.getElementById('ex-worker').value.trim(),
-    notes:document.getElementById('ex-notes').value.trim()};
+    paytype:source==='inventory'?'cash':document.getElementById('ex-paytype').value,
+    worker:document.getElementById('ex-worker').value.trim(),
+    notes:document.getElementById('ex-notes').value.trim(),
+    source, invItemId, invQty};
+
   if(editId){
-    Object.assign((S.expenses||[]).find(x=>x.id===Number(editId)),data);
+    const old=(S.expenses||[]).find(x=>x.id===Number(editId));
+    // if this was previously an inventory-consumption expense, reverse its stock deduction before re-applying
+    if(old&&old.source==='inventory'&&old.invItemId){
+      S.inventoryMoves=(S.inventoryMoves||[]).filter(m=>!(m.refType==='expense_consume'&&m.refId===old.id));
+      recalcInventoryQtys();
+    }
+    Object.assign(old,data);
+    if(source==='inventory'){
+      addInventoryMove(invItemId,date,'out',invQty,0,'expense_consume',old.id,'استهلاك مرتبط بمصروف: '+(EXPENSE_CATEGORIES[category]||category));
+    }
   } else {
     S.expenses=S.expenses||[];
     const ex=Object.assign({id:uid()},data);
     S.expenses.push(ex);
-    if(data.paytype==='credit'){
+    if(source==='inventory'){
+      addInventoryMove(invItemId,date,'out',invQty,0,'expense_consume',ex.id,'استهلاك مرتبط بمصروف: '+(EXPENSE_CATEGORIES[category]||category));
+    } else if(data.paytype==='credit'){
       S.debts=S.debts||[];
       S.debts.push({id:uid(),vendor:data.vendor||'مورد',reason:(EXPENSE_CATEGORIES[category]||category),amount,remaining:amount,status:'open',date,refId:ex.id,refType:'expense'});
     }
@@ -107,7 +181,9 @@ function saveExpense(){
   schedSave();closeModal('m-expense');renderPage(currentPage);toast('تم حفظ المصروف');
 }
 function deleteExpense(id){
-  confirmAction('حذف هذا المصروف؟',()=>{
+  confirmAction('حذف هذا المصروف؟ لو كان مرتبطاً باستهلاك من المخزون، ستُعاد الكمية للمخزون.',()=>{
+    S.inventoryMoves=(S.inventoryMoves||[]).filter(m=>!(m.refType==='expense_consume'&&m.refId===id));
+    recalcInventoryQtys();
     S.expenses=(S.expenses||[]).filter(e=>e.id!==id);
     schedSave();renderPage(currentPage);toast('تم الحذف');
   });

@@ -3,6 +3,20 @@
 // ═══════════════════════════════════════════════════════
 const SESSION_LABELS={full:'يوم كامل',am:'صباحي',pm:'مسائي'};
 
+function traderAdvancesCard(){
+  const advances=[...(S.traderAdvances||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!advances.length) return '';
+  const traders=new Set(advances.map(a=>a.trader));
+  const outstandingRows=[...traders].map(t=>({trader:t,balance:traderAdvanceBalance(t)})).filter(r=>r.balance>0.01);
+  return '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><i class="fas fa-hand-holding-usd"></i> سلف تجار الحليب</div></div><div class="card-body p0">'+
+    (outstandingRows.length?'<div style="padding:12px"><div class="split-grid">'+outstandingRows.map(r=>
+      '<div class="split-card" style="border-color:var(--orange)"><div class="sc-name">'+esc(r.trader)+'</div><div class="sc-val" style="color:var(--orange)">'+fMoney(r.balance)+'</div><div class="sc-sub">سلفة مستحقة لم تُخصم بعد</div></div>'
+    ).join('')+'</div></div>':'')+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>التاجر</th><th>القيمة</th><th>ملاحظات</th><th></th></tr></thead><tbody>'+
+    advances.map(a=>'<tr><td>'+a.date+'</td><td style="font-weight:700">'+esc(a.trader)+'</td><td class="amt-red">'+fMoney(a.amount)+'</td><td>'+esc(a.notes||'—')+'</td>'+
+      '<td><button class="btn-icon danger" onclick="deleteTraderAdvance('+a.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></td></tr>').join('')+
+    '</tbody></table></div></div></div>';
+}
 function activeLactatingCows(){return (S.cattle||[]).filter(c=>isActiveFemale(c)&&c.milkStatus==='lactating');}
 
 function dailyTotals(){
@@ -19,6 +33,7 @@ function dailyTotals(){
 
 function renderMilkPage(wrap){
   document.getElementById('topbar-actions').innerHTML=
+    '<button class="btn btn-outline" onclick="openTraderAdvanceModal()"><i class="fas fa-hand-holding-usd"></i> تسجيل سلفة لتاجر</button>'+
     '<button class="btn btn-outline" onclick="openFridayModal()"><i class="fas fa-file-invoice-dollar"></i> محاسبة تاجر</button>'+
     '<button class="btn btn-primary" onclick="openMilkModal(null)"><i class="fas fa-plus"></i> تسجيل إنتاج</button>';
   const logs=[...(S.milkLogs||[])].sort((a,b)=>(b.date+(b.session||'')).localeCompare(a.date+(a.session||'')));
@@ -45,6 +60,7 @@ function renderMilkPage(wrap){
       '<div class="card"><div class="card-header"><div class="card-title">الكمية اليومية — آخر 14 يوم</div></div><div class="card-body">'+milkChart(last14dates,dt)+'</div></div>'+
       '<div class="card"><div class="card-header"><div class="card-title">محاسبات تاجر الحليب</div></div><div class="card-body p0">'+fridayTable(frs)+'</div></div>'+
     '</div>'+
+    traderAdvancesCard()+
     // Per-cow revenue split (ownership)
     '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><i class="fas fa-sitemap"></i> توزيع إيراد الحليب على الشركاء (حسب نسبة ملكية كل بقرة)</div></div><div class="card-body p0">'+
     milkOwnershipTable()+
@@ -216,36 +232,102 @@ function deleteMilkLog(id){
 }
 
 // ---------- Friday settlement ----------
+// IMPORTANT: milk produced ON the settlement date itself is NOT included in this
+// settlement — it rolls forward into the next settlement period. This matches
+// the real workflow: when you settle accounts with the trader on a given day,
+// that day's milk hasn't been picked up/counted yet by him.
 function openFridayModal(){
   const frs=[...(S.fridays||[])].sort((a,b)=>b.date.localeCompare(a.date));
   const since=frs[0]?frs[0].date:'2000-01-01';
-  const pLogs=(S.milkLogs||[]).filter(l=>l.date>since);
+  const settleDate=TODAY;
+  const pLogs=(S.milkLogs||[]).filter(l=>l.date>since && l.date<settleDate);
   const qty=pLogs.reduce((s,l)=>s+Object.values(l.qtys||{}).reduce((a,v)=>a+Number(v||0),0),0);
   document.getElementById('fri-qty').value=fN(qty);
   document.getElementById('fri-qty-raw').value=qty;
-  document.getElementById('fri-date').value=TODAY;
-  ['fri-price','fri-total','fri-received','fri-notes','fri-trader'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('fri-summary-box').innerHTML='<strong>الكمية المتراكمة منذ آخر محاسبة ('+since+'): '+fN(qty)+' كيلو</strong>';
+  document.getElementById('fri-date').value=settleDate;
+  ['fri-price','fri-total','fri-received','fri-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  populateTraderSel();
+  // remember last-used trader as default
+  const lastTrader = frs[0]?frs[0].trader : (S.lastMilkTrader||'');
+  document.getElementById('fri-trader').value=lastTrader||'';
+  document.getElementById('fri-summary-box').innerHTML='<strong>الكمية المتراكمة من '+addDays(since,1)+' إلى '+addDays(settleDate,-1)+': '+fN(qty)+' كيلو</strong><div class="hint" style="margin-top:4px">حليب يوم المحاسبة نفسه ('+settleDate+') لا يُحسب الآن — سيُضاف للأسبوع القادم تلقائياً.</div>';
+  // show outstanding advance (سلفة) from this trader, if any
+  refreshTraderAdvanceBox();
   openModal('m-friday');
+}
+function populateTraderSel(){
+  const dl=document.getElementById('fri-trader-list');
+  if(!dl) return;
+  const traders=new Set((S.fridays||[]).map(f=>f.trader).filter(Boolean));
+  dl.innerHTML=[...traders].map(t=>'<option value="'+esc(t)+'">').join('');
+}
+function refreshTraderAdvanceBox(){
+  const trader=document.getElementById('fri-trader').value.trim();
+  const box=document.getElementById('fri-advance-box');
+  if(!box) return;
+  if(!trader){ box.innerHTML=''; document.getElementById('fri-advance-deduct').value='0'; return; }
+  const outstanding=traderAdvanceBalance(trader);
+  if(outstanding>0){
+    box.innerHTML='<div class="alert alert-warn"><i class="fas fa-hand-holding-usd"></i><span>يوجد سلفة سابقة مستحقة على هذا التاجر: <strong>'+fMoney(outstanding)+'</strong> — يمكنك خصم جزء أو كل قيمتها من هذه المحاسبة.</span></div>'+
+      '<div class="fg"><label>قيمة السلفة المخصومة من هذه المحاسبة (ج)</label><input type="number" id="fri-advance-deduct" placeholder="0" min="0" max="'+outstanding+'" value="0" oninput="calcFriday()"></div>';
+  } else {
+    box.innerHTML='';
+    document.getElementById('fri-advance-deduct')?.remove?.();
+  }
+}
+function traderAdvanceBalance(trader){
+  const given=(S.traderAdvances||[]).filter(a=>a.trader===trader).reduce((s,a)=>s+Number(a.amount||0),0);
+  const settled=(S.fridays||[]).filter(f=>f.trader===trader).reduce((s,f)=>s+Number(f.advanceDeducted||0),0);
+  return Math.max(0,given-settled);
 }
 function calcFriday(){
   const p=parseFloat(document.getElementById('fri-price').value)||0;
   const q=parseFloat(document.getElementById('fri-qty-raw').value)||0;
   const total=(p*q);
   document.getElementById('fri-total').value=total?total.toFixed(0):'';
-  if(!document.getElementById('fri-received').value) document.getElementById('fri-received').value=total?total.toFixed(0):'';
+  const advanceDeduct=parseFloat(document.getElementById('fri-advance-deduct')?.value)||0;
+  const net=Math.max(0,total-advanceDeduct);
+  // default "received" to match "total due" (minus any advance deduction) — auto-fill, still editable
+  document.getElementById('fri-received').value=net?net.toFixed(0):'';
 }
 function saveFriday(){
   const date=document.getElementById('fri-date').value,price=parseFloat(document.getElementById('fri-price').value)||0;
   if(!date||!price){toast('⚠ أدخل التاريخ والسعر');return;}
+  const trader=document.getElementById('fri-trader').value.trim();
   const qty=parseFloat(document.getElementById('fri-qty-raw').value)||0;
   const received=parseFloat(document.getElementById('fri-received').value)||0;
+  const advanceDeducted=Math.min(parseFloat(document.getElementById('fri-advance-deduct')?.value)||0, traderAdvanceBalance(trader));
   S.fridays=S.fridays||[];
-  S.fridays.push({id:uid(),date,trader:document.getElementById('fri-trader').value.trim(),price,qty,total:price*qty,received,notes:document.getElementById('fri-notes').value.trim()});
+  S.fridays.push({id:uid(),date,trader,price,qty,total:price*qty,received,advanceDeducted,notes:document.getElementById('fri-notes').value.trim()});
+  S.lastMilkTrader=trader;
   schedSave();closeModal('m-friday');renderPage(currentPage);toast('تم حفظ المحاسبة');
 }
 function deleteFriday(id){
   confirmAction('حذف محاسبة تاجر الحليب هذه؟',()=>{
     S.fridays=(S.fridays||[]).filter(f=>f.id!==id);schedSave();renderPage(currentPage);toast('تم الحذف');
+  });
+}
+
+// ---------- Trader advances (سلفة) ----------
+function openTraderAdvanceModal(){
+  populateTraderSel();
+  document.getElementById('adv-date').value=TODAY;
+  document.getElementById('adv-trader').value=S.lastMilkTrader||'';
+  document.getElementById('adv-amount').value='';
+  document.getElementById('adv-notes').value='';
+  openModal('m-traderadvance');
+}
+function saveTraderAdvance(){
+  const trader=document.getElementById('adv-trader').value.trim(),date=document.getElementById('adv-date').value;
+  const amount=parseFloat(document.getElementById('adv-amount').value)||0;
+  if(!trader||!date||amount<=0){toast('⚠ أدخل اسم التاجر والتاريخ والقيمة');return;}
+  S.traderAdvances=S.traderAdvances||[];
+  S.traderAdvances.push({id:uid(),trader,date,amount,notes:document.getElementById('adv-notes').value.trim()});
+  S.lastMilkTrader=trader;
+  schedSave();closeModal('m-traderadvance');renderPage(currentPage);toast('تم تسجيل السلفة');
+}
+function deleteTraderAdvance(id){
+  confirmAction('حذف سجل السلفة هذا؟',()=>{
+    S.traderAdvances=(S.traderAdvances||[]).filter(a=>a.id!==id);schedSave();renderPage(currentPage);toast('تم الحذف');
   });
 }

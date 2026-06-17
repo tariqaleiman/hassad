@@ -31,15 +31,15 @@ function addCropStage(cropId,stage,date,notes){
 const OP_TYPES=[
   {value:'plow',  label:'حرث',                 units:['ساعة','يومية']},
   {value:'prep',  label:'تسوية / تجهيز أرض',   units:['ساعة','يومية']},
-  {value:'sow',   label:'زراعة / بذر',          units:['ساعة','قيراط','يومية']},
-  {value:'transplant',label:'نقل شتلات',        units:['ساعة','قيراط','يومية']},
+  {value:'sow',   label:'زراعة / بذر',          units:['كيلو','شتلة','شيكارة','ساعة','قيراط','يومية']},
+  {value:'transplant',label:'نقل شتلات',        units:['شتلة','كيلو','ساعة','قيراط','يومية']},
   {value:'weed',  label:'عزيق / إزالة حشائش',   units:['ساعة','قيراط','يومية']},
-  {value:'harvest',label:'حصاد',                units:['ساعة','قيراط','يومية']},
+  {value:'harvest',label:'حصاد',                units:['كيلو','طن','قنطار','ساعة','قيراط','يومية']},
   {value:'fertilize',label:'تسميد',             units:['شيكارة','كيلو','وحدة','يومية']},
-  {value:'spray', label:'رش مبيدات / مغذيات',   units:['عبوة','لتر','مرة رش','يومية']},
+  {value:'spray', label:'رش مبيدات / مغذيات',   units:['عبوة','لتر','كيلو','مرة رش','يومية']},
   {value:'irrigate',label:'ري',                 units:['ساعة','يومية']},
   {value:'labor', label:'عمالة عامة / مياومة',  units:['يومية','ساعة']},
-  {value:'other', label:'عملية أخرى',           units:['وحدة','ساعة','يوم','يومية']},
+  {value:'other', label:'عملية أخرى',           units:['وحدة','كيلو','ساعة','يوم','يومية']},
 ];
 function opTypeLabel(v){const t=OP_TYPES.find(x=>x.value===v);return t?t.label:v;}
 

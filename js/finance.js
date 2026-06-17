@@ -106,57 +106,120 @@ function partnerCattleSummary(partnerId){
 // ═══════════════════════════════════════════════════════
 //  DEBTS & PAYMENTS PAGE
 // ═══════════════════════════════════════════════════════
+// ---------- Debt link/category system ----------
+// A debt can optionally be linked to a specific crop or animal — in which case its
+// repayment can be automatically settled from that item's future revenue (milk,
+// crop sale, animal sale). Debts can also be marked as "personal" — unrelated to
+// the farm at all (e.g. the owner's personal clothing or food expenses) — so they
+// stay completely separate from farm profitability calculations.
+const DEBT_LINK_LABELS={none:'دين عام (غير مرتبط)',crop:'محصول',cattle:'حيوان',personal:'دين شخصي (خارج المزرعة)'};
+
+function debtLinkText(d){
+  if(!d.linkType||d.linkType==='none') return 'غير مرتبط';
+  if(d.linkType==='personal') return '<span class="tag tag-gray">شخصي — خارج المزرعة</span>';
+  if(d.linkType==='crop'){const c=(S.crops||[]).find(x=>x.id===d.linkId);return c?'محصول: '+esc(c.name):'محصول محذوف';}
+  if(d.linkType==='cattle'){const c=(S.cattle||[]).find(x=>x.id===d.linkId);return c?'حيوان: '+esc(c.name):'حيوان محذوف';}
+  if(d.refType==='cropop'){const o=(S.ops||[]).find(x=>x.id===d.refId);const c=o?(S.crops||[]).find(x=>x.id===o.cropId):null;return o?('عملية على محصول: '+(c?esc(c.name):'—')):'—';}
+  return '—';
+}
+// Group debts by the linked item (crop/cattle/personal/none) for the "حسب العنصر" report
+function debtsByLinkSummary(){
+  const map={};
+  (S.debts||[]).filter(d=>!d.isPersonal && d.linkType!=='personal').forEach(d=>{
+    let key, label;
+    if(d.linkType==='crop'){const c=(S.crops||[]).find(x=>x.id===d.linkId);key='crop:'+d.linkId;label=c?'محصول: '+c.name:'محصول محذوف';}
+    else if(d.linkType==='cattle'){const c=(S.cattle||[]).find(x=>x.id===d.linkId);key='cattle:'+d.linkId;label=c?'حيوان: '+c.name:'حيوان محذوف';}
+    else {key='none';label='ديون عامة غير مرتبطة';}
+    if(!map[key]) map[key]={key,label,count:0,total:0,remaining:0};
+    map[key].count++;
+    map[key].total+=Number(d.amount||0);
+    map[key].remaining+=Number(d.remaining!=null?d.remaining:d.amount||0);
+  });
+  return Object.values(map).map(v=>Object.assign(v,{paid:v.total-v.remaining})).sort((a,b)=>b.remaining-a.remaining);
+}
+function personalDebtsSummary(){
+  const debts=(S.debts||[]).filter(d=>d.linkType==='personal');
+  const total=debts.reduce((s,d)=>s+Number(d.amount||0),0);
+  const remaining=debts.reduce((s,d)=>s+Number(d.remaining!=null?d.remaining:d.amount||0),0);
+  return {debts,total,remaining,paid:total-remaining};
+}
+
 function renderDebtsPage(wrap){
-  document.getElementById('topbar-actions').innerHTML='<button class="btn btn-primary" onclick="openDebtModal()"><i class="fas fa-plus"></i> تسجيل دين / مستحق</button>';
-  const debts=[...(S.debts||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('topbar-actions').innerHTML=
+    '<button class="btn btn-outline" onclick="openGeneralPayModal()"><i class="fas fa-hand-holding-usd"></i> سداد</button>'+
+    '<button class="btn btn-primary" onclick="openDebtModal()"><i class="fas fa-plus"></i> تسجيل دين / مستحق</button>';
+  const allDebts=[...(S.debts||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const debts=allDebts.filter(d=>d.linkType!=='personal');
+  const personal=personalDebtsSummary();
   const open=debts.filter(d=>d.status!=='paid');
   const totalOpen=open.reduce((s,d)=>s+Number(d.remaining!=null?d.remaining:d.amount||0),0);
   const totalAll=debts.reduce((s,d)=>s+Number(d.amount||0),0);
   const totalPaid=totalAll-totalOpen;
   const payments=[...(S.payments||[])].sort((a,b)=>b.date.localeCompare(a.date));
   const vendorSummary=vendorDebtSummary();
+  const linkSummary=debtsByLinkSummary();
 
   wrap.innerHTML=
-    '<div class="alert alert-info"><i class="fas fa-link"></i><span>كل الديون مرتبطة محاسبياً بحساب <strong>2100 — ديون الموردين</strong> في شجرة الحسابات، ويمكن مراجعتها بالتفصيل من دفتر الأستاذ في صفحة التقارير المالية.</span></div>'+
+    '<div class="alert alert-info"><i class="fas fa-link"></i><span>كل الديون مرتبطة محاسبياً بحساب <strong>2100 — ديون الموردين</strong> في شجرة الحسابات (باستثناء الديون الشخصية)، ويمكن مراجعتها بالتفصيل من دفتر الأستاذ في صفحة التقارير المالية.</span></div>'+
     '<div class="kpi-grid">'+
-      kpiCard('إجمالي الديون',fMoney(totalAll),'fa-file-invoice-dollar','')+
+      kpiCard('إجمالي ديون المزرعة',fMoney(totalAll),'fa-file-invoice-dollar','')+
       kpiCard('المدفوع',fMoney(totalPaid),'fa-check-circle','green')+
       kpiCard('المتبقي المستحق',fMoney(totalOpen),'fa-exclamation-circle','red')+
-      kpiCard('عدد البنود المفتوحة',open.length,'fa-list','orange')+
+      kpiCard('ديون شخصية (خارج المزرعة)',fMoney(personal.remaining),'fa-user','orange')+
     '</div>'+
-    '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><i class="fas fa-store"></i> الديون مجمّعة حسب المورد / الدائن</div></div><div class="card-body p0">'+
-    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>المورد / الدائن</th><th>عدد البنود</th><th>إجمالي الدين</th><th>المدفوع</th><th>المتبقي</th><th></th></tr></thead><tbody>'+
-    (vendorSummary.length?vendorSummary.map(v=>{
-      return '<tr><td style="font-weight:700">'+esc(v.vendor)+'</td><td>'+v.count+'</td>'+
-        '<td>'+fMoney(v.total)+'</td><td class="amt-green">'+fMoney(v.paid)+'</td>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'+
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-store"></i> حسب المورد / الدائن</div></div><div class="card-body p0">'+
+      '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>المورد</th><th>البنود</th><th>المتبقي</th><th></th></tr></thead><tbody>'+
+      (vendorSummary.length?vendorSummary.map(v=>'<tr><td style="font-weight:700">'+esc(v.vendor)+'</td><td>'+v.count+'</td>'+
         '<td class="'+(v.remaining>0?'amt-red':'amt-green')+'">'+fMoney(v.remaining)+'</td>'+
-        '<td><button class="btn btn-sm btn-outline" onclick="openVendorDetailModal(\''+esc(v.vendor).replace(/'/g,"\\'")+'\')"><i class="fas fa-file-invoice"></i> التفاصيل</button></td></tr>';
-    }).join(''):'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--txt4)">لا توجد ديون مسجلة</td></tr>')+
-    '</tbody></table></div></div></div>'+
-    '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title">الديون والمستحقات (سجل كامل)</div></div><div class="card-body p0">'+
-    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الجهة</th><th>السبب</th><th>القيمة</th><th>المتبقي</th><th>الحالة</th><th></th></tr></thead><tbody>'+
+        '<td><button class="btn btn-sm btn-outline" onclick="openVendorDetailModal(\''+esc(v.vendor).replace(/'/g,"\\'")+'\')"><i class="fas fa-file-invoice"></i></button></td></tr>').join(''):
+        '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--txt4)">لا توجد ديون</td></tr>')+
+      '</tbody></table></div></div>'+
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-sitemap"></i> حسب العنصر المرتبط</div></div><div class="card-body p0">'+
+      '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>العنصر</th><th>البنود</th><th>المتبقي</th></tr></thead><tbody>'+
+      (linkSummary.length?linkSummary.map(v=>'<tr><td style="font-weight:700">'+esc(v.label)+'</td><td>'+v.count+'</td>'+
+        '<td class="'+(v.remaining>0?'amt-red':'amt-green')+'">'+fMoney(v.remaining)+'</td></tr>').join(''):
+        '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--txt4)">لا توجد ديون مرتبطة بعناصر</td></tr>')+
+      '</tbody></table></div></div>'+
+    '</div>'+
+    '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title">ديون ومستحقات المزرعة (سجل كامل)</div></div><div class="card-body p0">'+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الجهة</th><th>السبب</th><th>مرتبط بـ</th><th>القيمة</th><th>المتبقي</th><th>الحالة</th><th></th></tr></thead><tbody>'+
     (debts.length?debts.map(d=>{
       const remaining=d.remaining!=null?Number(d.remaining):Number(d.amount||0);
       const status=remaining<=0?'paid':(remaining<Number(d.amount)?'partial':'open');
       const labels={paid:'<span class="tag tag-green">مدفوع</span>',partial:'<span class="tag tag-gold">مدفوع جزئياً</span>',open:'<span class="tag tag-red">مستحق</span>'};
       return '<tr><td>'+d.date+'</td><td style="font-weight:700"><button class="link-btn" onclick="openVendorDetailModal(\''+esc(d.vendor).replace(/'/g,"\\'")+'\')">'+esc(d.vendor)+'</button></td><td>'+esc(d.reason||'—')+'</td>'+
+        '<td>'+debtLinkText(d)+'</td>'+
         '<td>'+fMoney(d.amount)+'</td><td class="'+(remaining>0?'amt-red':'amt-green')+'">'+fMoney(remaining)+'</td>'+
         '<td>'+labels[status]+'</td>'+
-        '<td><div style="display:flex;gap:4px">'+(remaining>0?'<button class="btn btn-sm btn-outline" onclick="openPayDebtModal('+d.id+')"><i class="fas fa-coins"></i> دفعة</button>':'')+
+        '<td><div style="display:flex;gap:4px">'+(remaining>0?'<button class="btn btn-sm btn-outline" onclick="openPayDebtModal('+d.id+')"><i class="fas fa-coins"></i> سداد</button>':'')+
         '<button class="btn-icon danger" onclick="deleteDebt('+d.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
-    }).join(''):'<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد ديون مسجلة</td></tr>')+
+    }).join(''):'<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد ديون مسجلة</td></tr>')+
+    '</tbody></table></div></div></div>'+
+    '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><i class="fas fa-user"></i> ديون شخصية (خارج المزرعة)</div></div><div class="card-body p0">'+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الجهة</th><th>السبب</th><th>القيمة</th><th>المتبقي</th><th>الحالة</th><th></th></tr></thead><tbody>'+
+    (personal.debts.length?personal.debts.map(d=>{
+      const remaining=d.remaining!=null?Number(d.remaining):Number(d.amount||0);
+      const status=remaining<=0?'paid':(remaining<Number(d.amount)?'partial':'open');
+      const labels={paid:'<span class="tag tag-green">مدفوع</span>',partial:'<span class="tag tag-gold">جزئي</span>',open:'<span class="tag tag-red">مستحق</span>'};
+      return '<tr><td>'+d.date+'</td><td style="font-weight:700">'+esc(d.vendor)+'</td><td>'+esc(d.reason||'—')+'</td>'+
+        '<td>'+fMoney(d.amount)+'</td><td class="'+(remaining>0?'amt-red':'amt-green')+'">'+fMoney(remaining)+'</td><td>'+labels[status]+'</td>'+
+        '<td><div style="display:flex;gap:4px">'+(remaining>0?'<button class="btn btn-sm btn-outline" onclick="openPayDebtModal('+d.id+')"><i class="fas fa-coins"></i> سداد</button>':'')+
+        '<button class="btn-icon danger" onclick="deleteDebt('+d.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
+    }).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--txt4)">لا توجد ديون شخصية</td></tr>')+
     '</tbody></table></div></div></div>'+
     '<div class="card"><div class="card-header"><div class="card-title">سجل المدفوعات</div></div><div class="card-body p0">'+
-    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الجهة</th><th>المبلغ المدفوع</th><th>ملاحظات</th></tr></thead><tbody>'+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الجهة</th><th>المبلغ المدفوع</th><th>طريقة السداد</th><th>ملاحظات</th></tr></thead><tbody>'+
     (payments.length?payments.map(p=>{
       const d=(S.debts||[]).find(x=>x.id===p.debtId);
-      return '<tr><td>'+p.date+'</td><td>'+(d?esc(d.vendor):'—')+'</td><td class="amt-green">'+fMoney(p.amount)+'</td><td>'+esc(p.notes||'—')+'</td></tr>';
-    }).join(''):'<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--txt4)">لا توجد مدفوعات</td></tr>')+
+      const methodLabel=p.method==='revenue_offset'?'<span class="tag tag-blue">خصم من إيراد مرتبط</span>':'<span class="tag tag-green">دفعة نقدية</span>';
+      return '<tr><td>'+p.date+'</td><td>'+(d?esc(d.vendor):'—')+'</td><td class="amt-green">'+fMoney(p.amount)+'</td><td>'+methodLabel+'</td><td>'+esc(p.notes||'—')+'</td></tr>';
+    }).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--txt4)">لا توجد مدفوعات</td></tr>')+
     '</tbody></table></div></div></div>';
 }
 function vendorDebtSummary(){
   const map={};
-  (S.debts||[]).forEach(d=>{
+  (S.debts||[]).filter(d=>d.linkType!=='personal').forEach(d=>{
     const key=d.vendor||'بدون اسم';
     if(!map[key]) map[key]={vendor:key,count:0,total:0,remaining:0};
     map[key].count++;
@@ -199,14 +262,26 @@ function openVendorDetailModal(vendorName){
 function openDebtModal(){
   document.getElementById('dt-date').value=TODAY;
   ['dt-vendor','dt-reason','dt-amount','dt-paid'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('dt-linktype').value='none';
+  toggleDebtLinkSel();
   openModal('m-debt');
+}
+function toggleDebtLinkSel(){
+  const lt=document.getElementById('dt-linktype').value;
+  const fg=document.getElementById('dt-linkid-fg');
+  fg.style.display=(lt==='crop'||lt==='cattle')?'block':'none';
+  const sel=document.getElementById('dt-linkid');
+  if(lt==='crop') sel.innerHTML=(S.crops||[]).map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
+  else if(lt==='cattle') sel.innerHTML=(S.cattle||[]).filter(c=>!isOut(c)).map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
 }
 function saveDebt(){
   const vendor=document.getElementById('dt-vendor').value.trim(),amount=parseFloat(document.getElementById('dt-amount').value)||0;
   if(!vendor||amount<=0){toast('⚠ أدخل الجهة والقيمة');return;}
   const paid=parseFloat(document.getElementById('dt-paid').value)||0;
+  const linkType=document.getElementById('dt-linktype').value;
+  const linkId=(linkType==='crop'||linkType==='cattle')?Number(document.getElementById('dt-linkid').value)||null:null;
   S.debts=S.debts||[];
-  S.debts.push({id:uid(),date:document.getElementById('dt-date').value,vendor,reason:document.getElementById('dt-reason').value.trim(),amount,remaining:Math.max(0,amount-paid),status:paid>=amount?'paid':(paid>0?'partial':'open')});
+  S.debts.push({id:uid(),date:document.getElementById('dt-date').value,vendor,reason:document.getElementById('dt-reason').value.trim(),amount,remaining:Math.max(0,amount-paid),status:paid>=amount?'paid':(paid>0?'partial':'open'),linkType,linkId});
   schedSave();closeModal('m-debt');renderPage(currentPage);toast('تم التسجيل');
 }
 function deleteDebt(id){
@@ -231,10 +306,94 @@ function savePayment(){
   const amount=parseFloat(document.getElementById('pd-amount').value)||0;
   if(amount<=0){toast('⚠ أدخل قيمة الدفعة');return;}
   S.payments=S.payments||[];
-  S.payments.push({id:uid(),debtId,date:document.getElementById('pd-date').value,amount,notes:document.getElementById('pd-notes').value.trim()});
+  S.payments.push({id:uid(),debtId,date:document.getElementById('pd-date').value,amount,method:'cash',notes:document.getElementById('pd-notes').value.trim()});
   d.remaining=Math.max(0,(d.remaining!=null?Number(d.remaining):Number(d.amount))-amount);
   d.status=d.remaining<=0?'paid':'partial';
   schedSave();closeModal('m-paydebt');renderPage(currentPage);toast('تم تسجيل الدفعة');
+}
+
+// ═══════════════════════════════════════════════════════
+//  GENERAL PAY-OFF (سداد) — pick a vendor and/or linked item first,
+//  see all matching open debts, then settle them with one payment
+//  that's distributed automatically (oldest debt first) or per-line.
+// ═══════════════════════════════════════════════════════
+function openGeneralPayModal(){
+  populateGeneralPayFilterSels();
+  document.getElementById('gp-vendor').value='';
+  document.getElementById('gp-linktype').value='';
+  document.getElementById('gp-linkid').value='';
+  document.getElementById('gp-date').value=TODAY;
+  document.getElementById('gp-amount').value='';
+  document.getElementById('gp-notes').value='';
+  toggleGeneralPayLinkSel();
+  refreshGeneralPayList();
+  openModal('m-generalpay');
+}
+function populateGeneralPayFilterSels(){
+  const vendors=new Set((S.debts||[]).filter(d=>d.status!=='paid').map(d=>d.vendor).filter(Boolean));
+  document.getElementById('gp-vendor-list').innerHTML=[...vendors].map(v=>'<option value="'+esc(v)+'">').join('');
+}
+function toggleGeneralPayLinkSel(){
+  const lt=document.getElementById('gp-linktype').value;
+  const sel=document.getElementById('gp-linkid');
+  document.getElementById('gp-linkid-fg').style.display=lt?'block':'none';
+  if(lt==='crop') sel.innerHTML=(S.crops||[]).map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
+  else if(lt==='cattle') sel.innerHTML=(S.cattle||[]).filter(c=>!isOut(c)).map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('');
+  refreshGeneralPayList();
+}
+function matchingOpenDebts(){
+  const vendor=document.getElementById('gp-vendor').value.trim();
+  const linkType=document.getElementById('gp-linktype').value;
+  const linkId=linkType?Number(document.getElementById('gp-linkid').value)||null:null;
+  return (S.debts||[]).filter(d=>{
+    if(d.status==='paid') return false;
+    if(vendor && d.vendor!==vendor) return false;
+    if(linkType && d.linkType!==linkType) return false;
+    if(linkType && linkId && d.linkId!==linkId) return false;
+    return true;
+  }).sort((a,b)=>a.date.localeCompare(b.date)); // oldest first
+}
+function refreshGeneralPayList(){
+  const debts=matchingOpenDebts();
+  const totalRemaining=debts.reduce((s,d)=>s+Number(d.remaining!=null?d.remaining:d.amount||0),0);
+  const box=document.getElementById('gp-list-box');
+  if(!debts.length){
+    box.innerHTML='<div class="alert alert-info"><i class="fas fa-circle-info"></i><span>لا توجد ديون مفتوحة مطابقة لهذا الفلتر.</span></div>';
+    document.getElementById('gp-total-remaining').textContent='';
+    return;
+  }
+  document.getElementById('gp-total-remaining').innerHTML='إجمالي المتبقي على هذه الديون: <strong>'+fMoney(totalRemaining)+'</strong> ('+debts.length+' بند)';
+  box.innerHTML='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الجهة</th><th>السبب</th><th>مرتبط بـ</th><th>المتبقي</th></tr></thead><tbody>'+
+    debts.map(d=>'<tr><td>'+d.date+'</td><td>'+esc(d.vendor)+'</td><td>'+esc(d.reason||'—')+'</td><td>'+debtLinkText(d)+'</td>'+
+      '<td class="amt-red">'+fMoney(d.remaining!=null?d.remaining:d.amount)+'</td></tr>').join('')+
+    '</tbody></table></div>';
+}
+function fillGeneralPayFullAmount(){
+  const debts=matchingOpenDebts();
+  const total=debts.reduce((s,d)=>s+Number(d.remaining!=null?d.remaining:d.amount||0),0);
+  document.getElementById('gp-amount').value=total?total.toFixed(2):'';
+}
+function saveGeneralPayment(){
+  const debts=matchingOpenDebts();
+  if(!debts.length){toast('⚠ لا توجد ديون مفتوحة مطابقة لهذا الفلتر');return;}
+  let amount=parseFloat(document.getElementById('gp-amount').value)||0;
+  if(amount<=0){toast('⚠ أدخل قيمة السداد');return;}
+  const date=document.getElementById('gp-date').value||TODAY;
+  const notes=document.getElementById('gp-notes').value.trim();
+  S.payments=S.payments||[];
+  // distribute the payment across matching debts, oldest first, until exhausted
+  for(const d of debts){
+    if(amount<=0) break;
+    const remaining=Number(d.remaining!=null?d.remaining:d.amount||0);
+    if(remaining<=0) continue;
+    const pay=Math.min(remaining,amount);
+    S.payments.push({id:uid(),debtId:d.id,date,amount:pay,method:'cash',notes:notes||'سداد مجمّع'});
+    d.remaining=Math.max(0,remaining-pay);
+    d.status=d.remaining<=0?'paid':'partial';
+    amount-=pay;
+  }
+  schedSave();closeModal('m-generalpay');renderPage(currentPage);
+  toast(amount>0?('تم السداد، وتبقى '+fMoney(amount)+' لم يُستخدم (كل الديون المطابقة سُددت بالكامل)'):'تم السداد بنجاح');
 }
 
 // ═══════════════════════════════════════════════════════
