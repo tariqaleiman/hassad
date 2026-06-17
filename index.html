@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>حصاد | نظام إدارة المزرعة الشامل</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="stylesheet" href="css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="loading-overlay" id="loading">
+  <div class="lo-icon"><i class="fas fa-seedling"></i></div>
+  <div class="lo-text">جاري تحميل البيانات...</div>
+  <div class="lo-spin"></div>
+</div>
+
+<button class="mob-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+<div class="sidebar-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
+
+<div class="app-layout">
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-wrap">
+      <div class="logo-img">
+        <img src="assets/logo.svg" alt="حصاد">
+      </div>
+      <div><div class="logo-name">حصاد</div><div class="logo-sub">نظام إدارة المزرعة</div></div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">الرئيسية</div>
+    <button class="nav-item active" data-page="dashboard" onclick="goPage('dashboard',this)"><i class="fas fa-chart-pie"></i><span>لوحة التحكم</span></button>
+    <div class="nav-section">المزرعة الزراعية</div>
+    <button class="nav-item" data-page="crops" onclick="goPage('crops',this)"><i class="fas fa-leaf"></i><span>المحاصيل والمراعي</span></button>
+    <button class="nav-item" data-page="cropops" onclick="goPage('cropops',this)"><i class="fas fa-tractor"></i><span>العمليات الزراعية</span></button>
+    <button class="nav-item" data-page="harvest" onclick="goPage('harvest',this)"><i class="fas fa-warehouse"></i><span>الحصاد والمخلفات</span></button>
+    <div class="nav-section">قطيع الأبقار</div>
+    <button class="nav-item" data-page="cattle" onclick="goPage('cattle',this)"><i class="fas fa-cow"></i><span>القطيع</span></button>
+    <button class="nav-item" data-page="milk" onclick="goPage('milk',this)"><i class="fas fa-wine-bottle"></i><span>الحليب</span></button>
+    <button class="nav-item" data-page="repro" onclick="goPage('repro',this)"><i class="fas fa-dna"></i><span>التلقيح والتناسل</span></button>
+    <button class="nav-item" data-page="calves" onclick="goPage('calves',this)"><i class="fas fa-piggy-bank"></i><span>العجول</span></button>
+    <button class="nav-item" data-page="health" onclick="goPage('health',this)"><i class="fas fa-syringe"></i><span>الصحة والرعاية</span></button>
+    <div class="nav-section">المخزون</div>
+    <button class="nav-item" data-page="inventory" onclick="goPage('inventory',this)"><i class="fas fa-boxes-stacked"></i><span>المخزون والصيانة</span></button>
+    <div class="nav-section">المالية والشركاء</div>
+    <button class="nav-item" data-page="partners" onclick="goPage('partners',this)"><i class="fas fa-handshake"></i><span>الشركاء والملكية</span></button>
+    <button class="nav-item" data-page="debts" onclick="goPage('debts',this)"><i class="fas fa-file-invoice-dollar"></i><span>الحسابات والديون</span></button>
+    <button class="nav-item" data-page="reports" onclick="goPage('reports',this)"><i class="fas fa-chart-bar"></i><span>التقارير المالية</span></button>
+  </nav>
+  <div class="sidebar-bottom">
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:11px;color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2)" onclick="exportBackup()"><i class="fas fa-download"></i> نسخة احتياطية</button>
+      <label class="btn btn-sm btn-outline" style="flex:1;font-size:11px;color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2);cursor:pointer;text-align:center">
+        <i class="fas fa-upload"></i> استيراد
+        <input type="file" accept=".json" style="display:none" onchange="importBackupFile(this)">
+      </label>
+    </div>
+    <div class="sidebar-date" id="sidebar-date"></div>
+    <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+      <span class="sdot" id="status-dot" style="background:#4CAF50"></span>
+      <span style="color:rgba(255,255,255,.5);font-size:11px" id="status-txt">متصل</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main-content">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">لوحة التحكم</div>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+  <div class="content-wrap" id="content-wrap">
+    <!-- Pages injected by JS -->
+  </div>
+</main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════════ GENERIC CONFIRM DIALOG ═══════════════ -->
+<div class="ov" id="m-confirm" onclick="ovClick(event,'m-confirm')">
+<div class="modal" style="max-width:400px"><div class="modal-body" style="text-align:center;padding-top:28px">
+  <div class="confirm-icon"><i class="fas fa-triangle-exclamation"></i></div>
+  <div id="confirm-msg" style="font-size:14px;color:var(--txt);font-weight:600;line-height:1.7"></div>
+</div>
+<div class="modal-footer" style="justify-content:center">
+  <button class="btn btn-outline" onclick="closeModal('m-confirm')">إلغاء</button>
+  <button class="btn btn-danger" onclick="confirmYes()"><i class="fas fa-check"></i> تأكيد</button>
+</div></div></div>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+<!-- PARTNER MODAL -->
+<div class="ov" id="m-partner" onclick="ovClick(event,'m-partner')">
+<div class="modal"><div class="modal-header"><h3 id="m-partner-title"><i class="fas fa-user-plus"></i> إضافة شريك</h3><button class="modal-close" onclick="closeModal('m-partner')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="pt-id">
+  <div class="fg"><label>اسم الشريك</label><input type="text" id="pt-name" placeholder="مثال: أحمد (الشريك)"></div>
+  <div class="fg"><label>لون مميز</label><div id="pt-colors"></div></div>
+  <div class="fg chk-row"><input type="checkbox" id="pt-ismee"><label for="pt-ismee">هذا الشريك هو أنا (المستخدم الحالي)</label></div>
+  <div class="hint">يُستخدم هذا الشريك لحساب "نصيبك" في لوحة التحكم والتقارير.</div>
+</div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('m-partner')">إلغاء</button><button class="btn btn-primary" onclick="savePartner()"><i class="fas fa-check"></i> حفظ</button></div>
+</div></div>
+
+<!-- ADD/EDIT ANIMAL MODAL -->
+<div class="ov" id="m-animal" onclick="ovClick(event,'m-animal')">
+<div class="modal wide"><div class="modal-header"><h3 id="m-animal-title"><i class="fas fa-cow"></i> إضافة حيوان للقطيع</h3><button class="modal-close" onclick="closeModal('m-animal')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="a-edit-id">
+  <div class="frow">
+    <div class="fg"><label>الاسم / الرقم</label><input type="text" id="a-name" placeholder="مثال: بقرة 1 أو زينب"></div>
+    <div class="fg"><label>النوع / الجنس</label>
+      <select id="a-gender" onchange="toggleAnimalGenderFields()">
+        <option value="female">أنثى بالغة (بقرة)</option>
+        <option value="bull">ذكر بالغ (ثور)</option>
+        <option value="calf_f">عجلة (أنثى صغيرة)</option>
+        <option value="calf_m">عجل (ذكر صغير)</option>
+      </select>
+    </div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>السلالة</label><input type="text" id="a-breed" placeholder="مثال: فريزيان، بلدي"></div>
+    <div class="fg"><label>تاريخ الميلاد (تقريبي)</label><input type="date" id="a-dob"></div>
+  </div>
+
+  <!-- adult female fields -->
+  <div id="a-adult-female-fields">
+    <div class="frow">
+      <div class="fg"><label>الحالة الإنتاجية</label>
+        <select id="a-milkstatus">
+          <option value="lactating">حلوب</option>
+          <option value="dry">جافة</option>
+        </select>
+      </div>
+      <div class="fg"><label>الحالة التناسلية</label>
+        <select id="a-pregnant" onchange="togglePregMonths()">
+          <option value="no">فارغة</option>
+          <option value="yes">حامل</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg" id="a-pregmonths-fg" style="display:none">
+      <label>عدد شهور الحمل الحالية</label>
+      <input type="number" id="a-pregmonths" min="1" max="9" placeholder="1-9">
+      <div class="hint">سيتم حساب موعد الولادة تلقائياً (فترة الحمل ≈ 9.4 شهر)</div>
+    </div>
+  </div>
+
+  <!-- calf mother -->
+  <div class="fg" id="a-mother-fg" style="display:none">
+    <label>الأم</label><select id="a-mother"></select>
+  </div>
+
+  <!-- source -->
+  <div class="frow">
+    <div class="fg"><label>مصدر الحيوان</label>
+      <select id="a-source" onchange="toggleAnimalSource()">
+        <option value="bought">مشترى</option>
+        <option value="born">مولود في المزرعة</option>
+        <option value="gift">هدية / منحة</option>
+      </select>
+    </div>
+  </div>
+  <div id="a-buy-fields">
+    <div class="frow">
+      <div class="fg"><label>تاريخ الشراء</label><input type="date" id="a-buydate"></div>
+      <div class="fg"><label>سعر الشراء (ج)</label><input type="number" id="a-buyprice" placeholder="0" min="0"></div>
+    </div>
+    <div class="fg"><label>اسم البائع</label><input type="text" id="a-seller" placeholder="اسم البائع أو مرجع الشيك"></div>
+    <div class="frow">
+      <div class="fg"><label>طريقة الدفع</label>
+        <select id="a-paytype" onchange="document.getElementById('a-paid-fg').style.display=this.value==='credit'?'block':'none';document.getElementById('a-vendor-fg').style.display=this.value==='credit'?'block':'none'">
+          <option value="cash">نقداً (مدفوع بالكامل)</option>
+          <option value="credit">آجل / على الحساب</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg" id="a-paid-fg" style="display:none"><label>المبلغ المدفوع مقدماً (ج)</label><input type="number" id="a-paid" placeholder="0" min="0"></div>
+    <div class="fg" id="a-vendor-fg" style="display:none"><label>اسم الدائن (للديون)</label><input type="text" id="a-vendor-name" placeholder="البائع / الممول"></div>
+  </div>
+
+  <!-- ownership -->
+  <div class="form-divider"><i class="fas fa-handshake"></i> نسب الملكية — ملكية رأس المال</div>
+  <div class="hint" style="margin-bottom:8px">إجمالي النسب يجب أن يكون 100%. مثال: إذا لم تدفع شيئاً ضع 0% لك، أو إذا دفعت النص ضع 50%.</div>
+  <div id="a-own-wrap"></div>
+
+  <div class="form-divider">نصيب الأرباح عند البيع</div>
+  <label class="share-linked-toggle"><input type="checkbox" id="a-sale-same" checked onchange="toggleSaleShareEditor()"> نفس نسب ملكية رأس المال</label>
+  <div id="a-sale-editor-box" style="display:none"><div id="a-sale-wrap"></div></div>
+
+  <div class="form-divider">نصيب المواليد (العجول)</div>
+  <label class="share-linked-toggle"><input type="checkbox" id="a-birth-same" checked onchange="toggleBirthShareEditor()"> نفس نسب ملكية رأس المال</label>
+  <div class="hint">هذه النسبة هي التي ستُحسب تلقائياً لأي مولود من هذه البقرة.</div>
+  <div id="a-birth-editor-box" style="display:none"><div id="a-birth-wrap"></div></div>
+
+  <div class="fg" style="margin-top:14px"><label>ملاحظات</label><textarea id="a-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-animal')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveAnimal()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- STATUS CHANGE MODAL -->
+<div class="ov" id="m-status" onclick="ovClick(event,'m-status')">
+<div class="modal"><div class="modal-header"><h3 id="m-status-title"><i class="fas fa-rotate"></i> تغيير الحالة</h3><button class="modal-close" onclick="closeModal('m-status')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="st-cow-id">
+  <div class="frow">
+    <div class="fg"><label>تاريخ التغيير</label><input type="date" id="st-date"></div>
+  </div>
+  <div id="st-current-box"></div>
+  <div class="fg" style="margin-top:10px"><label>ملاحظة (اختياري)</label><input type="text" id="st-note" placeholder="سبب أو ملاحظة..."></div>
+  <div id="st-history"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-status')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveStatusChange()"><i class="fas fa-check"></i> تحديث الحالة</button>
+</div></div></div>
+
+<!-- SELL / EXIT ANIMAL MODAL -->
+<div class="ov" id="m-sellcow" onclick="ovClick(event,'m-sellcow')">
+<div class="modal wide"><div class="modal-header"><h3><i class="fas fa-hand-holding-usd"></i> بيع / خروج حيوان</h3><button class="modal-close" onclick="closeModal('m-sellcow')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="fg"><label>الحيوان</label><select id="sc-cow"></select></div>
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="sc-date"></div>
+    <div class="fg"><label>نوع الخروج</label>
+      <select id="sc-reason">
+        <option value="sold">بيع</option>
+        <option value="slaughter">ذبح</option>
+        <option value="dead">وفاة</option>
+      </select>
+    </div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>سعر البيع (ج)</label><input type="number" id="sc-price" placeholder="0" min="0" oninput="calcSellSplitPreview()"></div>
+    <div class="fg"><label>اسم المشتري</label><input type="text" id="sc-buyer" placeholder="اسم المشتري (اختياري)"></div>
+  </div>
+  <div class="form-divider">توزيع عائد البيع على الشركاء</div>
+  <div class="hint" style="margin-bottom:8px">النسب محسوبة تلقائياً من "نصيب البيع" المحدد في ملف البقرة. يمكن تعديلها.</div>
+  <div id="sc-split-wrap"></div>
+  <div id="sc-split-preview" style="margin-top:10px"></div>
+  <div class="fg" style="margin-top:10px"><label>ملاحظات</label><textarea id="sc-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-sellcow')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveSellCow()"><i class="fas fa-check"></i> تسجيل الخروج</button>
+</div></div></div>
+
+<!-- ANIMAL DETAIL MODAL -->
+<div class="ov" id="m-animaldetail" onclick="ovClick(event,'m-animaldetail')">
+<div class="modal xl"><div class="modal-header"><h3 id="ad-title"></h3><button class="modal-close" onclick="closeModal('m-animaldetail')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body" id="ad-body"></div>
+<div class="modal-footer" id="ad-footer"></div>
+</div></div>
+
+<!-- MILK LOG MODAL -->
+<div class="ov" id="m-milk" onclick="ovClick(event,'m-milk')">
+<div class="modal wide"><div class="modal-header"><h3 id="m-milk-title"><i class="fas fa-wine-bottle"></i> تسجيل إنتاج الحليب</h3><button class="modal-close" onclick="closeModal('m-milk')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="ml-edit-id">
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="ml-date" onchange="buildMilkCowsList(null)"></div>
+  </div>
+  <div class="fg"><label>طريقة التسجيل</label>
+    <div class="seg" id="ml-mode-seg">
+      <button data-m="batch" class="on" onclick="setMilkEntryMode('batch')">كل الأبقار دفعة واحدة</button>
+      <button data-m="single" onclick="setMilkEntryMode('single')">بقرة واحدة</button>
+    </div>
+  </div>
+  <div class="fg" id="ml-single-cow-fg" style="display:none"><label>البقرة</label><select id="ml-single-cow"></select></div>
+  <div class="fg"><label>الفترة</label>
+    <div class="seg" id="ml-session-seg">
+      <button data-s="full" class="on" onclick="setMilkSession('full',null)">يوم كامل</button>
+      <button data-s="am" onclick="setMilkSession('am',null)">صباحي</button>
+      <button data-s="pm" onclick="setMilkSession('pm',null)">مسائي</button>
+    </div>
+    <input type="hidden" id="ml-session" value="full">
+  </div>
+  <div class="form-divider">كمية الحليب لكل بقرة (كيلو)</div>
+  <div id="ml-cows-list"></div>
+  <div class="fg" style="margin-top:10px"><label>ملاحظات</label><input type="text" id="ml-notes" placeholder="ملاحظات اختيارية..."></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-milk')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveMilkLog()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- FRIDAY SETTLEMENT MODAL -->
+<div class="ov" id="m-friday" onclick="ovClick(event,'m-friday')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-file-invoice-dollar"></i> محاسبة تاجر الحليب</h3><button class="modal-close" onclick="closeModal('m-friday')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="box" id="fri-summary-box"></div>
+  <input type="hidden" id="fri-qty-raw">
+  <div class="fg"><label>اسم التاجر</label><input type="text" id="fri-trader" placeholder="اسم التاجر"></div>
+  <div class="frow">
+    <div class="fg"><label>تاريخ المحاسبة</label><input type="date" id="fri-date"></div>
+    <div class="fg"><label>الكمية الإجمالية (كيلو)</label><input type="text" id="fri-qty" readonly></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>سعر الكيلو (ج)</label><input type="number" id="fri-price" placeholder="0" step="0.01" oninput="calcFriday()"></div>
+    <div class="fg"><label>إجمالي المستحق (ج)</label><input type="number" id="fri-total" placeholder="يحسب تلقائياً" readonly></div>
+  </div>
+  <div class="fg"><label>المبلغ المقبوض فعلياً (ج)</label><input type="number" id="fri-received" placeholder="0"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="fri-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-friday')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveFriday()"><i class="fas fa-check"></i> حفظ المحاسبة</button>
+</div></div></div>
+
+<!-- INSEMINATION MODAL -->
+<div class="ov" id="m-insem" onclick="ovClick(event,'m-insem')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-dna"></i> تسجيل تلقيح</h3><button class="modal-close" onclick="closeModal('m-insem')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="in-edit">
+  <div class="frow">
+    <div class="fg"><label>البقرة</label><select id="in-cow"></select></div>
+    <div class="fg"><label>تاريخ التلقيح</label><input type="date" id="in-date"></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>نوع التلقيح</label>
+      <select id="in-type">
+        <option value="تلقيح اصطناعي">تلقيح اصطناعي</option>
+        <option value="تلقيح طبيعي">تلقيح طبيعي</option>
+      </select>
+    </div>
+    <div class="fg"><label>اسم الثور / رقم الجرعة</label><input type="text" id="in-bull" placeholder="اختياري"></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>التكلفة (ج)</label><input type="number" id="in-cost" placeholder="0" min="0"></div>
+    <div class="fg"><label>البيطري</label><input type="text" id="in-vet" placeholder="اسم البيطري"></div>
+  </div>
+  <div class="fg"><label>مرتبط ببرنامج صراف</label><select id="in-heatprog"></select></div>
+  <div class="fg"><label>تاريخ كشف الحمل المقترح</label><input type="date" id="in-checkdate"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="in-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-insem')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveInsem()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- HEAT PROGRAM MODAL -->
+<div class="ov" id="m-heatprog" onclick="ovClick(event,'m-heatprog')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-flask"></i> برنامج صراف / شبق صناعي</h3><button class="modal-close" onclick="closeModal('m-heatprog')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>البقرة</label><select id="hp-cow"></select></div>
+    <div class="fg"><label>تاريخ البدء</label><input type="date" id="hp-start"></div>
+  </div>
+  <div class="fg"><label>نوع البرنامج</label>
+    <select id="hp-type">
+      <option value="OvSynch">OvSynch</option>
+      <option value="CIDR">CIDR</option>
+      <option value="PGF2α">PGF2α</option>
+      <option value="برنامج مخصص">برنامج مخصص</option>
+    </select>
+  </div>
+  <div class="form-divider">خطوات البرنامج</div>
+  <div class="frow"><div class="fg"><label>الخطوة 1 — الوصف</label><input type="text" id="hp-step0" placeholder="مثال: حقنة GnRH"></div><div class="fg"><label>التاريخ</label><input type="date" id="hp-step0-date"></div></div>
+  <div class="frow"><div class="fg"><label>الخطوة 2 — الوصف</label><input type="text" id="hp-step1" placeholder="مثال: حقنة PGF2α"></div><div class="fg"><label>التاريخ</label><input type="date" id="hp-step1-date"></div></div>
+  <div class="frow"><div class="fg"><label>الخطوة 3 — الوصف</label><input type="text" id="hp-step2" placeholder="مثال: تلقيح"></div><div class="fg"><label>التاريخ</label><input type="date" id="hp-step2-date"></div></div>
+  <div class="frow">
+    <div class="fg"><label>التكلفة الإجمالية (ج)</label><input type="number" id="hp-cost" placeholder="0" min="0"></div>
+    <div class="fg"><label>البيطري</label><input type="text" id="hp-vet"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><textarea id="hp-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-heatprog')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveHeatProg()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- PREGNANCY CHECK MODAL -->
+<div class="ov" id="m-pregcheck" onclick="ovClick(event,'m-pregcheck')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-search"></i> تسجيل كشف حمل</h3><button class="modal-close" onclick="closeModal('m-pregcheck')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>البقرة</label><select id="pc-cow" onchange="loadCowInsems()"></select></div>
+    <div class="fg"><label>تاريخ الكشف</label><input type="date" id="pc-date"></div>
+  </div>
+  <div class="fg"><label>مرتبط بتلقيح</label><select id="pc-insem"></select></div>
+  <div class="fg"><label>النتيجة</label>
+    <select id="pc-result" onchange="togglePregResult()">
+      <option value="positive">إيجابي ✓ — البقرة حامل</option>
+      <option value="negative">سلبي ✗ — البقرة غير حامل</option>
+    </select>
+  </div>
+  <div id="pc-positive-fields">
+    <div class="frow">
+      <div class="fg"><label>عمر الجنين (أشهر)</label><input type="number" id="pc-month" min="1" max="9" step="0.5" oninput="calcPregDue()"></div>
+      <div class="fg"><label>موعد الولادة المتوقع</label><input type="date" id="pc-due"></div>
+    </div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>التكلفة (ج)</label><input type="number" id="pc-cost" placeholder="0" min="0"></div>
+    <div class="fg"><label>البيطري</label><input type="text" id="pc-vet"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><textarea id="pc-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-pregcheck')">إلغاء</button>
+  <button class="btn btn-primary" onclick="savePregCheck()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- BIRTH MODAL -->
+<div class="ov" id="m-birth" onclick="ovClick(event,'m-birth')">
+<div class="modal wide"><div class="modal-header"><h3><i class="fas fa-baby"></i> تسجيل ولادة</h3><button class="modal-close" onclick="closeModal('m-birth')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>الأم</label><select id="br-cow" onchange="refreshCalfOwnershipPreview()"></select></div>
+    <div class="fg"><label>تاريخ الولادة</label><input type="date" id="br-date"></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>جنس المولود</label>
+      <select id="br-gender">
+        <option value="female">أنثى (عجلة)</option>
+        <option value="male">ذكر (عجل)</option>
+      </select>
+    </div>
+    <div class="fg"><label>نوع الولادة</label>
+      <select id="br-type">
+        <option value="natural">طبيعية</option>
+        <option value="assisted">بمساعدة</option>
+        <option value="csection">قيصرية</option>
+      </select>
+    </div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>اسم المولود</label><input type="text" id="br-name" placeholder="اسم أو رقم العجل"></div>
+    <div class="fg"><label>الوزن (كيلو)</label><input type="number" id="br-weight" placeholder="0" min="0" step="0.5"></div>
+  </div>
+  <div class="fg"><label>مصير المولود</label>
+    <select id="br-fate">
+      <option value="keep_female">الاحتفاظ به (سيصبح بقرة)</option>
+      <option value="fatten_male">تسمين</option>
+      <option value="sell_female">بيع (أنثى صغيرة)</option>
+      <option value="sell_male">بيع (ذكر صغير)</option>
+    </select>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>تكلفة الولادة (ج)</label><input type="number" id="br-cost" placeholder="0" min="0"></div>
+    <div class="fg"><label>البيطري</label><input type="text" id="br-vet"></div>
+  </div>
+
+  <div class="form-divider"><i class="fas fa-handshake"></i> ملكية المولود</div>
+  <div class="alert alert-info" id="br-own-info" style="margin-bottom:10px">
+    <i class="fas fa-circle-info"></i><span>سيتم احتساب الملكية تلقائياً من نصيب المواليد المحدد للأم. راجع النسب أدناه قبل الحفظ.</span>
+  </div>
+  <div id="br-own-wrap"></div>
+
+  <div class="fg" style="margin-top:10px"><label>ملاحظات</label><textarea id="br-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-birth')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveBirth()"><i class="fas fa-check"></i> تسجيل الولادة</button>
+</div></div></div>
+
+<!-- CALF LOG MODAL -->
+<div class="ov" id="m-calflog" onclick="ovClick(event,'m-calflog')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-receipt"></i> تسجيل مصروف عجل</h3><button class="modal-close" onclick="closeModal('m-calflog')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="fg"><label>العجل</label><select id="cl-calf"></select></div>
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="cl-date"></div>
+    <div class="fg"><label>النوع</label>
+      <select id="cl-type">
+        <option value="feed">تغذية (حليب/بدائل)</option>
+        <option value="vet">بيطري</option>
+        <option value="other">أخرى</option>
+      </select>
+    </div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>الكمية</label><input type="number" id="cl-qty" placeholder="0" min="0" step="0.1"></div>
+    <div class="fg"><label>الوحدة</label><input type="text" id="cl-unit" placeholder="لتر / كيلو..."></div>
+  </div>
+  <div class="fg"><label>التكلفة (ج)</label><input type="number" id="cl-cost" placeholder="0" min="0"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="cl-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-calflog')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveCalfLog()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- HEALTH LOG MODAL -->
+<div class="ov" id="m-health" onclick="ovClick(event,'m-health')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-stethoscope"></i> تسجيل إجراء صحي</h3><button class="modal-close" onclick="closeModal('m-health')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>الحيوان</label><select id="hl-animal"></select></div>
+    <div class="fg"><label>التاريخ</label><input type="date" id="hl-date"></div>
+  </div>
+  <div class="fg"><label>نوع الإجراء</label>
+    <select id="hl-type">
+      <option value="vaccination">تحصين / لقاح</option>
+      <option value="treatment">علاج</option>
+      <option value="checkup">فحص دوري</option>
+      <option value="deworming">مكافحة طفيليات</option>
+      <option value="hoof">تقليم أظلاف</option>
+      <option value="other">أخرى</option>
+    </select>
+  </div>
+  <div class="fg"><label>الوصف / الدواء</label><input type="text" id="hl-desc" placeholder="اسم الدواء أو الإجراء بالتفصيل"></div>
+  <div class="fg chk-row"><input type="checkbox" id="hl-hascost" onchange="toggleHealthCost()"><label for="hl-hascost">توجد تكلفة مالية</label></div>
+  <div class="fg" id="hl-cost-fg" style="display:none"><label>التكلفة (ج)</label><input type="number" id="hl-cost" placeholder="0" min="0"></div>
+  <div class="frow">
+    <div class="fg"><label>البيطري</label><input type="text" id="hl-vet" placeholder="اسم البيطري (اختياري)"></div>
+    <div class="fg"><label>موعد التكرار القادم</label><input type="date" id="hl-nextdate"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><textarea id="hl-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-health')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveHealthLog()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- CROP MODAL -->
+<div class="ov" id="m-crop" onclick="ovClick(event,'m-crop')">
+<div class="modal"><div class="modal-header"><h3 id="m-crop-title"><i class="fas fa-leaf"></i> إضافة محصول</h3><button class="modal-close" onclick="closeModal('m-crop')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="cr-edit-id">
+  <div class="frow">
+    <div class="fg"><label>اسم المحصول</label><input type="text" id="cr-name" placeholder="مثال: برسيم الموسم الثاني"></div>
+    <div class="fg"><label>نوع المحصول</label><input type="text" id="cr-type" list="cr-type-list" placeholder="اختر من القائمة أو اكتب نوعاً جديداً"><datalist id="cr-type-list"></datalist><div class="hint">يمكنك كتابة نوع محصول جديد غير موجود في القائمة وسيُحفظ للاستخدام لاحقاً</div></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>المساحة</label><input type="number" id="cr-area" placeholder="0" min="0" step="0.25"></div>
+    <div class="fg"><label>وحدة المساحة</label>
+      <select id="cr-areaunit">
+        <option value="قيراط">قيراط</option>
+        <option value="فدان">فدان</option>
+        <option value="هكتار">هكتار</option>
+      </select>
+    </div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>تاريخ الزراعة</label><input type="date" id="cr-pdate"></div>
+    <div class="fg"><label>موعد الحصاد المتوقع</label><input type="date" id="cr-hdate"></div>
+  </div>
+  <div class="fg"><label>الموقع / القطعة</label><input type="text" id="cr-loc" placeholder="مثال: قطعة الشمال"></div>
+  <div class="fg"><label>الحالة</label>
+    <select id="cr-status">
+      <option value="growing">تحت الزراعة</option>
+      <option value="harvested">تم الحصاد</option>
+      <option value="done">منتهي</option>
+    </select>
+  </div>
+  <div class="fg chk-row"><input type="checkbox" id="cr-isforage"><label for="cr-isforage">علف / مرعى — يُحش بشكل متكرر (برسيم، حشيش...)</label></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="cr-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-crop')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveCrop()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- CROP OP MODAL -->
+<div class="ov" id="m-cropop" onclick="ovClick(event,'m-cropop')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-tractor"></i> تسجيل عملية زراعية</h3><button class="modal-close" onclick="closeModal('m-cropop')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="co-edit-id">
+  <div class="fg"><label>المحصول</label><select id="co-crop"></select></div>
+  <div class="frow">
+    <div class="fg"><label>نوع العملية</label><select id="co-type" onchange="updateOpUnits()"></select></div>
+    <div class="fg"><label>التاريخ</label><input type="date" id="co-date"></div>
+  </div>
+  <div class="fg"><label>الوصف / التفاصيل</label><input type="text" id="co-desc" placeholder="تفاصيل إضافية..."></div>
+  <div class="frow">
+    <div class="fg"><label>الكمية</label><input type="number" id="co-qty" placeholder="0" min="0" step="0.5"></div>
+    <div class="fg"><label>الوحدة</label><select id="co-unit" onchange="toggleWorkerField()"></select></div>
+  </div>
+  <div class="fg" id="co-worker-fg" style="display:none"><label>اسم العامل / المياومة لمن</label><input type="text" id="co-worker" placeholder="اسم العامل (اختياري)"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="co-notes" rows="2"></textarea></div>
+  <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>تكاليف هذه العملية (مواد، بنزين، أجور، صيانة...) تُسجَّل كمصروفات مستقلة — يمكنك إضافة أكثر من مصروف لهذه العملية بتواريخ مختلفة، بعد الحفظ مباشرة أو لاحقاً من سجل العمليات.</span></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-cropop')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveCropOp()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- CUTTING MODAL -->
+<div class="ov" id="m-cutting" onclick="ovClick(event,'m-cutting')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-wheat-awn"></i> تسجيل حشة</h3><button class="modal-close" onclick="closeModal('m-cutting')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>المحصول (علف/مرعى)</label><select id="ct-crop" onchange="updateCutNoSuggestion()"></select></div>
+    <div class="fg"><label>التاريخ</label><input type="date" id="ct-date"></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>رقم الحشة</label><input type="number" id="ct-cutno" min="1"></div>
+    <div class="fg"><label>الكمية</label><input type="number" id="ct-qty" placeholder="0" min="0" step="0.5"></div>
+  </div>
+  <div class="fg"><label>الوحدة</label>
+    <select id="ct-unit">
+      <option value="حمولة">حمولة</option><option value="بالة">بالة</option>
+      <option value="طن">طن</option><option value="كيلو">كيلو</option>
+    </select>
+  </div>
+  <div class="fg"><label>مصير الحشة</label>
+    <select id="ct-destination" onchange="toggleCuttingDestination()">
+      <option value="feed">تحويل لعلف (مخزون)</option>
+      <option value="rent">إيجار قيراط — تُحمَّل كتكلفة على الأبقار</option>
+      <option value="sold">بيع</option>
+    </select>
+  </div>
+  <div id="ct-feed-box">
+    <div class="fg"><label>ربط بعنصر مخزون علف (أو إنشاء جديد)</label><select id="ct-feeditem"></select></div>
+  </div>
+  <div id="ct-rent-box" style="display:none">
+    <div class="frow">
+      <div class="fg"><label>عدد القيراط</label><input type="number" id="ct-rentqirat" placeholder="0" min="0" step="0.25"></div>
+      <div class="fg"><label>سعر القيراط (ج)</label><input type="number" id="ct-rentprice" placeholder="0" min="0"></div>
+    </div>
+    <div class="hint">إجمالي التكلفة = عدد القيراط × سعر القيراط، وتُحمَّل تلقائياً على تكاليف الأبقار.</div>
+  </div>
+  <div id="ct-sold-box" style="display:none">
+    <div class="fg"><label>إجمالي إيراد البيع (ج)</label><input type="number" id="ct-soldtotal" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><textarea id="ct-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-cutting')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveCutting()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- HARVEST MODAL -->
+<div class="ov" id="m-harvest" onclick="ovClick(event,'m-harvest')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-warehouse"></i> تسجيل حصاد</h3><button class="modal-close" onclick="closeModal('m-harvest')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="fg"><label>المحصول</label><select id="hv-crop"></select></div>
+  <div class="frow">
+    <div class="fg"><label>تاريخ الحصاد</label><input type="date" id="hv-date"></div>
+    <div class="fg"><label>الكمية</label><input type="number" id="hv-qty" placeholder="0" min="0" step="0.1"></div>
+  </div>
+  <div class="fg"><label>الوحدة</label>
+    <select id="hv-unit">
+      <option value="كيلو">كيلو</option><option value="طن">طن</option>
+      <option value="قنطار">قنطار</option><option value="أردب">أردب</option>
+      <option value="بالة">بالة</option><option value="صندوق">صندوق</option>
+    </select>
+  </div>
+  <div class="fg"><label>مصير المحصول</label>
+    <select id="hv-destination" onchange="toggleHarvestDestination()">
+      <option value="feed">تحويل لعلف (مخزون)</option>
+      <option value="sold">بيع</option>
+      <option value="stored">تخزين</option>
+    </select>
+  </div>
+  <div id="hv-feed-box">
+    <div class="fg"><label>ربط بعنصر مخزون علف</label><select id="hv-feeditem"></select></div>
+  </div>
+  <div id="hv-sold-box" style="display:none">
+    <div class="fg"><label>إجمالي إيراد البيع (ج)</label><input type="number" id="hv-soldtotal" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><textarea id="hv-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-harvest')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveHarvest()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- BYPRODUCT MODAL -->
+<div class="ov" id="m-byproduct" onclick="ovClick(event,'m-byproduct')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-leaf"></i> تسجيل مخلفات زراعية</h3><button class="modal-close" onclick="closeModal('m-byproduct')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>نوع المخلف</label><select id="bp-crop"></select></div>
+    <div class="fg"><label>التاريخ</label><input type="date" id="bp-date"></div>
+  </div>
+  <div class="fg"><label>المساحة (قيراط)</label><input type="number" id="bp-qirat" placeholder="0" min="0" step="0.25"></div>
+  <div class="frow">
+    <div class="fg"><label>تكلفة النقل (ج)</label><input type="number" id="bp-transport" placeholder="0" min="0"></div>
+    <div class="fg"><label>تكلفة التجهيز (ج)</label><input type="number" id="bp-prep" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>مصير المخلفات</label>
+    <select id="bp-destination" onchange="toggleByproductDestination()">
+      <option value="feed">تحويل لعلف</option>
+      <option value="sold">بيع</option>
+      <option value="stored">تخزين</option>
+    </select>
+  </div>
+  <div id="bp-feed-box">
+    <div class="frow">
+      <div class="fg"><label>الكمية</label><input type="number" id="bp-qty" placeholder="0" min="0"></div>
+      <div class="fg"><label>الوحدة</label><input type="text" id="bp-unit" value="كيلو"></div>
+    </div>
+    <div class="fg"><label>ربط بعنصر مخزون علف</label><select id="bp-feeditem"></select></div>
+  </div>
+  <div id="bp-sold-box" style="display:none">
+    <div class="fg"><label>إجمالي إيراد البيع (ج)</label><input type="number" id="bp-soldtotal" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><textarea id="bp-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-byproduct')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveByproduct()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- INVENTORY ITEM MODAL -->
+<div class="ov" id="m-inv-item" onclick="ovClick(event,'m-inv-item')">
+<div class="modal"><div class="modal-header"><h3 id="m-inv-item-title"><i class="fas fa-boxes-stacked"></i> عنصر مخزون</h3><button class="modal-close" onclick="closeModal('m-inv-item')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="ii-edit-id">
+  <div class="fg"><label>اسم العنصر</label><input type="text" id="ii-name" placeholder="مثال: تبن — سيلاج — يوريا"></div>
+  <div class="fg"><label>التصنيف</label><select id="ii-cat"></select></div>
+  <div class="fg"><label>وحدة القياس</label><input type="text" id="ii-unit" placeholder="كيلو / طن / شيكارة / لتر / بالة..."></div>
+  <div class="frow">
+    <div class="fg"><label>الرصيد الافتتاحي</label><input type="number" id="ii-qty" placeholder="0" min="0" step="0.5"></div>
+    <div class="fg"><label>متوسط تكلفة الوحدة (ج)</label><input type="number" id="ii-avgcost" placeholder="0" min="0" step="0.01"></div>
+  </div>
+  <div class="fg"><label>حد التنبيه (الحد الأدنى)</label><input type="number" id="ii-minqty" placeholder="اتركه فارغاً لتعطيل التنبيه" min="0"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-inv-item')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveInvItem()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- INVENTORY MOVE MODAL -->
+<div class="ov" id="m-inv-move" onclick="ovClick(event,'m-inv-move')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-arrows-up-down"></i> حركة مخزون</h3><button class="modal-close" onclick="closeModal('m-inv-move')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="fg"><label>العنصر</label><select id="im-item"></select></div>
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="im-date"></div>
+    <div class="fg"><label>نوع الحركة</label>
+      <select id="im-type" onchange="toggleInvMoveType()">
+        <option value="in">وارد (شراء / إنتاج)</option>
+        <option value="out">صادر (استخدام / صرف)</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>الكمية</label><input type="number" id="im-qty" placeholder="0" min="0" step="0.5"></div>
+  <div class="fg" id="im-cost-fg"><label>سعر الوحدة (ج) — للوارد</label><input type="number" id="im-unitcost" placeholder="0" min="0" step="0.01"></div>
+  <div class="fg"><label>السبب</label><select id="im-reason"></select></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-inv-move')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveInvMove()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- INVENTORY CONVERT (دراس) MODAL -->
+<div class="ov" id="m-inv-convert" onclick="ovClick(event,'m-inv-convert')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-arrows-rotate"></i> تحويل / دراس أعلاف</h3><button class="modal-close" onclick="closeModal('m-inv-convert')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>مثال: تحويل قش → تبن عن طريق عملية دراس. سيتم تسجيل الصرف من العنصر الأول والإضافة للثاني مع احتساب التكلفة.</span></div>
+  <div class="fg"><label>العنصر المستهلك (المدخل)</label><select id="cv-from" onchange="refreshConvertToSel()"></select></div>
+  <div class="fg"><label>الكمية المستهلكة</label><input type="number" id="cv-fromqty" placeholder="0" min="0" step="0.5"></div>
+  <div class="fg"><label>العنصر الناتج (المخرج)</label><select id="cv-to" onchange="toggleConvertNew()"></select></div>
+  <div class="fg" id="cv-tonew-fg"><label>اسم العنصر الجديد (إذا لم يكن موجوداً)</label><input type="text" id="cv-tonew" placeholder="مثال: تبن مضغوط"></div>
+  <div class="frow">
+    <div class="fg"><label>الكمية الناتجة</label><input type="number" id="cv-toqty" placeholder="0" min="0" step="0.5"></div>
+    <div class="fg"><label>تكلفة عملية التحويل (ج)</label><input type="number" id="cv-cost" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>التاريخ</label><input type="date" id="cv-date"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="cv-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-inv-convert')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveInvConvert()"><i class="fas fa-check"></i> تنفيذ التحويل</button>
+</div></div></div>
+
+<!-- MAINTENANCE MODAL -->
+<div class="ov" id="m-maint" onclick="ovClick(event,'m-maint')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-wrench"></i> تسجيل صيانة / وقود</h3><button class="modal-close" onclick="closeModal('m-maint')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="mt-date"></div>
+    <div class="fg"><label>المعدة / الجهاز</label><input type="text" id="mt-equipment" placeholder="مثال: جرار — مضخة ري — رشاش"></div>
+  </div>
+  <div class="fg"><label>نوع الصيانة</label><select id="mt-type"></select></div>
+  <div class="frow">
+    <div class="fg"><label>الكمية</label><input type="number" id="mt-qty" placeholder="0" min="0" step="0.5"></div>
+    <div class="fg"><label>الوحدة</label><input type="text" id="mt-unit" placeholder="لتر / كيلو..."></div>
+  </div>
+  <div class="fg"><label>التكلفة (ج)</label><input type="number" id="mt-cost" placeholder="0" min="0"></div>
+  <div class="frow">
+    <div class="fg"><label>المورد / الميكانيكي</label><input type="text" id="mt-vendor" placeholder="اسم المورد أو الميكانيكي"></div>
+    <div class="fg"><label>طريقة الدفع</label>
+      <select id="mt-paytype">
+        <option value="cash">نقداً</option>
+        <option value="credit">آجل</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><textarea id="mt-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-maint')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveMaint()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- DEBT MODAL -->
+<div class="ov" id="m-debt" onclick="ovClick(event,'m-debt')">
+<div class="modal"><div class="modal-header"><h3><i class="fas fa-file-invoice-dollar"></i> تسجيل دين / مستحق</h3><button class="modal-close" onclick="closeModal('m-debt')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="dt-date"></div>
+    <div class="fg"><label>الجهة (بائع / دائن)</label><input type="text" id="dt-vendor" placeholder="اسم الجهة الدائنة"></div>
+  </div>
+  <div class="fg"><label>السبب / الوصف</label><input type="text" id="dt-reason" placeholder="مثال: شراء أسمدة — صيانة جرار..."></div>
+  <div class="frow">
+    <div class="fg"><label>القيمة الإجمالية (ج)</label><input type="number" id="dt-amount" placeholder="0" min="0"></div>
+    <div class="fg"><label>المدفوع مقدماً (ج)</label><input type="number" id="dt-paid" placeholder="0" min="0"></div>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-debt')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveDebt()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- PAY DEBT MODAL -->
+<div class="ov" id="m-paydebt" onclick="ovClick(event,'m-paydebt')">
+<div class="modal" style="max-width:420px"><div class="modal-header"><h3><i class="fas fa-coins"></i> تسجيل دفعة</h3><button class="modal-close" onclick="closeModal('m-paydebt')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="pd-debt-id">
+  <div class="box" id="pd-info" style="font-weight:700;font-size:13px"></div>
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="pd-date"></div>
+    <div class="fg"><label>المبلغ المدفوع (ج)</label><input type="number" id="pd-amount" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><input type="text" id="pd-notes" placeholder="اختياري"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-paydebt')">إلغاء</button>
+  <button class="btn btn-primary" onclick="savePayment()"><i class="fas fa-check"></i> تسجيل الدفعة</button>
+</div></div></div>
+
+<!-- CROP STAGES (GROWTH TIMELINE) MODAL -->
+<div class="ov" id="m-cropstages" onclick="ovClick(event,'m-cropstages')">
+<div class="modal"><div class="modal-header"><h3 id="m-cropstages-title"><i class="fas fa-route"></i> مراحل الزراعة</h3><button class="modal-close" onclick="closeModal('m-cropstages')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="cs-crop-id">
+  <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>سجّل كل مرحلة يمر بها المحصول بترتيبها الزمني: من البذر أو الشتلات، حتى النمو والتزهير والحصاد.</span></div>
+  <div class="frow">
+    <div class="fg"><label>المرحلة</label><select id="cs-stage"></select></div>
+    <div class="fg"><label>التاريخ</label><input type="date" id="cs-date"></div>
+  </div>
+  <div class="fg"><label>ملاحظات</label><input type="text" id="cs-notes" placeholder="اختياري"></div>
+  <button class="btn btn-primary" style="width:100%;margin-bottom:16px" onclick="saveCropStage()"><i class="fas fa-plus"></i> تسجيل هذه المرحلة</button>
+  <div class="form-divider">السجل الزمني للمراحل</div>
+  <div id="cs-timeline" style="margin-top:10px"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-cropstages')">إغلاق</button>
+</div></div></div>
+
+<!-- VENDOR/CREDITOR DETAIL MODAL -->
+<div class="ov" id="m-vendordetail" onclick="ovClick(event,'m-vendordetail')">
+<div class="modal xl"><div class="modal-header"><h3 id="vd-title"><i class="fas fa-store"></i> ملف المورد</h3><button class="modal-close" onclick="closeModal('m-vendordetail')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body" id="vd-body"></div>
+<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('m-vendordetail')">إغلاق</button></div>
+</div></div>
+
+<!-- EXPENSE MODAL -->
+<div class="ov" id="m-expense" onclick="ovClick(event,'m-expense')">
+<div class="modal"><div class="modal-header"><h3 id="m-expense-title"><i class="fas fa-receipt"></i> تسجيل مصروف</h3><button class="modal-close" onclick="closeModal('m-expense')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="ex-edit-id">
+  <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>المصروف منفصل تماماً عن تاريخ العملية الزراعية — يمكنك تسجيل شراء مادة في تاريخ، واستخدامها في عملية بتاريخ آخر.</span></div>
+  <div class="frow">
+    <div class="fg"><label>التاريخ</label><input type="date" id="ex-date"></div>
+    <div class="fg"><label>المبلغ (ج)</label><input type="number" id="ex-amount" placeholder="0" min="0"></div>
+  </div>
+  <div class="fg"><label>التصنيف</label><select id="ex-category"></select></div>
+  <div class="fg"><label>ربط اختياري بـ</label>
+    <select id="ex-linktype" onchange="toggleExpenseLink()">
+      <option value="none">بدون ربط (مصروف عام)</option>
+      <option value="crop">محصول</option>
+      <option value="cropop">عملية زراعية محددة</option>
+      <option value="cattle">حيوان محدد</option>
+    </select>
+  </div>
+  <div class="fg" id="ex-link-fg" style="display:none"><label>اختر العنصر المرتبط</label><select id="ex-linkid"></select></div>
+  <div class="frow">
+    <div class="fg"><label>المورد / الجهة</label><input type="text" id="ex-vendor" placeholder="اسم المورد (اختياري)"></div>
+    <div class="fg"><label>طريقة الدفع</label>
+      <select id="ex-paytype">
+        <option value="cash">نقداً</option>
+        <option value="credit">آجل</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>اسم العامل (إن كان المصروف أجر يومية)</label><input type="text" id="ex-worker" placeholder="اختياري"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="ex-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-expense')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveExpense()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- end modals -->
+
+<!-- ═══════════════ SCRIPTS ═══════════════ -->
+<!-- Firebase SDK (compat build — works with simple script tags, no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="js/firebase.js"></script>
+<script src="js/core.js"></script>
+<script src="js/partners.js"></script>
+<script src="js/cattle.js"></script>
+<script src="js/milk.js"></script>
+<script src="js/repro.js"></script>
+<script src="js/calves.js"></script>
+<script src="js/health.js"></script>
+<script src="js/crops.js"></script>
+<script src="js/expenses.js"></script>
+<script src="js/harvest.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/accounting.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

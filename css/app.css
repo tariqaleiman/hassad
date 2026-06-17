@@ -1,0 +1,87 @@
+/* ═══════════════════════════════════════════════════════
+   حصاد — ADDITIONAL APP STYLES (ownership, inventory, etc.)
+   ═══════════════════════════════════════════════════════ */
+
+/* ── SHARE EDITOR (ownership %) ── */
+.share-editor{background:var(--bg3);border-radius:var(--r2);padding:10px 12px;}
+.share-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.share-row:last-of-type{margin-bottom:0;}
+.share-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.share-name{flex:1;font-size:12px;font-weight:600;color:var(--txt2);}
+.share-input{width:72px;padding:5px 8px;border:1.5px solid var(--brd);border-radius:6px;font-family:"Cairo",sans-serif;font-size:13px;text-align:center;background:#fff;}
+.share-input:focus{outline:none;border-color:var(--pr2);}
+.share-pctsign{font-size:12px;color:var(--txt3);width:14px;}
+.share-total{font-size:12px;font-weight:800;margin-top:8px;padding-top:8px;border-top:1px dashed var(--brd);color:var(--pr2);}
+.share-quick{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.chip{background:var(--bg2);border:1px solid var(--brd);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--txt2);cursor:pointer;font-family:"Cairo",sans-serif;transition:all .15s;}
+.chip:hover{border-color:var(--pr2);color:var(--pr2);background:var(--pr5);}
+.share-linked-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--txt2);margin:10px 0 6px;cursor:pointer;}
+.share-linked-toggle input{width:15px;height:15px;}
+
+/* ── PARTNER SPLIT TABLE / BADGES ── */
+.partner-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--bg3);color:var(--txt2);white-space:nowrap;}
+.partner-badge .pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.split-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+.split-card{background:var(--bg3);border-radius:var(--r2);padding:12px;border-right:3px solid var(--brd);}
+.split-card .sc-name{font-size:11px;color:var(--txt3);font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.split-card .sc-val{font-size:16px;font-weight:900;color:var(--txt);}
+.split-card .sc-sub{font-size:10px;color:var(--txt4);margin-top:2px;}
+
+/* ── STOCK / INVENTORY CARDS ── */
+.stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+.stock-card{background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.stock-card::before{content:"";position:absolute;top:0;right:0;width:4px;height:100%;background:var(--pr3);}
+.stock-card.low::before{background:var(--red);}
+.stock-card .st-name{font-size:13px;font-weight:800;color:var(--txt);margin-bottom:6px;}
+.stock-card .st-qty{font-size:20px;font-weight:900;color:var(--txt);}
+.stock-card .st-unit{font-size:11px;color:var(--txt3);font-weight:600;}
+.stock-card .st-meta{font-size:11px;color:var(--txt4);margin-top:6px;}
+.stock-card .st-low-badge{position:absolute;top:10px;left:10px;}
+
+/* ── STATUS TIMELINE EXTRA ── */
+.tli.ev-status::before{background:#E1BEE7;box-shadow:0 0 0 1.5px #8E24AA;}
+.tli.ev-sale::before{background:#FFE0B2;box-shadow:0 0 0 1.5px var(--orange);}
+.tli.ev-feed::before{background:#D7CCC8;box-shadow:0 0 0 1.5px #6D4C41;}
+
+/* ── NAV: collapsible section toggle (mobile friendlier groups) ── */
+.nav-section{display:flex;align-items:center;gap:6px;}
+
+/* ── OWNERSHIP PILL on animal card ── */
+.owner-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.owner-pill{font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;color:#fff;}
+
+/* ── INPUT GROUP WITH UNIT SELECT ── */
+.input-unit-group{display:flex;gap:6px;}
+.input-unit-group input{flex:2;}
+.input-unit-group select{flex:1;}
+
+/* ── SMALL TABS within forms ── */
+.seg{display:flex;border:1.5px solid var(--brd);border-radius:var(--r2);overflow:hidden;}
+.seg button{flex:1;border:none;background:var(--bg2);padding:8px;font-family:"Cairo",sans-serif;font-size:12px;font-weight:700;color:var(--txt3);cursor:pointer;transition:all .15s;}
+.seg button.on{background:var(--pr2);color:#fff;}
+.seg button:not(:last-child){border-left:1px solid var(--brd);}
+
+/* ── CONFIRM MODAL ── */
+.confirm-icon{width:48px;height:48px;border-radius:50%;background:var(--redL);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 12px;}
+
+/* ── SMALL TEXT BUTTONS / LINKS ── */
+.link-btn{background:none;border:none;color:var(--blue);font-family:"Cairo",sans-serif;font-size:12px;font-weight:700;cursor:pointer;padding:0;}
+.link-btn:hover{text-decoration:underline;}
+
+/* ── RESPONSIVE: stack split grid on mobile ── */
+@media(max-width:768px){
+  .split-grid{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ── COLOR SWATCH (partner color picker) ── */
+.color-swatch{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;display:inline-block;transition:all .15s;}
+.color-swatch.on{border-color:var(--txt);box-shadow:0 0 0 2px var(--bg2),0 0 0 4px var(--txt);}
+#pt-colors{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── Checkbox row inline ── */
+.fg.chk-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.fg.chk-row input[type=checkbox]{width:17px;height:17px;}
+.fg.chk-row label{margin:0;text-transform:none;font-size:13px;color:var(--txt);}
+
+/* ── Box wrappers ── */
+.box{background:var(--bg3);border-radius:var(--r2);padding:12px;margin-bottom:14px;}

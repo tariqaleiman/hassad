@@ -1,0 +1,224 @@
+// ═══════════════════════════════════════════════════════
+//  حصاد — MILK MODULE
+// ═══════════════════════════════════════════════════════
+const SESSION_LABELS={full:'يوم كامل',am:'صباحي',pm:'مسائي'};
+
+function activeLactatingCows(){return (S.cattle||[]).filter(c=>isActiveFemale(c)&&c.milkStatus==='lactating');}
+
+function dailyTotals(){
+  // returns map date -> {full,am,pm,total}
+  const map={};
+  (S.milkLogs||[]).forEach(l=>{
+    const t=Object.values(l.qtys||{}).reduce((s,v)=>s+Number(v||0),0);
+    map[l.date]=map[l.date]||{full:0,am:0,pm:0,total:0};
+    map[l.date][l.session||'full']+=t;
+    map[l.date].total+=t;
+  });
+  return map;
+}
+
+function renderMilkPage(wrap){
+  document.getElementById('topbar-actions').innerHTML=
+    '<button class="btn btn-outline" onclick="openFridayModal()"><i class="fas fa-file-invoice-dollar"></i> محاسبة تاجر</button>'+
+    '<button class="btn btn-primary" onclick="openMilkModal(null)"><i class="fas fa-plus"></i> تسجيل إنتاج</button>';
+  const logs=[...(S.milkLogs||[])].sort((a,b)=>(b.date+(b.session||'')).localeCompare(a.date+(a.session||'')));
+  const frs=[...(S.fridays||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const lastFri=frs[0];
+  const since=lastFri?lastFri.date:'2000-01-01';
+  const pendQty=(S.milkLogs||[]).filter(l=>l.date>since).reduce((s,l)=>s+Object.values(l.qtys||{}).reduce((a,v)=>a+Number(v||0),0),0);
+  const dt=dailyTotals();
+  const last14dates=Object.keys(dt).sort((a,b)=>b.localeCompare(a)).slice(0,14);
+  const weekTotal=last14dates.slice(0,7).reduce((s,d)=>s+dt[d].total,0);
+  const nd=new Date(); while(nd.getDay()!==5)nd.setDate(nd.getDate()+1);
+  const dtf=dBetween(TODAY,nd.toISOString().split('T')[0]);
+  const totalRevAll=(S.fridays||[]).reduce((s,f)=>s+Number(f.received||0),0);
+  const lactCows=activeLactatingCows();
+
+  wrap.innerHTML=
+    '<div class="kpi-grid">'+
+      kpiCard('حليب هذا الأسبوع',fN(weekTotal)+' كيلو','fa-wine-bottle','green')+
+      kpiCard('منذ آخر محاسبة',fN(pendQty)+' كيلو','fa-clock','gold')+
+      kpiCard('للجمعة القادمة',dtf+' يوم','fa-calendar','blue')+
+      kpiCard('إجمالي إيرادات الحليب',fMoney(totalRevAll),'fa-coins','green')+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'+
+      '<div class="card"><div class="card-header"><div class="card-title">الكمية اليومية — آخر 14 يوم</div></div><div class="card-body">'+milkChart(last14dates,dt)+'</div></div>'+
+      '<div class="card"><div class="card-header"><div class="card-title">محاسبات تاجر الحليب</div></div><div class="card-body p0">'+fridayTable(frs)+'</div></div>'+
+    '</div>'+
+    // Per-cow revenue split (ownership)
+    '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><i class="fas fa-sitemap"></i> توزيع إيراد الحليب على الشركاء (حسب نسبة ملكية كل بقرة)</div></div><div class="card-body p0">'+
+    milkOwnershipTable()+
+    '</div></div>'+
+    '<div class="card"><div class="card-header"><div class="card-title">سجل الحليب اليومي</div></div><div class="card-body p0">'+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>الفترة</th>'+lactCows.map(c=>'<th>'+esc(c.name)+'</th>').join('')+'<th>الإجمالي</th><th></th></tr></thead>'+
+    '<tbody>'+(logs.length?logs.slice(0,40).map(l=>{
+      const total=Object.values(l.qtys||{}).reduce((s,v)=>s+Number(v||0),0);
+      return '<tr><td>'+l.date+'</td><td><span class="tag tag-gray">'+(SESSION_LABELS[l.session]||'يوم كامل')+'</span></td>'+lactCows.map(c=>'<td class="amt">'+(l.qtys&&l.qtys[c.id]!=null?fN(l.qtys[c.id]):'-')+'</td>').join('')+
+        '<td class="amt-green">'+fN(total)+'</td>'+
+        '<td><div style="display:flex;gap:4px"><button class="btn-icon" onclick="openMilkModal('+l.id+')"><i class="fas fa-pen" style="font-size:11px"></i></button><button class="btn-icon danger" onclick="deleteMilkLog('+l.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
+    }).join(''):'<tr><td colspan="'+(3+lactCows.length)+'" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد سجلات بعد</td></tr>')+
+    '</tbody></table></div></div></div>';
+}
+
+function milkChart(dates,dt){
+  if(!dates.length) return '<div style="text-align:center;color:var(--txt4);font-size:13px">لا بيانات</div>';
+  const totals=dates.map(d=>dt[d].total);
+  const max=Math.max(...totals,1);
+  return '<div style="display:flex;gap:3px;align-items:flex-end;height:80px">'+
+    [...dates].reverse().map((d,i)=>{
+      const t=totals[dates.length-1-i],h=Math.max(Math.round(t/max*76),2);
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">'+
+        '<div style="font-size:8px;color:var(--txt4)">'+fN(t)+'</div>'+
+        '<div style="width:100%;height:'+h+'px;background:var(--pr3);border-radius:2px 2px 0 0"></div>'+
+        '<div style="font-size:8px;color:var(--txt4)">'+d.slice(8)+'</div></div>';
+    }).join('')+
+  '</div>';
+}
+function fridayTable(frs){
+  if(!frs.length) return '<div style="padding:20px;text-align:center;color:var(--txt4);font-size:13px">لا توجد محاسبات بعد</div>';
+  return '<table class="tbl"><thead><tr><th>التاريخ</th><th>الكمية</th><th>السعر</th><th>المقبوض</th><th></th></tr></thead><tbody>'+
+    frs.slice(0,8).map(f=>'<tr><td>'+f.date+'</td><td>'+fN(f.qty)+' ك</td><td>'+fN(f.price)+' ج</td><td class="amt-green">'+fMoney(f.received)+'</td>'+
+      '<td><button class="btn-icon danger" onclick="deleteFriday('+f.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></td></tr>').join('')+
+  '</tbody></table>';
+}
+function milkOwnershipTable(){
+  const perCow=milkRevenuePerCow();
+  const cows=Object.keys(perCow).map(Number).filter(id=>perCow[id].qty>0);
+  if(!cows.length) return '<div style="padding:20px;text-align:center;color:var(--txt4);font-size:13px">لا توجد بيانات كافية (سجل الإنتاج ومحاسبة التاجر)</div>';
+  return '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>البقرة</th><th>إجمالي الإنتاج</th><th>إيراد البقرة التقديري</th>'+
+    (S.partners||[]).map(p=>'<th>نصيب '+esc(p.name)+'</th>').join('')+'</tr></thead><tbody>'+
+    cows.map(id=>{
+      const c=(S.cattle||[]).find(x=>x.id===id);
+      const row=perCow[id];
+      return '<tr><td style="font-weight:700">'+(c?esc(c.name):'#'+id)+'</td><td>'+fN(row.qty)+' ك</td><td class="amt">'+fMoney(row.revenue)+'</td>'+
+        (S.partners||[]).map(p=>'<td class="amt-green">'+fMoney(row.revenue*shareFor(c?c.owners:[],p.id)/100)+'</td>').join('')+
+      '</tr>';
+    }).join('')+
+  '</tbody></table></div>';
+}
+
+// ---------- Modal ----------
+let milkEntryMode='batch'; // 'batch' = all cows together, 'single' = one cow at a time
+function openMilkModal(editId){
+  const l=editId?(S.milkLogs||[]).find(x=>x.id===editId):null;
+  document.getElementById('ml-edit-id').value=editId||'';
+  document.getElementById('ml-date').value=l?l.date:TODAY;
+  document.getElementById('ml-notes').value=l?(l.notes||''):'';
+  document.getElementById('m-milk-title').textContent=l?'تعديل سجل حليب':'تسجيل إنتاج الحليب';
+  // default to batch mode unless editing a log that has exactly one cow (then show single mode for convenience)
+  milkEntryMode = (l && Object.keys(l.qtys||{}).length===1) ? 'single' : 'batch';
+  setMilkEntryMode(milkEntryMode);
+  setMilkSession(l?l.session:'full', l);
+  openModal('m-milk');
+}
+function setMilkEntryMode(mode){
+  milkEntryMode=mode;
+  document.querySelectorAll('#ml-mode-seg button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
+  document.getElementById('ml-single-cow-fg').style.display=mode==='single'?'block':'none';
+  buildMilkCowsList(null);
+}
+function setMilkSession(session,existing){
+  document.querySelectorAll('#ml-session-seg button').forEach(b=>b.classList.toggle('on',b.dataset.s===session));
+  document.getElementById('ml-session').value=session;
+  buildMilkCowsList(existing);
+}
+function buildMilkCowsList(existing){
+  const wrap=document.getElementById('ml-cows-list');
+  const ac=activeLactatingCows();
+  if(!ac.length){wrap.innerHTML='<p style="color:var(--txt4);text-align:center;padding:16px">لا توجد أبقار حلوب حالياً — يمكنك تغيير حالة الأبقار من صفحة القطيع</p>';return;}
+  const session=document.getElementById('ml-session').value;
+  const date=document.getElementById('ml-date').value;
+  let qtys={};
+  if(existing) qtys=existing.qtys||{};
+  else { const found=(S.milkLogs||[]).find(x=>x.date===date&&(x.session||'full')===session); if(found) qtys=found.qtys||{}; }
+  window._milkQtysCache=qtys; // used by single-cow mode to read/preserve other cows' values
+
+  if(milkEntryMode==='single'){
+    document.getElementById('ml-single-cow').innerHTML=ac.map(c=>'<option value="'+c.id+'">'+esc(c.name)+(c.breed?' ('+esc(c.breed)+')':'')+'</option>').join('');
+    document.getElementById('ml-single-cow').onchange=renderSingleCowQtyInput;
+    renderSingleCowQtyInput();
+  } else {
+    wrap.innerHTML=ac.map(c=>'<div class="fg"><label>'+esc(c.name)+(c.breed?' ('+esc(c.breed)+')':'')+'</label><input type="number" id="mlq-'+c.id+'" placeholder="0 كيلو" min="0" step="0.25" style="direction:ltr" value="'+(qtys[c.id]!=null?qtys[c.id]:'')+'"></div>').join('');
+  }
+}
+function renderSingleCowQtyInput(){
+  const wrap=document.getElementById('ml-cows-list');
+  const cowId=Number(document.getElementById('ml-single-cow').value);
+  const qtys=window._milkQtysCache||{};
+  const val=qtys[cowId]!=null?qtys[cowId]:'';
+  wrap.innerHTML='<div class="fg"><label>الكمية (كيلو)</label><input type="number" id="mlq-single-current" placeholder="0 كيلو" min="0" step="0.25" style="direction:ltr" value="'+val+'" oninput="persistSingleCowQty()"></div>'+
+    '<div class="hint">القيم المسجلة مسبقاً لباقي الأبقار (إن وُجدت) في هذا التاريخ والفترة لن تُحذف عند الحفظ.</div>';
+}
+function persistSingleCowQty(){
+  const cowId=Number(document.getElementById('ml-single-cow').value);
+  const v=parseFloat(document.getElementById('mlq-single-current').value);
+  window._milkQtysCache=window._milkQtysCache||{};
+  if(v>0) window._milkQtysCache[cowId]=v;
+  else delete window._milkQtysCache[cowId];
+}
+function saveMilkLog(){
+  const date=document.getElementById('ml-date').value;if(!date){toast('⚠ أدخل التاريخ');return;}
+  const session=document.getElementById('ml-session').value||'full';
+  const editId=document.getElementById('ml-edit-id').value;
+  let qtys={};
+  if(milkEntryMode==='single'){
+    persistSingleCowQty();
+    qtys=Object.assign({},window._milkQtysCache||{});
+  } else {
+    activeLactatingCows().forEach(c=>{
+      const v=parseFloat(document.getElementById('mlq-'+c.id)?.value);
+      if(v>0)qtys[c.id]=v;
+    });
+  }
+  if(!Object.keys(qtys).length){toast('⚠ أدخل كمية واحدة على الأقل');return;}
+  S.milkLogs=S.milkLogs||[];
+  if(editId){
+    const l=S.milkLogs.find(x=>x.id===Number(editId));
+    if(l){l.date=date;l.session=session;l.qtys=qtys;l.notes=document.getElementById('ml-notes').value.trim();}
+  } else {
+    // replace any existing entry for same date+session (avoid duplicates)
+    S.milkLogs=S.milkLogs.filter(x=>!(x.date===date&&(x.session||'full')===session));
+    S.milkLogs.push({id:uid(),date,session,qtys,notes:document.getElementById('ml-notes').value.trim()});
+  }
+  schedSave();closeModal('m-milk');renderPage(currentPage);toast('تم حفظ سجل الحليب');
+}
+function deleteMilkLog(id){
+  confirmAction('حذف سجل الحليب هذا؟',()=>{
+    S.milkLogs=(S.milkLogs||[]).filter(l=>l.id!==id);schedSave();renderPage(currentPage);toast('تم الحذف');
+  });
+}
+
+// ---------- Friday settlement ----------
+function openFridayModal(){
+  const frs=[...(S.fridays||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  const since=frs[0]?frs[0].date:'2000-01-01';
+  const pLogs=(S.milkLogs||[]).filter(l=>l.date>since);
+  const qty=pLogs.reduce((s,l)=>s+Object.values(l.qtys||{}).reduce((a,v)=>a+Number(v||0),0),0);
+  document.getElementById('fri-qty').value=fN(qty);
+  document.getElementById('fri-qty-raw').value=qty;
+  document.getElementById('fri-date').value=TODAY;
+  ['fri-price','fri-total','fri-received','fri-notes','fri-trader'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('fri-summary-box').innerHTML='<strong>الكمية المتراكمة منذ آخر محاسبة ('+since+'): '+fN(qty)+' كيلو</strong>';
+  openModal('m-friday');
+}
+function calcFriday(){
+  const p=parseFloat(document.getElementById('fri-price').value)||0;
+  const q=parseFloat(document.getElementById('fri-qty-raw').value)||0;
+  const total=(p*q);
+  document.getElementById('fri-total').value=total?total.toFixed(0):'';
+  if(!document.getElementById('fri-received').value) document.getElementById('fri-received').value=total?total.toFixed(0):'';
+}
+function saveFriday(){
+  const date=document.getElementById('fri-date').value,price=parseFloat(document.getElementById('fri-price').value)||0;
+  if(!date||!price){toast('⚠ أدخل التاريخ والسعر');return;}
+  const qty=parseFloat(document.getElementById('fri-qty-raw').value)||0;
+  const received=parseFloat(document.getElementById('fri-received').value)||0;
+  S.fridays=S.fridays||[];
+  S.fridays.push({id:uid(),date,trader:document.getElementById('fri-trader').value.trim(),price,qty,total:price*qty,received,notes:document.getElementById('fri-notes').value.trim()});
+  schedSave();closeModal('m-friday');renderPage(currentPage);toast('تم حفظ المحاسبة');
+}
+function deleteFriday(id){
+  confirmAction('حذف محاسبة تاجر الحليب هذه؟',()=>{
+    S.fridays=(S.fridays||[]).filter(f=>f.id!==id);schedSave();renderPage(currentPage);toast('تم الحذف');
+  });
+}
