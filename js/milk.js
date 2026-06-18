@@ -39,8 +39,8 @@ function renderMilkPage(wrap){
   const logs=[...(S.milkLogs||[])].sort((a,b)=>(b.date+(b.session||'')).localeCompare(a.date+(a.session||'')));
   const frs=[...(S.fridays||[])].sort((a,b)=>b.date.localeCompare(a.date));
   const lastFri=frs[0];
-  const since=lastFri?lastFri.date:'2000-01-01';
-  const pendQty=(S.milkLogs||[]).filter(l=>l.date>since).reduce((s,l)=>s+Object.values(l.qtys||{}).reduce((a,v)=>a+Number(v||0),0),0);
+  const since=lastFri?lastFri.date:null;
+  const pendQty=(S.milkLogs||[]).filter(l=>since?l.date>=since:true).reduce((s,l)=>s+Object.values(l.qtys||{}).reduce((a,v)=>a+Number(v||0),0),0);
   const dt=dailyTotals();
   const last14dates=Object.keys(dt).sort((a,b)=>b.localeCompare(a)).slice(0,14);
   const weekTotal=last14dates.slice(0,7).reduce((s,d)=>s+dt[d].total,0);
@@ -238,9 +238,12 @@ function deleteMilkLog(id){
 // that day's milk hasn't been picked up/counted yet by him.
 function openFridayModal(){
   const frs=[...(S.fridays||[])].sort((a,b)=>b.date.localeCompare(a.date));
-  const since=frs[0]?frs[0].date:'2000-01-01';
+  const since=frs[0]?frs[0].date:null; // previous settlement date = first day of the current week (inclusive)
   const settleDate=TODAY;
-  const pLogs=(S.milkLogs||[]).filter(l=>l.date>since && l.date<settleDate);
+  // Week runs from the previous settlement date (inclusive) up to, but not including, today's
+  // settlement date — today's milk starts the NEXT week, exactly matching the trader's routine
+  // (e.g. Friday-to-Thursday weeks, where each Friday both closes one week and opens the next).
+  const pLogs=(S.milkLogs||[]).filter(l=>(since?l.date>=since:true) && l.date<settleDate);
   const qty=pLogs.reduce((s,l)=>s+Object.values(l.qtys||{}).reduce((a,v)=>a+Number(v||0),0),0);
   document.getElementById('fri-qty').value=fN(qty);
   document.getElementById('fri-qty-raw').value=qty;
@@ -250,7 +253,9 @@ function openFridayModal(){
   // remember last-used trader as default
   const lastTrader = frs[0]?frs[0].trader : (S.lastMilkTrader||'');
   document.getElementById('fri-trader').value=lastTrader||'';
-  document.getElementById('fri-summary-box').innerHTML='<strong>الكمية المتراكمة من '+addDays(since,1)+' إلى '+addDays(settleDate,-1)+': '+fN(qty)+' كيلو</strong><div class="hint" style="margin-top:4px">حليب يوم المحاسبة نفسه ('+settleDate+') لا يُحسب الآن — سيُضاف للأسبوع القادم تلقائياً.</div>';
+  const periodStart = since||'بداية التسجيل';
+  const periodEnd = addDays(settleDate,-1);
+  document.getElementById('fri-summary-box').innerHTML='<strong>الكمية المتراكمة من '+periodStart+' إلى '+periodEnd+': '+fN(qty)+' كيلو</strong><div class="hint" style="margin-top:4px">حليب يوم المحاسبة نفسه ('+settleDate+') يبدأ تجميع الأسبوع القادم، ولن يُحسب الآن.</div>';
   // show outstanding advance (سلفة) from this trader, if any
   refreshTraderAdvanceBox();
   openModal('m-friday');
