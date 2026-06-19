@@ -85,3 +85,9 @@
 
 /* ── Box wrappers ── */
 .box{background:var(--bg3);border-radius:var(--r2);padding:12px;margin-bottom:14px;}
+
+/* ── INLINE OP EXPENSE ROWS ── */
+.op-exp-row{background:var(--bg3);border:1px solid var(--brd2);border-radius:var(--r2);padding:10px;margin-bottom:8px;}
+.op-exp-row .frow{gap:6px;}
+.op-exp-cat{background:var(--bg2);border:1px solid var(--brd);border-radius:6px;padding:7px 8px;font-family:'Cairo',sans-serif;font-size:12px;width:100%;}
+.op-exp-amt{background:var(--bg2);border:1px solid var(--brd);border-radius:6px;padding:7px 8px;font-family:'Cairo',sans-serif;font-size:13px;width:100%;direction:ltr;}

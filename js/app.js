@@ -4,6 +4,8 @@
 
 const PAGE_TITLES={
   dashboard:'لوحة التحكم',
+  lands:'الأراضي',
+  seasons:'المواسم الزراعية',
   crops:'المحاصيل والمراعي',
   cropops:'العمليات الزراعية',
   harvest:'الحصاد والمخلفات',
@@ -38,6 +40,8 @@ function renderPage(name){
   const wrap=document.getElementById('content-wrap');
   const pages={
     dashboard: renderDashboard,
+    lands:     renderLandsPage,
+    seasons:   renderSeasonsPage,
     crops:     renderCropsPage,
     cropops:   renderCropOpsPage,
     harvest:   renderHarvestPage,
@@ -65,9 +69,33 @@ function renderPage(name){
 // ═══════════════════════════════════════════════════════
 function renderDashboard(wrap){
   const activeCrops=(S.crops||[]).filter(c=>c.status==='growing').length;
-  const activeCattle=(S.cattle||[]).filter(c=>c.status!=='sold'&&c.status!=='dead').length;
+  const activeCattle=(S.cattle||[]).filter(c=>!isOut(c)).length;
   const fin=computeFinanceTotals();
-  const totalDebt=(S.debts||[]).filter(d=>d.status!=='paid').reduce((s,d)=>s+Number(d.remaining!=null?d.remaining:d.amount||0),0);
+  const totalDebt=(S.debts||[]).filter(d=>d.linkType!=='personal'&&d.status!=='paid').reduce((s,d)=>s+Number(d.remaining!=null?d.remaining:d.amount||0),0);
+  const cur=activeSeason();
+  const curFin=cur?seasonFinancials(cur.id):null;
+
+  // Active season banner
+  const seasonBanner = cur?
+    '<div class="card" style="margin-bottom:16px;background:var(--bg3);border-color:var(--pr2)">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
+        '<div style="display:flex;align-items:center;gap:10px">'+
+          '<i class="fas '+seasonTypeIcon(cur.type)+'" style="font-size:20px;color:var(--pr2)"></i>'+
+          '<div>'+
+            '<div style="font-size:13px;font-weight:800">الموسم النشط: '+esc(cur.name)+'</div>'+
+            '<div style="font-size:11px;color:var(--txt3)">'+seasonTypeLabel(cur.type)+' '+cur.year+(cur.startDate?' · منذ '+cur.startDate:'')+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<button class="btn btn-sm btn-outline" onclick="goPage(\'seasons\',null)"><i class="fas fa-exchange-alt"></i> تغيير</button>'+
+      '</div>'+
+      (curFin?'<div class="kpi-grid" style="margin-top:12px">'+
+        kpiCard('محاصيل الموسم',activeCrops+' نشط','fa-leaf','green')+
+        kpiCard('تكاليف الموسم',fMoney(curFin.cost),'fa-coins','red')+
+        kpiCard('إيرادات الموسم',fMoney(curFin.revenue),'fa-arrow-trend-up','green')+
+        kpiCard('صافي الموسم',fMoney(curFin.net),'fa-chart-line',curFin.net>=0?'green':'red')+
+      '</div>':'')+
+    '</div>'
+    :'<div class="alert alert-info"><i class="fas fa-calendar-alt"></i><span>لا يوجد موسم نشط — <button class="link-btn" onclick="goPage(\'seasons\',null)">أضف موسماً الآن</button> لتنظيم محاصيلك وتتبع مالية كل موسم بشكل منفصل.</span></div>';
 
   // Alerts
   let alerts='';
@@ -89,6 +117,7 @@ function renderDashboard(wrap){
   if(totalDebt>0) alerts+='<div class="alert alert-warn"><i class="fas fa-file-invoice-dollar"></i><span>إجمالي الديون المستحقة: '+fMoney(totalDebt)+'</span></div>';
 
   wrap.innerHTML=
+    seasonBanner+
     (alerts?'<div style="margin-bottom:20px">'+alerts+'</div>':'')+
     '<div class="kpi-grid">'+
       kpiCard('إجمالي الإيرادات',fMoney(fin.totalRev),'fa-arrow-trend-up','green')+

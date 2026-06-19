@@ -54,15 +54,30 @@ function setCropsTab(t,btn){
 // ═══════════════════════════════════════════════════════
 //  CROPS PAGE (tabs: المحاصيل | الحشات والمراعي)
 // ═══════════════════════════════════════════════════════
+let cropsSeasonFilter='active'; // 'active' = current active season only, 'all' = every season, or a specific seasonId
+function setCropsSeasonFilter(val){
+  cropsSeasonFilter=val;
+  renderPage('crops');
+}
 function renderCropsPage(wrap){
   document.getElementById('topbar-actions').innerHTML=
     (cropsTab==='crops'?'<button class="btn btn-primary" onclick="openCropModal(null)"><i class="fas fa-plus"></i> إضافة محصول</button>'
      :cropsTab==='cuttings'?'<button class="btn btn-primary" onclick="openCuttingModal(null)"><i class="fas fa-plus"></i> تسجيل حشة</button>'
      :'<button class="btn btn-primary" onclick="openExpenseModal(null)"><i class="fas fa-plus"></i> تسجيل مصروف</button>');
-  const crops=S.crops||[];
+  const allCrops=S.crops||[];
+  const cur=activeSeason();
+  let crops=allCrops;
+  if(cropsSeasonFilter==='active' && cur) crops=allCrops.filter(c=>c.seasonId===cur.id);
+  else if(cropsSeasonFilter!=='all' && cropsSeasonFilter!=='active') crops=allCrops.filter(c=>c.seasonId===Number(cropsSeasonFilter));
   const growing=crops.filter(c=>c.status==='growing');
   const totalArea=crops.reduce((s,c)=>s+Number(c.area||0),0);
-  const opsCost=(S.ops||[]).filter(o=>o.hasCost).reduce((s,o)=>s+Number(o.cost||0),0);
+  const opsCost=(S.ops||[]).filter(o=>crops.some(c=>c.id===o.cropId)&&o.hasCost).reduce((s,o)=>s+Number(o.cost||0),0);
+
+  const seasonFilterHTML='<div class="fg" style="max-width:280px;margin-bottom:14px"><label style="font-size:11px;color:var(--txt3);font-weight:700;display:block;margin-bottom:4px">عرض محاصيل:</label><select onchange="setCropsSeasonFilter(this.value)" style="width:100%;padding:8px;border:1.5px solid var(--brd);border-radius:var(--r2);font-family:\'Cairo\',sans-serif">'+
+    '<option value="active"'+(cropsSeasonFilter==='active'?' selected':'')+'>الموسم النشط فقط'+(cur?' ('+esc(cur.name)+')':'')+'</option>'+
+    '<option value="all"'+(cropsSeasonFilter==='all'?' selected':'')+'>كل المواسم</option>'+
+    (S.seasons||[]).map(s=>'<option value="'+s.id+'"'+(String(cropsSeasonFilter)===String(s.id)?' selected':'')+'>'+esc(s.name)+'</option>').join('')+
+  '</select></div>';
 
   wrap.innerHTML=
     '<div class="seg" id="crops-tabs" style="max-width:480px;margin-bottom:16px">'+
@@ -70,6 +85,7 @@ function renderCropsPage(wrap){
       '<button class="'+(cropsTab==='cuttings'?'on':'')+'" onclick="setCropsTab(\'cuttings\',this)">الحشات والمراعي</button>'+
       '<button class="'+(cropsTab==='expenses'?'on':'')+'" onclick="setCropsTab(\'expenses\',this)">المصروفات</button>'+
     '</div>'+
+    (cropsTab==='crops'?seasonFilterHTML:'')+
     (cropsTab==='crops'?renderCropsTab(crops,growing,totalArea,opsCost):cropsTab==='cuttings'?renderCuttingsTab():renderExpensesTab());
 }
 function renderCropsTab(crops,growing,totalArea,opsCost){
@@ -80,18 +96,21 @@ function renderCropsTab(crops,growing,totalArea,opsCost){
       kpiCard('إجمالي المحاصيل المسجلة',crops.length,'fa-leaf','blue')+
     '</div>'+
     '<div class="card"><div class="card-header"><div class="card-title">المحاصيل المسجلة</div></div><div class="card-body p0">'+
-    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>المحصول</th><th>النوع</th><th>المساحة</th><th>المرحلة الحالية</th><th>تاريخ الزراعة</th><th>الحالة</th><th>تكلفة العمليات</th><th>علف/مرعى</th><th></th></tr></thead><tbody>'+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>المحصول</th><th>النوع</th><th>الموسم</th><th>الأرض</th><th>المساحة</th><th>المرحلة الحالية</th><th>الحالة</th><th>التكلفة الإجمالية</th><th></th></tr></thead><tbody>'+
     (crops.length?crops.map(c=>{
       const cost=(S.ops||[]).filter(o=>o.cropId===c.id&&o.hasCost).reduce((s,o)=>s+Number(o.cost||0),0)+totalExpensesForCrop(c.id);
       const stage=currentStage(c);
+      const season=(S.seasons||[]).find(s=>s.id===c.seasonId);
+      const land=(S.lands||[]).find(l=>l.id===c.landId);
       return '<tr><td style="font-weight:700">'+esc(c.name)+'</td><td><span class="tag tag-blue">'+esc(c.type)+'</span></td>'+
-        '<td>'+fN(c.area)+' '+esc(c.areaUnit||'قيراط')+'</td>'+
+        '<td>'+(season?esc(season.name):'<span style="color:var(--txt4)">—</span>')+'</td>'+
+        '<td>'+(land?esc(land.name):'<span style="color:var(--txt4)">—</span>')+'</td>'+
+        '<td>'+fN(c.area)+' '+esc(c.areaUnit||'قيراط')+(c.isForage?' <span class="tag tag-gold" style="margin-right:3px">علف</span>':'')+'</td>'+
         '<td>'+(stage?'<span class="tag tag-gold"><i class="fas '+stageIcon(stage)+'"></i> '+stageLabel(stage)+'</span>':'<span style="color:var(--txt4)">لم تبدأ</span>')+'</td>'+
-        '<td>'+(c.pdate||'—')+'</td>'+
         '<td><span class="tag '+(c.status==='growing'?'tag-green':'tag-gray')+'">'+(CROP_STATUS_LABELS[c.status]||c.status)+'</span></td>'+
-        '<td class="amt-red">'+fMoney(cost)+'</td><td>'+(c.isForage?'<span class="tag tag-gold">نعم</span>':'—')+'</td>'+
-        '<td><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="openCropStagesModal('+c.id+')"><i class="fas fa-route"></i> المراحل</button><button class="btn-icon" onclick="openCropModal('+c.id+')"><i class="fas fa-pen" style="font-size:11px"></i></button><button class="btn-icon danger" onclick="deleteCrop('+c.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
-    }).join(''):'<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد محاصيل مسجلة</td></tr>')+
+        '<td class="amt-red">'+fMoney(cost)+'</td>'+
+        '<td><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="openCropStagesModal('+c.id+')"><i class="fas fa-route"></i></button><button class="btn-icon" onclick="openCropModal('+c.id+')"><i class="fas fa-pen" style="font-size:11px"></i></button><button class="btn-icon danger" onclick="deleteCrop('+c.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
+    }).join(''):'<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد محاصيل مسجلة في هذا العرض</td></tr>')+
     '</tbody></table></div></div></div>';
 }
 function renderCuttingsTab(){
@@ -135,6 +154,10 @@ function openCropModal(editId){
   document.getElementById('cr-name').value=c?c.name:'';
   populateCropTypeDatalist();
   document.getElementById('cr-type').value=c?c.type:(S.cropTypes&&S.cropTypes[0])||'';
+  populateSeasonSel('cr-season');
+  document.getElementById('cr-season').value=c?(c.seasonId||''):(S.activeSeasonId||'');
+  populateLandSel('cr-land');
+  document.getElementById('cr-land').value=c?(c.landId||''):'';
   document.getElementById('cr-area').value=c?(c.area||''):'';
   document.getElementById('cr-areaunit').value=c?(c.areaUnit||'قيراط'):'قيراط';
   document.getElementById('cr-pdate').value=c?(c.pdate||TODAY):TODAY;
@@ -161,6 +184,8 @@ function saveCrop(){
     areaUnit:document.getElementById('cr-areaunit').value,pdate:document.getElementById('cr-pdate').value,
     hdate:document.getElementById('cr-hdate').value,loc:document.getElementById('cr-loc').value.trim(),
     status:document.getElementById('cr-status').value,isForage:document.getElementById('cr-isforage').checked,
+    seasonId:Number(document.getElementById('cr-season').value)||null,
+    landId:document.getElementById('cr-land').value?Number(document.getElementById('cr-land').value):null,
     notes:document.getElementById('cr-notes').value.trim()};
   if(editId){ Object.assign((S.crops||[]).find(x=>x.id===Number(editId)),data); }
   else { S.crops=S.crops||[]; S.crops.push(Object.assign({id:uid(),stageLog:[]},data)); }
@@ -270,6 +295,64 @@ function opTotalCost(opId){
 function opExpenseCount(opId){
   return (S.expenses||[]).filter(e=>e.linkType==='cropop'&&e.linkId===opId).length;
 }
+// ──── Per-operation inline expense rows (multi-cost) ────
+const OP_EXPENSE_CATEGORIES=[
+  {id:'seeds',label:'تقاوي/بذور',icon:'fa-seedling'},
+  {id:'fertilizer',label:'أسمدة',icon:'fa-box'},
+  {id:'pesticide',label:'مبيدات/مغذيات',icon:'fa-flask'},
+  {id:'fuel',label:'بنزين/وقود',icon:'fa-gas-pump'},
+  {id:'labor',label:'أجور عمالة',icon:'fa-person'},
+  {id:'machine',label:'إيجار آلة',icon:'fa-tractor'},
+  {id:'water',label:'مياه/ري',icon:'fa-droplet'},
+  {id:'maintenance',label:'صيانة',icon:'fa-wrench'},
+  {id:'transport',label:'نقل',icon:'fa-truck'},
+  {id:'other',label:'أخرى',icon:'fa-ellipsis'},
+];
+let opExpenseRows=[];
+function addOpExpenseRow(){
+  const rowId='oer_'+uid();
+  opExpenseRows.push({rowId,catId:'labor',amount:'',date:'',vendor:'',notes:'',paytype:'cash'});
+  renderOpExpenseRows();
+}
+function removeOpExpenseRow(rowId){
+  opExpenseRows=opExpenseRows.filter(r=>r.rowId!==rowId);
+  renderOpExpenseRows();
+}
+function renderOpExpenseRows(){
+  const wrap=document.getElementById('co-expense-rows');
+  if(!wrap) return;
+  wrap.innerHTML=opExpenseRows.map(r=>'<div class="op-exp-row" id="row_'+r.rowId+'">'+
+    '<div class="frow" style="margin-bottom:0">'+
+      '<div class="fg"><select class="op-exp-cat" data-row="'+r.rowId+'" onchange="updateOpExpRow(\''+r.rowId+'\',\'catId\',this.value)">'+
+        OP_EXPENSE_CATEGORIES.map(c=>'<option value="'+c.id+'"'+(c.id===r.catId?' selected':'')+'>'+c.label+'</option>').join('')+
+      '</select></div>'+
+      '<div class="fg"><input type="number" class="op-exp-amt" placeholder="المبلغ (ج)" min="0" value="'+r.amount+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'amount\',this.value);calcOpExpTotal()"></div>'+
+      '<div class="fg"><input type="date" value="'+r.date+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'date\',this.value)"></div>'+
+      '<button class="btn-icon danger" onclick="removeOpExpenseRow(\''+r.rowId+'\')"><i class="fas fa-trash" style="font-size:11px"></i></button>'+
+    '</div>'+
+    '<div class="frow" style="margin-bottom:6px">'+
+      '<div class="fg"><input type="text" placeholder="المورد / الجهة (اختياري)" value="'+esc(r.vendor)+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'vendor\',this.value)"></div>'+
+      '<div class="fg"><select onchange="updateOpExpRow(\''+r.rowId+'\',\'paytype\',this.value)">'+
+        '<option value="cash"'+(r.paytype==='cash'?' selected':'')+'>نقدي</option>'+
+        '<option value="credit"'+(r.paytype==='credit'?' selected':'')+'>آجل</option>'+
+      '</select></div>'+
+    '</div>'+
+  '</div>').join('');
+  if(!opExpenseRows.length){
+    wrap.innerHTML='<div style="text-align:center;font-size:11px;color:var(--txt4);padding:10px;background:var(--bg3);border-radius:var(--r2);border:1px dashed var(--brd2)">اضغط "+ إضافة بند" لتسجيل تكاليف هذه العملية (مواد + بنزين + أجور... كلها في خطوة واحدة)</div>';
+  }
+  calcOpExpTotal();
+}
+function updateOpExpRow(rowId,field,val){
+  const r=opExpenseRows.find(x=>x.rowId===rowId);
+  if(r) r[field]=val;
+}
+function calcOpExpTotal(){
+  const total=opExpenseRows.reduce((s,r)=>s+parseFloat(r.amount||0),0);
+  const el=document.getElementById('co-expense-total');
+  if(el) el.textContent=total>0?'إجمالي التكاليف: '+fMoney(total):'';
+}
+
 function openCropOpModal(editId){
   populateCropSel('co-crop',false);
   document.getElementById('co-edit-id').value=editId||'';
@@ -284,17 +367,17 @@ function openCropOpModal(editId){
   updateOpUnits();
   if(o&&o.opUnit) document.getElementById('co-unit').value=o.opUnit;
   toggleWorkerField();
+  // load existing linked expense rows for edit mode
+  opExpenseRows=[];
+  if(o){
+    const linked=(S.expenses||[]).filter(e=>e.linkType==='cropop'&&e.linkId===o.id);
+    linked.forEach(e=>{
+      opExpenseRows.push({rowId:'oer_'+uid(),catId:e.category||'other',amount:e.amount||'',
+        date:e.date||TODAY,vendor:e.vendor||'',notes:e.notes||'',paytype:e.paytype||'cash'});
+    });
+  }
+  renderOpExpenseRows();
   openModal('m-cropop');
-}
-function updateOpUnits(){
-  const t=OP_TYPES.find(x=>x.value===document.getElementById('co-type').value)||OP_TYPES[0];
-  document.getElementById('co-unit').innerHTML=t.units.map(u=>'<option value="'+u+'">'+u+'</option>').join('');
-  toggleWorkerField();
-}
-function toggleWorkerField(){
-  const unit=document.getElementById('co-unit').value;
-  const wf=document.getElementById('co-worker-fg');
-  if(wf) wf.style.display=(unit==='يومية')?'block':'none';
 }
 function saveCropOp(){
   const cropId=Number(document.getElementById('co-crop').value),date=document.getElementById('co-date').value;
@@ -303,19 +386,41 @@ function saveCropOp(){
   const data={cropId,date,type:document.getElementById('co-type').value,desc:document.getElementById('co-desc').value.trim(),
     qty:parseFloat(document.getElementById('co-qty').value)||null,opUnit:document.getElementById('co-unit').value,
     worker:document.getElementById('co-worker').value.trim(),notes:document.getElementById('co-notes').value.trim()};
+  let opId;
   if(editId){
-    Object.assign((S.ops||[]).find(x=>x.id===Number(editId)),data);
-    schedSave();closeModal('m-cropop');renderPage(currentPage);toast('تم حفظ التعديلات');
-    return;
+    opId=Number(editId);
+    Object.assign((S.ops||[]).find(x=>x.id===opId),data);
+    // remove old linked expenses and re-create from current rows
+    S.expenses=(S.expenses||[]).filter(e=>!(e.linkType==='cropop'&&e.linkId===opId));
+    S.inventoryMoves=(S.inventoryMoves||[]).filter(m=>!(m.refType==='expense_consume'&&opExpenseRows.some(r=>r.rowId===m.refId)));
+  } else {
+    S.ops=S.ops||[];
+    const op=Object.assign({id:uid(),hasCost:false,cost:0},data);
+    S.ops.push(op);
+    opId=op.id;
   }
-  S.ops=S.ops||[];
-  const op=Object.assign({id:uid(),hasCost:false,cost:0},data);
-  S.ops.push(op);
-  schedSave();closeModal('m-cropop');renderPage(currentPage);
-  // Prompt immediately to add a cost line for this operation (common case), without forcing it
-  confirmAction('تم تسجيل العملية. هل تريد إضافة مصروف مرتبط بها الآن (مواد، أجور، وقود...)؟',()=>{
-    openExpenseModal(null,{linkType:'cropop',linkId:op.id,category:opExpenseCategory(op.type)});
+  // save inline expense rows as separate Expense records linked to this operation
+  opExpenseRows.forEach(r=>{
+    const amount=parseFloat(r.amount)||0;
+    if(amount<=0) return;
+    const expDate=r.date||date;
+    const ex={id:uid(),date:expDate,amount,category:expCatFromOpCat(r.catId),accountCode:guessExpenseAccount(expCatFromOpCat(r.catId)),
+      linkType:'cropop',linkId:opId,vendor:r.vendor||'',paytype:r.paytype||'cash',worker:'',notes:r.notes||r.catId,source:'direct',invItemId:null,invQty:null};
+    S.expenses=S.expenses||[];
+    S.expenses.push(ex);
+    if(r.paytype==='credit'){
+      S.debts=S.debts||[];
+      const crop=(S.crops||[]).find(c=>c.id===cropId);
+      S.debts.push({id:uid(),vendor:r.vendor||'مورد',reason:opTypeLabel(data.type)+(crop?' — '+crop.name:''),amount,remaining:amount,status:'open',date:expDate,refId:ex.id,refType:'expense',linkType:'crop',linkId:cropId});
+    }
   });
+  schedSave();closeModal('m-cropop');renderPage(currentPage);
+  const totalExp=opExpenseRows.reduce((s,r)=>s+parseFloat(r.amount||0),0);
+  toast('تم تسجيل العملية'+(totalExp>0?' مع '+opExpenseRows.filter(r=>parseFloat(r.amount)>0).length+' بنود تكلفة بإجمالي '+fMoney(totalExp):''));
+}
+function expCatFromOpCat(catId){
+  const map={seeds:'other',fertilizer:'inputs',pesticide:'inputs',fuel:'maintenance',labor:'labor',machine:'cropops',water:'cropops',maintenance:'maintenance',transport:'transport',other:'other'};
+  return map[catId]||'other';
 }
 function deleteCropOp(id){
   const linkedCount=opExpenseCount(id);

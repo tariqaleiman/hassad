@@ -16,6 +16,8 @@ function emptyDB(){
     // Cattle & related
     cattle:[], milkLogs:[], fridays:[], healthLogs:[], insems:[], pregChecks:[],
     births:[], calfLogs:[], heatPrograms:[], traderAdvances:[], lastMilkTrader:'',
+    // Land & seasons (new hierarchical structure: land -> season -> crop record)
+    lands:[], seasons:[], activeSeasonId:null,
     // Crops & agricultural ops
     cropTypes: JSON.parse(JSON.stringify(DEFAULT_CROP_TYPES)),
     crops:[], ops:[], harvests:[], cuttings:[],
@@ -39,6 +41,31 @@ const DEFAULT_CROP_TYPES=[
   'أرز','قطن','فول صويا','فول بلدي','عدس','حمص','سمسم','كتان',
   'بطاطس','بطاطا','بصل','ثوم','طماطم','خس','كرنب','فلفل','باذنجان','كوسة','خيار','بامية',
   'بنجر السكر','قصب السكر','موالح','مانجو','عنب','نخيل','زيتون','أخرى'
+];
+
+// ---------- Land ownership types ----------
+const LAND_TYPES=[
+  {id:'owned',label:'ملك',icon:'fa-house'},
+  {id:'rent',label:'إيجار',icon:'fa-handshake'},
+  {id:'share',label:'مزارعة',icon:'fa-scale-balanced'},
+];
+// ---------- Area units with conversion ratio relative to فدان (feddan = 1.0) ----------
+const AREA_UNITS=[
+  {id:'feddan',label:'فدان',ratio:1},
+  {id:'kirat',label:'قيراط',ratio:1/24},
+  {id:'sahm',label:'سهم',ratio:1/576},
+];
+function areaUnitLabel(id){const u=AREA_UNITS.find(x=>x.id===id);return u?u.label:(id||'فدان');}
+function convertArea(value,fromUnit,toUnit){
+  const f=AREA_UNITS.find(x=>x.id===fromUnit)||AREA_UNITS[0];
+  const t=AREA_UNITS.find(x=>x.id===toUnit)||AREA_UNITS[0];
+  return Number(value||0)*f.ratio/t.ratio;
+}
+// ---------- Season types ----------
+const SEASON_TYPES=[
+  {id:'summer',label:'صيفي',icon:'fa-sun'},
+  {id:'winter',label:'شتوي',icon:'fa-snowflake'},
+  {id:'between',label:'بين الموسمين',icon:'fa-cloud-sun'},
 ];
 
 // ---------- Default chart of accounts (شجرة الحسابات) ----------
@@ -235,6 +262,23 @@ function migrateData(){
   (S.milkLogs||[]).forEach(l=>{ if(!l.session) l.session='full'; });
   (S.crops||[]).forEach(c=>{ if(!c.stageLog) c.stageLog=[]; });
   (S.ops||[]).forEach(o=>{ if(o.qty===undefined) o.qty=null; if(o.opUnit===undefined) o.opUnit=''; if(o.worker===undefined) o.worker=''; });
+
+  // ---- Lands & Seasons: introduce the new hierarchical structure (land -> season -> crop record) ----
+  // additive only — never deletes anything; existing crops are migrated into a default season automatically.
+  if(!S.lands) S.lands=[];
+  if(!S.seasons) S.seasons=[];
+  if(!S.seasons.length){
+    S.seasons.push({id:uid(),name:'الموسم الحالي',type:'summer',year:new Date(TODAY).getFullYear(),
+      startDate:TODAY,endDate:null,isDefault:true,createdAt:TODAY});
+  }
+  const defaultSeason = S.seasons.find(s=>s.isDefault) || S.seasons[0];
+  (S.crops||[]).forEach(c=>{
+    if(c.seasonId===undefined) c.seasonId=defaultSeason.id;
+    if(c.landId===undefined) c.landId=null;
+  });
+  if(S.activeSeasonId===undefined || !S.seasons.find(s=>s.id===S.activeSeasonId)){
+    S.activeSeasonId = defaultSeason.id;
+  }
 
   // ---- Crop types: merge any custom types already in use into the editable list (never lose a type a user already has) ----
   if(!S.cropTypes||!S.cropTypes.length) S.cropTypes=JSON.parse(JSON.stringify(DEFAULT_CROP_TYPES));

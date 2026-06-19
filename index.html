@@ -34,6 +34,8 @@
     <div class="nav-section">الرئيسية</div>
     <button class="nav-item active" data-page="dashboard" onclick="goPage('dashboard',this)"><i class="fas fa-chart-pie"></i><span>لوحة التحكم</span></button>
     <div class="nav-section">المزرعة الزراعية</div>
+    <button class="nav-item" data-page="lands" onclick="goPage('lands',this)"><i class="fas fa-map"></i><span>الأراضي</span></button>
+    <button class="nav-item" data-page="seasons" onclick="goPage('seasons',this)"><i class="fas fa-calendar-alt"></i><span>المواسم الزراعية</span></button>
     <button class="nav-item" data-page="crops" onclick="goPage('crops',this)"><i class="fas fa-leaf"></i><span>المحاصيل والمراعي</span></button>
     <button class="nav-item" data-page="cropops" onclick="goPage('cropops',this)"><i class="fas fa-tractor"></i><span>العمليات الزراعية</span></button>
     <button class="nav-item" data-page="harvest" onclick="goPage('harvest',this)"><i class="fas fa-warehouse"></i><span>الحصاد والمخلفات</span></button>
@@ -539,12 +541,16 @@
 
 <!-- CROP MODAL -->
 <div class="ov" id="m-crop" onclick="ovClick(event,'m-crop')">
-<div class="modal"><div class="modal-header"><h3 id="m-crop-title"><i class="fas fa-leaf"></i> إضافة محصول</h3><button class="modal-close" onclick="closeModal('m-crop')"><i class="fas fa-times"></i></button></div>
+<div class="modal wide"><div class="modal-header"><h3 id="m-crop-title"><i class="fas fa-leaf"></i> إضافة محصول</h3><button class="modal-close" onclick="closeModal('m-crop')"><i class="fas fa-times"></i></button></div>
 <div class="modal-body">
   <input type="hidden" id="cr-edit-id">
   <div class="frow">
-    <div class="fg"><label>اسم المحصول</label><input type="text" id="cr-name" placeholder="مثال: برسيم الموسم الثاني"></div>
-    <div class="fg"><label>نوع المحصول</label><input type="text" id="cr-type" list="cr-type-list" placeholder="اختر من القائمة أو اكتب نوعاً جديداً"><datalist id="cr-type-list"></datalist><div class="hint">يمكنك كتابة نوع محصول جديد غير موجود في القائمة وسيُحفظ للاستخدام لاحقاً</div></div>
+    <div class="fg"><label>اسم المحصول / الصنف</label><input type="text" id="cr-name" placeholder="مثال: لب سوبر — برسيم الموسم الثاني"></div>
+    <div class="fg"><label>نوع المحصول</label><input type="text" id="cr-type" list="cr-type-list" placeholder="اختر أو اكتب جديداً"><datalist id="cr-type-list"></datalist></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>الموسم</label><select id="cr-season"></select></div>
+    <div class="fg"><label>الأرض</label><select id="cr-land"></select></div>
   </div>
   <div class="frow">
     <div class="fg"><label>المساحة</label><input type="number" id="cr-area" placeholder="0" min="0" step="0.25"></div>
@@ -552,6 +558,7 @@
       <select id="cr-areaunit">
         <option value="قيراط">قيراط</option>
         <option value="فدان">فدان</option>
+        <option value="سهم">سهم</option>
         <option value="هكتار">هكتار</option>
       </select>
     </div>
@@ -560,7 +567,7 @@
     <div class="fg"><label>تاريخ الزراعة</label><input type="date" id="cr-pdate"></div>
     <div class="fg"><label>موعد الحصاد المتوقع</label><input type="date" id="cr-hdate"></div>
   </div>
-  <div class="fg"><label>الموقع / القطعة</label><input type="text" id="cr-loc" placeholder="مثال: قطعة الشمال"></div>
+  <div class="fg"><label>الموقع / القطعة (اختياري)</label><input type="text" id="cr-loc" placeholder="مثال: قطعة الشمال أو الحقل الشرقي"></div>
   <div class="fg"><label>الحالة</label>
     <select id="cr-status">
       <option value="growing">تحت الزراعة</option>
@@ -575,10 +582,16 @@
   <button class="btn btn-outline" onclick="closeModal('m-crop')">إلغاء</button>
   <button class="btn btn-primary" onclick="saveCrop()"><i class="fas fa-check"></i> حفظ</button>
 </div></div></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="cr-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-crop')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveCrop()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
 
 <!-- CROP OP MODAL -->
 <div class="ov" id="m-cropop" onclick="ovClick(event,'m-cropop')">
-<div class="modal"><div class="modal-header"><h3><i class="fas fa-tractor"></i> تسجيل عملية زراعية</h3><button class="modal-close" onclick="closeModal('m-cropop')"><i class="fas fa-times"></i></button></div>
+<div class="modal wide"><div class="modal-header"><h3><i class="fas fa-tractor"></i> تسجيل عملية زراعية</h3><button class="modal-close" onclick="closeModal('m-cropop')"><i class="fas fa-times"></i></button></div>
 <div class="modal-body">
   <input type="hidden" id="co-edit-id">
   <div class="fg"><label>المحصول</label><select id="co-crop"></select></div>
@@ -591,9 +604,15 @@
     <div class="fg"><label>الكمية</label><input type="number" id="co-qty" placeholder="0" min="0" step="0.5"></div>
     <div class="fg"><label>الوحدة</label><select id="co-unit" onchange="toggleWorkerField()"></select></div>
   </div>
-  <div class="fg" id="co-worker-fg" style="display:none"><label>اسم العامل / المياومة لمن</label><input type="text" id="co-worker" placeholder="اسم العامل (اختياري)"></div>
+  <div class="fg" id="co-worker-fg" style="display:none"><label>اسم العامل</label><input type="text" id="co-worker" placeholder="اسم العامل (اختياري)"></div>
   <div class="fg"><label>ملاحظات</label><textarea id="co-notes" rows="2"></textarea></div>
-  <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>تكاليف هذه العملية (مواد، بنزين، أجور، صيانة...) تُسجَّل كمصروفات مستقلة — يمكنك إضافة أكثر من مصروف لهذه العملية بتواريخ مختلفة، بعد الحفظ مباشرة أو لاحقاً من سجل العمليات.</span></div>
+
+  <div class="form-divider"><i class="fas fa-receipt"></i> تكاليف هذه العملية
+    <button type="button" class="btn btn-sm btn-outline" style="float:left;margin-top:-2px" onclick="addOpExpenseRow()"><i class="fas fa-plus"></i> إضافة بند</button>
+  </div>
+  <div class="hint" style="margin-bottom:8px">أضف أكثر من بند تكلفة (مواد رش + بنزين + أجور...) كلها بتاريخ واحد أو مختلف. يمكنك إضافة بنود لاحقاً من سجل العمليات أيضاً.</div>
+  <div id="co-expense-rows"></div>
+  <div id="co-expense-total" style="font-size:12px;font-weight:700;color:var(--pr2);margin-top:6px;text-align:left"></div>
 </div>
 <div class="modal-footer">
   <button class="btn btn-outline" onclick="closeModal('m-cropop')">إلغاء</button>
@@ -968,6 +987,113 @@
   <button class="btn btn-primary" onclick="saveExpense()"><i class="fas fa-check"></i> حفظ</button>
 </div></div></div>
 
+<!-- LAND MODAL -->
+<div class="ov" id="m-land" onclick="ovClick(event,'m-land')">
+<div class="modal"><div class="modal-header"><h3 id="m-land-title"><i class="fas fa-map"></i> إضافة أرض</h3><button class="modal-close" onclick="closeModal('m-land')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="ld-edit-id">
+  <div class="fg"><label>اسم الأرض</label><input type="text" id="ld-name" placeholder="مثال: حقل الشمال — أرض أبو سعد"></div>
+  <div class="fg"><label>نوع الملكية</label>
+    <select id="ld-type">
+      <option value="owned">ملك</option>
+      <option value="rent">إيجار</option>
+      <option value="share">مزارعة</option>
+    </select>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>المساحة</label><input type="number" id="ld-area" placeholder="0" min="0" step="0.25"></div>
+    <div class="fg"><label>وحدة المساحة</label><select id="ld-areaunit"></select></div>
+  </div>
+  <div class="fg"><label>الموقع (اختياري)</label><input type="text" id="ld-location" placeholder="القرية / المنطقة / المركز"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="ld-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-land')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveLand()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- SEASON MODAL -->
+<div class="ov" id="m-season" onclick="ovClick(event,'m-season')">
+<div class="modal"><div class="modal-header"><h3 id="m-season-title"><i class="fas fa-calendar-alt"></i> موسم جديد</h3><button class="modal-close" onclick="closeModal('m-season')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="sn-edit-id">
+  <div class="fg"><label>اسم الموسم</label><input type="text" id="sn-name" placeholder="مثال: صيف 2026 — موسم الشتاء الأول"></div>
+  <div class="frow">
+    <div class="fg"><label>نوع الموسم</label>
+      <select id="sn-type">
+        <option value="summer">صيفي ☀️</option>
+        <option value="winter">شتوي ❄️</option>
+        <option value="between">بين الموسمين 🌤️</option>
+      </select>
+    </div>
+    <div class="fg"><label>السنة</label><input type="number" id="sn-year" min="2000" max="2099" step="1"></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>تاريخ البدء</label><input type="date" id="sn-start"></div>
+    <div class="fg"><label>تاريخ الانتهاء (اختياري)</label><input type="date" id="sn-end"></div>
+  </div>
+  <div class="hint">عند إنشاء موسم جديد، يصبح تلقائياً الموسم النشط الحالي.</div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-season')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveSeason()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- LAND MODAL -->
+<div class="ov" id="m-land" onclick="ovClick(event,'m-land')">
+<div class="modal"><div class="modal-header"><h3 id="m-land-title"><i class="fas fa-map"></i> إضافة أرض</h3><button class="modal-close" onclick="closeModal('m-land')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="ld-edit-id">
+  <div class="fg"><label>اسم الأرض</label><input type="text" id="ld-name" placeholder="مثال: حقل الشمال — القطعة الشرقية"></div>
+  <div class="fg"><label>نوع الملكية</label>
+    <select id="ld-type">
+      <option value="owned">ملك</option>
+      <option value="rent">إيجار</option>
+      <option value="share">مزارعة</option>
+    </select>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>المساحة</label><input type="number" id="ld-area" placeholder="0" min="0" step="0.25"></div>
+    <div class="fg"><label>وحدة المساحة</label>
+      <select id="ld-areaunit">
+        <option value="feddan">فدان</option>
+        <option value="kirat">قيراط</option>
+        <option value="sahm">سهم</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg"><label>الموقع / المنطقة (اختياري)</label><input type="text" id="ld-location" placeholder="القرية أو المنطقة"></div>
+  <div class="fg"><label>ملاحظات</label><textarea id="ld-notes" rows="2"></textarea></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-land')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveLand()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- SEASON MODAL -->
+<div class="ov" id="m-season" onclick="ovClick(event,'m-season')">
+<div class="modal"><div class="modal-header"><h3 id="m-season-title"><i class="fas fa-calendar-alt"></i> موسم جديد</h3><button class="modal-close" onclick="closeModal('m-season')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="sn-edit-id">
+  <div class="fg"><label>اسم الموسم</label><input type="text" id="sn-name" placeholder="مثال: صيف 2025 — موسم القمح الشتوي"></div>
+  <div class="fg"><label>نوع الموسم</label>
+    <select id="sn-type">
+      <option value="summer">صيفي ☀️</option>
+      <option value="winter">شتوي ❄️</option>
+      <option value="between">بين الموسمين 🌤️</option>
+    </select>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>السنة</label><input type="number" id="sn-year" min="2020" max="2099"></div>
+    <div class="fg"><label>تاريخ البدء</label><input type="date" id="sn-start"></div>
+  </div>
+  <div class="fg"><label>تاريخ الانتهاء (اختياري)</label><input type="date" id="sn-end"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-season')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveSeason()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
 <!-- end modals -->
 
 <!-- ═══════════════ SCRIPTS ═══════════════ -->
@@ -977,11 +1103,15 @@
 <script src="js/firebase.js"></script>
 <script src="js/core.js"></script>
 <script src="js/partners.js"></script>
+<script src="js/lands.js"></script>
+<script src="js/seasons.js"></script>
 <script src="js/cattle.js"></script>
 <script src="js/milk.js"></script>
 <script src="js/repro.js"></script>
 <script src="js/calves.js"></script>
 <script src="js/health.js"></script>
+<script src="js/lands.js"></script>
+<script src="js/seasons.js"></script>
 <script src="js/crops.js"></script>
 <script src="js/expenses.js"></script>
 <script src="js/harvest.js"></script>
