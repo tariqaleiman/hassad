@@ -169,7 +169,7 @@ function toggleAnimalGenderFields(){
   const g=document.getElementById('a-gender').value;
   const adultFemale = g==='female';
   document.getElementById('a-adult-female-fields').style.display=adultFemale?'block':'none';
-  document.getElementById('a-mother-fg').style.display=(g==='calf_f'||g==='calf_m')?'block':'none';
+  document.getElementById('a-mother-fg').style.display='block';
 }
 function togglePregMonths(){
   document.getElementById('a-pregmonths-fg').style.display=document.getElementById('a-pregnant').value==='yes'?'block':'none';
