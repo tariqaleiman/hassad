@@ -169,14 +169,14 @@ function toggleAnimalGenderFields(){
   const g=document.getElementById('a-gender').value;
   const adultFemale = g==='female';
   document.getElementById('a-adult-female-fields').style.display=adultFemale?'block':'none';
-  document.getElementById('a-mother-fg').style.display='block';
 }
 function togglePregMonths(){
   document.getElementById('a-pregmonths-fg').style.display=document.getElementById('a-pregnant').value==='yes'?'block':'none';
 }
 function toggleAnimalSource(){
-  const b=document.getElementById('a-source').value==='bought';
-  document.getElementById('a-buy-fields').style.display=b?'block':'none';
+  const src=document.getElementById('a-source').value;
+  document.getElementById('a-buy-fields').style.display=(src==='bought')?'block':'none';
+  document.getElementById('a-mother-fg').style.display=(src==='born')?'block':'none';
 }
 function toggleSaleShareEditor(){
   document.getElementById('a-sale-editor-box').style.display=document.getElementById('a-sale-same').checked?'none':'block';
@@ -235,15 +235,16 @@ function saveAnimal(){
     return;
   }
 
-  const a={id:uid(),name,gender,breed:document.getElementById('a-breed').value.trim(),dob:document.getElementById('a-dob').value,
+    const entryDate = source==='bought'?document.getElementById('a-buydate').value:(document.getElementById('a-dob').value||TODAY);
+    const a={id:uid(),name,gender,breed:document.getElementById('a-breed').value.trim(),dob:document.getElementById('a-dob').value,
     lifecycle, milkStatus, pregnant, pregMonths, dueDate,
     source, buyDate:source==='bought'?document.getElementById('a-buydate').value:'', buyPrice,
     seller:source==='bought'?document.getElementById('a-seller').value.trim():'',
     owners, saleShares, birthShares,
     motherId:document.getElementById('a-mother').value?Number(document.getElementById('a-mother').value):null,
     notes:document.getElementById('a-notes').value.trim(),
-    statusLog:[{date:TODAY,field:'created',from:null,to:lifecycle,note:'إضافة الحيوان للقطيع'}],
-    createdAt:TODAY};
+    statusLog:[{date:entryDate,field:'created',from:null,to:lifecycle,note:'إضافة الحيوان للقطيع'}],
+    createdAt:entryDate};
   S.cattle=S.cattle||[];S.cattle.push(a);
   if(source==='bought'&&buyPrice>0){
     const paytype=document.getElementById('a-paytype').value;
