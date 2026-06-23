@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/modern.css">
+  <link rel="stylesheet" href="css/modern.css?v=2">
   <!-- We still load style/app to not break forms inside, but modern.css handles layout -->
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/style.css?v=2">
+  <link rel="stylesheet" href="css/app.css?v=2">
 </head>
 <body>
 <div class="loading-overlay" id="loading">
@@ -573,6 +573,43 @@
 <div class="modal-footer">
   <button class="btn btn-outline" onclick="closeModal('m-health')">إلغاء</button>
   <button class="btn btn-primary" onclick="saveHealthLog()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
+<!-- CROP OP MODAL -->
+<div class="ov" id="m-cropop" onclick="ovClick(event,'m-cropop')">
+<div class="modal"><div class="modal-header"><h3 id="m-cropop-title"><i class="fas fa-tractor"></i> تسجيل عملية زراعية</h3><button class="modal-close" onclick="closeModal('m-cropop')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="co-edit-id">
+  <div class="frow">
+    <div class="fg"><label>المحصول</label><select id="co-crop"></select></div>
+    <div class="fg"><label>التاريخ</label><input type="date" id="co-date"></div>
+  </div>
+  <div class="fg"><label>نوع العملية</label>
+    <select id="co-type">
+      <option value="preparation">تجهيز أرض / حرث</option>
+      <option value="planting">زراعة / بذور</option>
+      <option value="irrigation">ري</option>
+      <option value="fertilizing">تسميد</option>
+      <option value="pesticide">مبيدات / رش</option>
+      <option value="weeding">عزيق / إزالة حشائش</option>
+      <option value="other">أخرى</option>
+    </select>
+  </div>
+  <div class="fg"><label>التفاصيل والمواد المستخدمة</label><input type="text" id="co-desc" placeholder="مثال: يوريا 46%، رش مبيد حشري، تقليب التربة"></div>
+  <div class="frow">
+    <div class="fg"><label>الكمية (اختياري)</label><input type="number" id="co-qty" placeholder="مثال: 5" min="0" step="any"></div>
+    <div class="fg"><label>الوحدة (شيكارة، لتر، ساعة...)</label><input type="text" id="co-unit" placeholder="مثال: شيكارة"></div>
+  </div>
+  <div class="fg"><label>العمال / المعدة (اختياري)</label><input type="text" id="co-worker" placeholder="أسماء العمال أو المعدات المستخدمة"></div>
+  <div class="fg"><label>ملاحظات إضافية</label><textarea id="co-notes" rows="2"></textarea></div>
+  
+  <div class="form-divider" style="margin-top:20px;border-top:1px solid var(--brd);padding-top:16px"><i class="fas fa-money-bill-wave"></i> تكاليف ومصروفات العملية (تُسجل تلقائياً كأعباء على المحصول)</div>
+  <div id="op-expenses-wrap"></div>
+  <button class="btn btn-sm btn-outline" style="width:100%" onclick="addOpExpenseRow()"><i class="fas fa-plus"></i> إضافة بند مصروف لهذه العملية</button>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-cropop')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveCropOp()"><i class="fas fa-check"></i> حفظ العملية</button>
 </div></div></div>
 
 <!-- CROP MODAL -->
@@ -1162,24 +1199,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="js/firebase.js"></script>
-<script src="js/core.js"></script>
-<script src="js/partners.js"></script>
-<script src="js/lands.js"></script>
-<script src="js/seasons.js"></script>
-<script src="js/cattle.js"></script>
-<script src="js/milk.js"></script>
-<script src="js/repro.js"></script>
-<script src="js/calves.js"></script>
-<script src="js/health.js"></script>
-<script src="js/lands.js"></script>
-<script src="js/seasons.js"></script>
-<script src="js/crops.js"></script>
-<script src="js/expenses.js"></script>
-<script src="js/harvest.js"></script>
-<script src="js/inventory.js"></script>
-<script src="js/accounting.js"></script>
-<script src="js/finance.js"></script>
-<script src="js/app.js"></script>
+<script src="js/firebase.js?v=2"></script>
+<script src="js/core.js?v=2"></script>
+<script src="js/partners.js?v=2"></script>
+<script src="js/lands.js?v=2"></script>
+<script src="js/seasons.js?v=2"></script>
+<script src="js/cattle.js?v=2"></script>
+<script src="js/milk.js?v=2"></script>
+<script src="js/repro.js?v=2"></script>
+<script src="js/calves.js?v=2"></script>
+<script src="js/health.js?v=2"></script>
+<script src="js/crops.js?v=2"></script>
+<script src="js/expenses.js?v=2"></script>
+<script src="js/harvest.js?v=2"></script>
+<script src="js/inventory.js?v=2"></script>
+<script src="js/accounting.js?v=2"></script>
+<script src="js/finance.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
 </body>
 </html>
