@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hassad-v9';
+const CACHE_NAME = 'hassad-v10';
 const ASSETS = [
   './',
   './index.html',
