@@ -102,6 +102,7 @@ function renderPage(name){
     partners:  renderPartnersPage,
     debts:     renderDebtsPage,
     reports:   renderReportsPage,
+    profile:   renderProfilePage,
   };
   if(!pages[name]){ wrap.innerHTML='<p>قريباً...</p>'; return; }
   try{
@@ -252,4 +253,55 @@ window.addEventListener('DOMContentLoaded', async ()=>{
 function wireGlobalEvents(){
   // Nothing to wire globally — all events are inline onclick.
   // This hook is kept for future extensibility.
+}
+
+// ═══════════════════════════════════════════════════════
+//  PROFILE PAGE
+// ═══════════════════════════════════════════════════════
+function renderProfilePage(wrap){
+  document.getElementById('topbar-actions').innerHTML='';
+  const email = (typeof fbUser !== 'undefined' && fbUser) ? fbUser.email : 'غير متاح';
+  const name = (typeof fbUser !== 'undefined' && fbUser && fbUser.displayName) ? fbUser.displayName : S.farmName || 'مالك المزرعة';
+  
+  wrap.innerHTML=
+    '<div class="card" style="max-width:600px;margin:0 auto">'+
+      '<div class="card-header"><div class="card-title"><i class="fas fa-user-circle"></i> الملف الشخصي وإعدادات المزرعة</div></div>'+
+      '<div class="card-body">'+
+        '<div style="display:flex;align-items:center;gap:20px;margin-bottom:24px">'+
+          '<div style="width:80px;height:80px;border-radius:40px;background:var(--pr);color:white;display:flex;align-items:center;justify-content:center;font-size:32px"><i class="fas fa-user"></i></div>'+
+          '<div>'+
+            '<div style="font-size:24px;font-weight:900;color:var(--txt)">'+esc(name)+'</div>'+
+            '<div style="font-size:14px;color:var(--txt3)">'+esc(email)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="form-divider">بيانات المزرعة الرئيسية</div>'+
+        '<div class="fg">'+
+          '<label>اسم المزرعة</label>'+
+          '<input type="text" id="prof-farmname" value="'+esc(S.farmName||'')+'" placeholder="مثال: مزرعة الخير">'+
+        '</div>'+
+        '<div class="fg">'+
+          '<label>رقم هاتف للتواصل (اختياري)</label>'+
+          '<input type="tel" id="prof-phone" value="'+esc(S.farmPhone||'')+'" placeholder="أدخل رقم الجوال">'+
+        '</div>'+
+        '<div class="fg">'+
+          '<label>عنوان المزرعة (اختياري)</label>'+
+          '<textarea id="prof-address" rows="2" placeholder="الموقع أو العنوان">'+esc(S.farmAddress||'')+'</textarea>'+
+        '</div>'+
+        '<button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveProfile()"><i class="fas fa-save"></i> حفظ التعديلات</button>'+
+      '</div>'+
+    '</div>';
+}
+
+function saveProfile(){
+  S.farmName = document.getElementById('prof-farmname').value.trim();
+  S.farmPhone = document.getElementById('prof-phone').value.trim();
+  S.farmAddress = document.getElementById('prof-address').value.trim();
+  
+  // Update sidebar or headers if needed
+  const sidebarName = document.querySelector('.logo-name');
+  if(sidebarName && S.farmName) sidebarName.textContent = S.farmName;
+  
+  schedSave();
+  toast('تم حفظ الملف الشخصي بنجاح');
+  renderPage('profile');
 }

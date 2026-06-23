@@ -215,6 +215,14 @@ html, body { height: 100dvh; background: var(--bg-app); color: var(--txt); overf
 .auth-overlay { position: fixed; inset: 0; background: var(--bg-glass-heavy); backdrop-filter: var(--blur); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .auth-box { width: 100%; max-width: 400px; padding: 32px 24px; border-radius: 32px; background: rgba(255,255,255,0.6); box-shadow: var(--shadow-float); border: 1px solid rgba(255,255,255,0.4); }
 
+/* Splash Screen (Loading Overlay Override) */
+.loading-overlay { background: var(--bg-app); backdrop-filter: var(--blur); }
+.lo-icon { width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(135deg, var(--pr2), var(--pr)); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 32px rgba(16,185,129,0.3); margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+.lo-text { font-size: 28px; font-weight: 900; color: var(--txt); font-family: 'Cairo', sans-serif; letter-spacing: -0.5px; }
+.lo-sub { font-size: 14px; color: var(--txt3); margin-top: 4px; font-weight: 600; margin-bottom: 24px; }
+.lo-spin { width: 30px; height: 30px; border: 3px solid var(--brd); border-top-color: var(--pr); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
 /* Utility */
 .link-btn { background: none; border: none; color: var(--pr); font-weight: 700; cursor: pointer; text-decoration: underline; font-family: 'Tajawal', sans-serif; }
 .hide { opacity: 0; pointer-events: none; }
