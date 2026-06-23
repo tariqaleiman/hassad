@@ -518,3 +518,54 @@ function populateAnimalSels(){
   ['in-cow','br-cow','pc-cow','hp-cow'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML=femOpts;});
   const mo=document.getElementById('a-mother');if(mo)mo.innerHTML='<option value="">اختر الأم (إن وُجدت)</option>'+femOpts;
 }
+
+// ═══════════════════════════════════════════════════════
+//  RATION CALCULATOR (حاسبة الأعلاف)
+// ═══════════════════════════════════════════════════════
+function renderRationPage(wrap){
+  wrap.innerHTML=
+    '<div class="card" style="max-width:800px;margin:0 auto">'+
+      '<div class="card-header"><div class="card-title"><i class="fas fa-scale-balanced"></i> حاسبة الأعلاف المبسطة للقطيع</div></div>'+
+      '<div class="card-body">'+
+        '<p style="color:var(--txt4);font-size:14px;margin-bottom:20px">تساعدك الحاسبة في تقدير كمية العلف المركز (بالكيلو جرام) المطلوب تقديمها للبقرة بناءً على إنتاجها من الحليب ووزنها التقريبي.</p>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'+
+          '<div class="fg">'+
+            '<label>متوسط وزن البقرة الحلوب (كجم)</label>'+
+            '<input type="number" id="rat-weight" placeholder="مثال: 550" value="550">'+
+          '</div>'+
+          '<div class="fg">'+
+            '<label>الإنتاج اليومي من الحليب للرأس (كجم)</label>'+
+            '<input type="number" id="rat-milk" placeholder="مثال: 20">'+
+          '</div>'+
+        '</div>'+
+        '<button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="calculateRation()">احسب الاحتياج التقريبي</button>'+
+        '<div id="rat-result" style="margin-top:20px;display:none" class="alert alert-info"></div>'+
+      '</div>'+
+    '</div>';
+}
+
+function calculateRation(){
+  const w = Number(document.getElementById('rat-weight').value||0);
+  const m = Number(document.getElementById('rat-milk').value||0);
+  const res = document.getElementById('rat-result');
+  
+  if(!w || !m){ toast('يرجى إدخال الوزن والإنتاج'); return; }
+  
+  // Simplified maintenance requirement: 1% of body weight for dry matter from concentrate
+  // For milk production: approx 0.4 kg of concentrate per 1 kg of milk
+  const maintenance = w * 0.01;
+  const production = m * 0.4;
+  const totalCon = maintenance + production;
+  const roughage = w * 0.02; // Roughly 2% body weight for roughage dry matter
+  
+  res.style.display = 'block';
+  res.innerHTML =
+    '<div style="font-size:16px;font-weight:bold;margin-bottom:10px;text-align:center">الاحتياجات اليومية التقديرية (للرأس الواحدة)</div>'+
+    '<ul style="padding-right:20px;line-height:2">'+
+      '<li>العلف المركز (حبوب/مكعبات): <strong>'+totalCon.toFixed(1)+' كجم</strong> '+
+      '<span style="color:var(--txt4);font-size:12px">(منها '+maintenance.toFixed(1)+' لحفظ الحياة + '+production.toFixed(1)+' لإنتاج اللبن)</span></li>'+
+      '<li>العلف الماليء (دريس/سيلاج) المادة الجافة: حوالي <strong>'+roughage.toFixed(1)+' كجم</strong></li>'+
+      '<li>المياه النظيفة: <strong>حوالي '+(m*3 + 40).toFixed(0)+' لتر</strong></li>'+
+    '</ul>'+
+    '<div style="font-size:12px;color:var(--txt4);margin-top:10px">* ملاحظة: هذه تقديرات استرشادية عامة وتختلف حسب جودة العلف ونسبة البروتين وظروف الطقس وصحة الحيوان.</div>';
+}

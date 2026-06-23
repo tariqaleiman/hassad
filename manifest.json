@@ -1,0 +1,19 @@
+{
+  "name": "حصاد - إدارة المزرعة",
+  "short_name": "حصاد",
+  "description": "نظام ذكي متكامل لإدارة المزارع والثروة الحيوانية",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#007aff",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

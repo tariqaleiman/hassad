@@ -28,9 +28,47 @@ function costBreakdown(){
 }
 function computeFinanceTotals(){
   const r=revenueBreakdown(), c=costBreakdown();
+  let manualIn=0, manualOut=0;
+  (S.fin||[]).forEach(tx=>{
+    if(tx.type==='in') manualIn+=Number(tx.amount||0);
+    else manualOut+=Number(tx.amount||0);
+  });
+  if(manualIn) r.manualJournal=manualIn;
+  if(manualOut) c.manualJournal=manualOut;
   const totalRev=Object.values(r).reduce((s,v)=>s+v,0);
   const totalCost=Object.values(c).reduce((s,v)=>s+v,0);
   return {totalRev,totalCost,netProfit:totalRev-totalCost,r,c};
+}
+
+function getAllTransactions() {
+  const txs = [];
+  const add = (date, type, amount, cat, note) => {
+    if(!date || !amount) return;
+    txs.push({date: String(date).substring(0,10), type, amount: Number(amount), cat, note});
+  };
+  
+  // Operational Revenue
+  (S.fridays||[]).forEach(f=> add(f.date, 'in', f.received, 'حليب', 'مبيعات حليب'));
+  (S.cattle||[]).filter(c=>c.lifecycle==='sold').forEach(c=> add(c.date, 'in', c.sellPrice, 'ماشية', 'بيع حيوان'));
+  (S.harvests||[]).forEach(h=> add(h.date, 'in', h.soldRevenue, 'محاصيل', 'بيع محصول'));
+  (S.cuttings||[]).filter(c=>c.destination==='sold').forEach(c=> add(c.date, 'in', c.soldTotal, 'أعلاف', 'بيع حشة'));
+  (S.byproducts||[]).filter(b=>b.destination==='sold').forEach(b=> add(b.date, 'in', b.soldTotal, 'مخلفات', 'بيع مخلفات'));
+  
+  // Operational Cost
+  (S.cattle||[]).forEach(c=> add(c.date, 'out', c.buyPrice, 'ماشية', 'شراء حيوان'));
+  (S.feeds||[]).forEach(f=> add(f.date, 'out', f.cost, 'أعلاف', 'تغذية'));
+  (S.healthLogs||[]).filter(h=>h.hasCost).forEach(h=> add(h.date, 'out', h.cost, 'بيطرة', 'علاج/تحصين'));
+  (S.insems||[]).forEach(i=> add(i.date, 'out', i.cost, 'تناسليات', 'تلقيح'));
+  (S.heatPrograms||[]).forEach(p=> add(p.date, 'out', p.cost, 'تناسليات', 'برنامج شياع'));
+  (S.births||[]).forEach(b=> add(b.date, 'out', b.cost, 'ولادات', 'ولادة'));
+  (S.calfLogs||[]).forEach(l=> add(l.date, 'out', l.cost, 'رضاعة', 'تغذية عجل'));
+  (S.ops||[]).filter(o=>o.hasCost).forEach(o=> add(o.date, 'out', o.cost, 'عمليات زراعية', o.type));
+  (S.maintenanceLogs||[]).forEach(m=> add(m.date, 'out', m.cost, 'صيانة', m.item));
+  
+  // Manual Journals
+  (S.fin||[]).forEach(m=> add(m.date, m.type, m.amount, m.cat, m.note));
+  
+  return txs;
 }
 
 // ---------- Milk revenue allocation per cow ----------
@@ -407,7 +445,9 @@ function setReportsTab(t,btn){
   renderPage('reports');
 }
 function renderReportsPage(wrap){
-  document.getElementById('topbar-actions').innerHTML='';
+  document.getElementById('topbar-actions').innerHTML=
+    '<button class="btn btn-outline" onclick="openModal(\'m-depreciation\')"><i class="fas fa-tractor"></i> حساب إهلاك</button>'+
+    '<button class="btn btn-primary" onclick="openManualJournal()"><i class="fas fa-plus"></i> إضافة قيد يدوي</button>';
   wrap.innerHTML=
     '<div class="seg" id="reports-tabs" style="max-width:680px;margin-bottom:16px;flex-wrap:wrap">'+
       '<button class="'+(reportsTab==='summary'?'on':'')+'" onclick="setReportsTab(\'summary\',this)">ملخص مالي</button>'+
@@ -555,9 +595,10 @@ function renderLedgerTab(){
     codesWithActivity.map(a=>{
       const rows=ledger[a.code];
       const finalBal=rows[rows.length-1].balance;
+      const tid='tbl-ledger-'+a.code;
       return '<div class="card" style="margin-bottom:14px"><div class="card-header"><div class="card-title">'+a.code+' — '+esc(a.name)+'</div>'+
-        '<span class="tag '+(finalBal>=0?'tag-green':'tag-red')+'">الرصيد: '+fMoney(Math.abs(finalBal))+(finalBal<0?' (دائن)':'')+'</span></div>'+
-        '<div class="card-body p0"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>'+
+        '<div style="display:flex;gap:10px;align-items:center"><button class="btn btn-sm btn-outline" onclick="exportTableToExcel(\''+tid+'\', \'Ledger_'+a.code+'\')"><i class="fas fa-file-excel"></i> تصدير</button><span class="tag '+(finalBal>=0?'tag-green':'tag-red')+'">الرصيد: '+fMoney(Math.abs(finalBal))+(finalBal<0?' (دائن)':'')+'</span></div></div>'+
+        '<div class="card-body p0"><div class="tbl-wrap"><table class="tbl" id="'+tid+'"><thead><tr><th>التاريخ</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody>'+
         rows.map(r=>'<tr><td>'+r.date+'</td><td>'+esc(r.desc)+'</td>'+
           '<td class="amt-green">'+(r.debit?fMoney(r.debit):'—')+'</td><td class="amt-red">'+(r.credit?fMoney(r.credit):'—')+'</td>'+
           '<td class="amt">'+fMoney(r.balance)+'</td></tr>').join('')+
@@ -623,4 +664,62 @@ function renderBalanceSheetTab(){
         '</table>'+
       '</div></div>'+
     '</div>';
+}
+
+// ---------- Manual Journal Entries ----------
+function openManualJournal(){
+  document.getElementById('mj-date').value = TODAY;
+  ['mj-amount','mj-note'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  openModal('m-manual-journal');
+}
+
+function saveManualJournal(){
+  const date = document.getElementById('mj-date').value;
+  const type = document.getElementById('mj-type').value;
+  const cat = document.getElementById('mj-cat').value;
+  const amount = Number(document.getElementById('mj-amount').value);
+  const note = document.getElementById('mj-note').value;
+  
+  if(!date || !amount) { toast('يرجى تعبئة التاريخ والمبلغ'); return; }
+  
+  if(!S.fin) S.fin = [];
+  S.fin.push({
+    id: Date.now(),
+    date, type, cat, amount, note
+  });
+  
+  schedSave();
+  closeModal('m-manual-journal');
+  if(currentPage === 'dashboard') renderPage('dashboard');
+  if(currentPage === 'reports') renderPage('reports');
+  toast('تم حفظ القيد المحاسبي بنجاح');
+}
+
+// ---------- Asset Depreciation ----------
+function calculateDepreciation(){
+  const name = document.getElementById('dp-name').value.trim();
+  const val = Number(document.getElementById('dp-value').value);
+  const years = Number(document.getElementById('dp-years').value);
+  
+  if(!name || !val || !years || years <= 0) {
+    toast('يرجى تعبئة جميع الحقول بشكل صحيح'); return;
+  }
+  
+  const annualDep = Math.round(val / years);
+  
+  if(!S.fin) S.fin = [];
+  S.fin.push({
+    id: Date.now(),
+    date: TODAY,
+    type: 'out',
+    cat: 'تسوية إهلاك',
+    amount: annualDep,
+    note: 'إهلاك الأصل: ' + name
+  });
+  
+  schedSave();
+  closeModal('m-depreciation');
+  if(currentPage === 'dashboard') renderPage('dashboard');
+  if(currentPage === 'reports') renderPage('reports');
+  toast('تم حساب وتسجيل الإهلاك بنجاح');
 }

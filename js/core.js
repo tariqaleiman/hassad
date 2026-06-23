@@ -520,3 +520,18 @@ function cascadeDeleteCattle(cowId){
   (S.cattle||[]).forEach(c=>{ if(c.motherId===cowId) c.motherId=null; });
   S.cattle=(S.cattle||[]).filter(c=>c.id!==cowId);
 }
+
+// ═══════════════════════════════════════════════════════
+//  EXPORT TO EXCEL (SheetJS)
+// ═══════════════════════════════════════════════════════
+function exportTableToExcel(tableId, filename) {
+  if(typeof XLSX === 'undefined') {
+    toast('يرجى الانتظار حتى يتم تحميل مكتبة التصدير أو تحقق من اتصال الإنترنت');
+    return;
+  }
+  const table = document.getElementById(tableId);
+  if(!table) { toast('لم يتم العثور على الجدول'); return; }
+  
+  const wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
+  XLSX.writeFile(wb, filename + ".xlsx");
+}

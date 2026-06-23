@@ -97,6 +97,7 @@ function renderPage(name){
     repro:     renderReproPage,
     calves:    renderCalvesPage,
     health:    renderHealthPage,
+    ration:    renderRationPage,
     inventory: renderInventoryPage,
     partners:  renderPartnersPage,
     debts:     renderDebtsPage,
@@ -105,6 +106,9 @@ function renderPage(name){
   if(!pages[name]){ wrap.innerHTML='<p>قريباً...</p>'; return; }
   try{
     pages[name](wrap);
+    if(name === 'dashboard' && typeof initDashboardCharts === 'function') {
+      setTimeout(initDashboardCharts, 50); // slight delay to ensure canvas is painted
+    }
   }catch(err){
     console.error('renderPage error on "'+name+'":',err);
     wrap.innerHTML='<div class="alert alert-danger" style="margin:20px"><i class="fas fa-triangle-exclamation"></i><span>حدث خطأ غير متوقع أثناء عرض هذه الصفحة. تم تسجيل التفصيل في console المتصفح (F12). لن تتأثر بياناتك المحفوظة. حاول إعادة تحميل الصفحة، وإذا تكررت المشكلة أبلغ بتفاصيل آخر إجراء قمت به.<br><small style="opacity:.7">'+esc(err.message||String(err))+'</small></span></div>';
@@ -201,6 +205,11 @@ function renderDashboard(wrap){
           '<div class="sc-sub">من إيرادات '+fMoney(cs.revenue)+' وتكاليف '+fMoney(cs.cost)+'</div></div>';
       }).join('')+
     '</div></div></div>'+
+    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">'+
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-column"></i> الإيرادات والمصروفات (آخر 6 أشهر)</div></div><div class="card-body" style="height:300px;position:relative"><canvas id="chart-finance"></canvas></div></div>'+
+      '<div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-chart-pie"></i> توزيع المصروفات</div></div><div class="card-body" style="height:300px;position:relative"><canvas id="chart-expenses"></canvas></div></div>'+
+    '</div>'+
+    '<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title"><i class="fas fa-chart-line"></i> إنتاج الحليب (آخر 14 يوم)</div></div><div class="card-body" style="height:250px;position:relative"><canvas id="chart-milk"></canvas></div></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'+
       '<div class="card"><div class="card-header"><div class="card-title">آخر سجلات الحليب</div><button class="btn btn-sm btn-outline" onclick="goPage(\'milk\',null)">عرض الكل</button></div>'+
       '<div class="card-body p0">'+recentMilkTable()+'</div></div>'+
