@@ -22,7 +22,7 @@ function renderPartnersPage(wrap){
         '<td>'+ownerPillsHTML(c.owners)+'</td>'+
         '<td>'+ownerPillsHTML(c.saleShares)+'</td>'+
         '<td>'+ownerPillsHTML(c.birthShares)+'</td>'+
-        '<td><button class="btn btn-sm btn-outline" onclick="openAddAnimalModal('+c.id+')"><i class="fas fa-pen"></i> تعديل</button></td></tr>';
+        '<td><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="openAddAnimalModal('+c.id+')"><i class="fas fa-pen"></i> تعديل</button><button class="btn-icon danger" onclick="deleteAnimal('+c.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
     }).join(''):'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--txt4)">لا توجد رؤوس مسجلة</td></tr>')+
     '</tbody></table></div></div></div>';
 }

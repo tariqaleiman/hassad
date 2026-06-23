@@ -99,11 +99,11 @@ function renderDashboard(wrap){
 
   // Alerts
   let alerts='';
-  (S.cattle||[]).filter(c=>c.status==='pregnant'&&c.dueDate).forEach(c=>{
+  (S.cattle||[]).filter(c=>c.pregnant&&c.dueDate).forEach(c=>{
     const left=dBetween(TODAY,c.dueDate);
-    if(left<=10&&left>=0) alerts+='<div class="alert alert-warn"><i class="fas fa-exclamation-triangle"></i><span>'+esc(c.name)+': موعد الولادة بعد '+left+' يوم ('+c.dueDate+')</span></div>';
+    if(left<=30&&left>=0) alerts+='<div class="alert alert-warn"><i class="fas fa-exclamation-triangle"></i><span>'+esc(c.name)+': موعد الولادة بعد '+left+' يوم ('+c.dueDate+')</span></div>';
     if(left<0) alerts+='<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i><span>'+esc(c.name)+': تأخرت الولادة! كان موعدها '+c.dueDate+'</span></div>';
-    if(left<=60&&left>10&&c.status!=='dry') alerts+='<div class="alert alert-info"><i class="fas fa-pause-circle"></i><span>'+esc(c.name)+': يُفضّل بدء فترة الجفاف قريباً (متبقي '+left+' يوم على الولادة المتوقعة)</span></div>';
+    if(left<=60&&left>30&&c.status!=='dry') alerts+='<div class="alert alert-info"><i class="fas fa-pause-circle"></i><span>'+esc(c.name)+': يُفضّل بدء فترة الجفاف قريباً (متبقي '+left+' يوم على الولادة المتوقعة)</span></div>';
   });
   (S.healthLogs||[]).filter(h=>h.nextDate&&dBetween(TODAY,h.nextDate)>=0&&dBetween(TODAY,h.nextDate)<=3).forEach(h=>{
     const a=(S.cattle||[]).find(c=>c.id===h.cowId);
@@ -152,7 +152,7 @@ function recentMilkTable(){
   '</tbody></table>';
 }
 function upcomingBirths(){
-  const preg=(S.cattle||[]).filter(c=>c.status==='pregnant'&&c.dueDate).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  const preg=(S.cattle||[]).filter(c=>c.pregnant&&c.dueDate).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
   if(!preg.length) return '<div style="text-align:center;color:var(--txt4);font-size:13px">لا توجد أبقار حوامل</div>';
   return preg.map(c=>{
     const left=dBetween(TODAY,c.dueDate);

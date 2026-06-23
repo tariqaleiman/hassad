@@ -22,8 +22,9 @@ function renderReproPage(wrap){
     (pregnant.length?'<div class="card" style="margin-bottom:16px"><div class="card-header"><div class="card-title">الأبقار الحوامل</div></div><div class="card-body p0">'+
       '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>البقرة</th><th>شهر الحمل</th><th>موعد الولادة المتوقع</th><th>الأيام المتبقية</th><th>الحالة الإنتاجية</th><th></th></tr></thead><tbody>'+
       pregnant.map(c=>{
-        const left=c.dueDate?dBetween(TODAY,c.dueDate):null;
-        return '<tr><td style="font-weight:700">'+esc(c.name)+'</td><td>'+(c.pregMonths||'—')+'</td><td>'+(c.dueDate||'—')+'</td>'+
+          const left=c.dueDate?dBetween(TODAY,c.dueDate):null;
+          const dynMonths=c.dueDate?Math.max(1,Math.round(9 - left/30.4)):c.pregMonths;
+          return '<tr><td style="font-weight:700">'+esc(c.name)+'</td><td>'+(dynMonths||'—')+'</td><td>'+(c.dueDate||'—')+'</td>'+
           '<td><span class="tag '+(left!==null&&left<=7?'tag-red':left!==null&&left<=DRY_PERIOD_DAYS?'tag-gold':'tag-green')+'">'+(left!==null?(left>=0?left+' يوم':'تأخر'):'—')+'</span></td>'+
           '<td>'+(c.milkStatus==='lactating'?'<span class="tag tag-green">حلوب</span>':'<span class="tag tag-gray">جافة</span>')+'</td>'+
           '<td><button class="btn btn-sm btn-outline" onclick="openBirthForCow('+c.id+')"><i class="fas fa-baby"></i> تسجيل ولادة</button></td></tr>';

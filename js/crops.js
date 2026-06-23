@@ -406,6 +406,17 @@ function calcOpExpTotal(){
   if(el) el.textContent=total>0?'إجمالي التكاليف المضافة: '+fMoney(total):'';
 }
 
+function updateOpUnits(){
+  const type=document.getElementById('co-type').value;
+  let units='<option value="">-- اختر الوحدة --</option>';
+  if(type==='plow'||type==='plant') units+='<option value="ساعة">ساعة</option><option value="يومية">يومية</option><option value="مقطوعية">مقطوعية</option>';
+  else if(type==='irrigate') units+='<option value="ساعة">ساعة</option><option value="مرة">مرة</option>';
+  else if(type==='spray'||type==='fertilize') units+='<option value="رشة">رشة</option><option value="يومية">يومية</option><option value="مقطوعية">مقطوعية</option>';
+  else units+='<option value="ساعة">ساعة</option><option value="يومية">يومية</option><option value="مرة">مرة</option><option value="مقطوعية">مقطوعية</option>';
+  const sel=document.getElementById('co-unit');
+  if(sel) sel.innerHTML=units;
+}
+
 function openCropOpModal(editId){
   populateCropSel('co-crop',false);
   document.getElementById('co-edit-id').value=editId||'';

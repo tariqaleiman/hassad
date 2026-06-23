@@ -22,7 +22,8 @@ function cowBadges(c){
     out+= c.milkStatus==='lactating' ? '<span class="tag tag-green">حلوب</span>' : '<span class="tag tag-gray">جافة</span>';
     if(c.pregnant){
       const left=c.dueDate?dBetween(TODAY,c.dueDate):null;
-      out+=' <span class="tag tag-gold">حامل'+(c.pregMonths?' — شهر '+c.pregMonths:'')+(left!=null?' ('+(left>=0?left+'ي':'تأخر')+')':'')+'</span>';
+      const dynMonths=c.dueDate?Math.max(1,Math.round(9 - left/30.4)):c.pregMonths;
+      out+=' <span class="tag tag-gold">حامل'+(dynMonths?' — شهر '+dynMonths:'')+(left!=null?' ('+(left>=0?left+'ي':'تأخر')+')':'')+'</span>';
     }
   }
   return out;
