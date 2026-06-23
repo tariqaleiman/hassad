@@ -102,7 +102,9 @@ function renderCropsTab(crops,growing,totalArea,opsCost){
       const stage=currentStage(c);
       const season=(S.seasons||[]).find(s=>s.id===c.seasonId);
       const land=(S.lands||[]).find(l=>l.id===c.landId);
-      return '<tr><td style="font-weight:700">'+esc(c.name)+'</td><td><span class="tag tag-blue">'+esc(c.type)+'</span></td>'+
+      const fullName = c.subtype ? esc(c.name) + ' <span style="font-weight:400;color:var(--txt3)">(' + esc(c.subtype) + ')</span>' : esc(c.name);
+      const tracking = getCropTrackingHTML(c.id);
+      return '<tr><td style="font-weight:700">'+fullName+'<div style="margin-top:4px">'+tracking+'</div></td><td><span class="tag tag-blue">'+esc(c.type)+'</span></td>'+
         '<td>'+(season?esc(season.name):'<span style="color:var(--txt4)">—</span>')+'</td>'+
         '<td>'+(land?esc(land.name):'<span style="color:var(--txt4)">—</span>')+'</td>'+
         '<td>'+fN(c.area)+' '+esc(c.areaUnit||'قيراط')+(c.isForage?' <span class="tag tag-gold" style="margin-right:3px">علف</span>':'')+'</td>'+
@@ -112,6 +114,24 @@ function renderCropsTab(crops,growing,totalArea,opsCost){
         '<td><div style="display:flex;gap:4px"><button class="btn btn-sm btn-outline" onclick="openCropStagesModal('+c.id+')"><i class="fas fa-route"></i></button><button class="btn-icon" onclick="openCropModal('+c.id+')"><i class="fas fa-pen" style="font-size:11px"></i></button><button class="btn-icon danger" onclick="deleteCrop('+c.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></div></td></tr>';
     }).join(''):'<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد محاصيل مسجلة في هذا العرض</td></tr>')+
     '</tbody></table></div></div></div>';
+}
+function getCropTrackingHTML(cropId){
+  const ops = (S.ops||[]).filter(o=>o.cropId===cropId).sort((a,b)=>a.date.localeCompare(b.date));
+  const irrigations = ops.filter(o=>o.type==='irrigate');
+  const fertilizations = ops.filter(o=>o.type==='fertilize');
+  
+  let html = '';
+  if(irrigations.length){
+    const last = irrigations[irrigations.length-1];
+    const days = Math.floor((new Date(TODAY) - new Date(last.date))/(1000*60*60*24));
+    html += '<span class="tag tag-blue" style="font-size:10px;padding:2px 6px" title="تاريخ آخر رية: '+last.date+'"><i class="fas fa-droplet"></i> رية '+irrigations.length+' (منذ '+days+' يوم)</span> ';
+  }
+  if(fertilizations.length){
+    const last = fertilizations[fertilizations.length-1];
+    const days = Math.floor((new Date(TODAY) - new Date(last.date))/(1000*60*60*24));
+    html += '<span class="tag tag-orange" style="font-size:10px;padding:2px 6px" title="تاريخ آخر تسميد: '+last.date+'"><i class="fas fa-seedling"></i> تسميد '+fertilizations.length+' (منذ '+days+' يوم)</span>';
+  }
+  return html;
 }
 function renderCuttingsTab(){
   const cuttings=[...(S.cuttings||[])].sort((a,b)=>b.date.localeCompare(a.date));
@@ -152,6 +172,7 @@ function openCropModal(editId){
   document.getElementById('cr-edit-id').value=editId||'';
   document.getElementById('m-crop-title').textContent=c?'تعديل محصول: '+c.name:'إضافة محصول';
   document.getElementById('cr-name').value=c?c.name:'';
+  document.getElementById('cr-subtype').value=c?(c.subtype||''):'';
   populateCropTypeDatalist();
   document.getElementById('cr-type').value=c?c.type:(S.cropTypes&&S.cropTypes[0])||'';
   populateSeasonSel('cr-season');
@@ -175,12 +196,13 @@ function populateCropTypeDatalist(){
 function saveCrop(){
   const name=document.getElementById('cr-name').value.trim();
   if(!name){toast('⚠ أدخل اسم المحصول');return;}
+  const subtype=document.getElementById('cr-subtype').value.trim();
   const type=document.getElementById('cr-type').value.trim()||'أخرى';
   // if the user typed a brand-new crop type, remember it for next time
   S.cropTypes=S.cropTypes||JSON.parse(JSON.stringify(DEFAULT_CROP_TYPES));
   if(!S.cropTypes.includes(type)) S.cropTypes.push(type);
   const editId=document.getElementById('cr-edit-id').value;
-  const data={name,type,area:parseFloat(document.getElementById('cr-area').value)||0,
+  const data={name,subtype,type,area:parseFloat(document.getElementById('cr-area').value)||0,
     areaUnit:document.getElementById('cr-areaunit').value,pdate:document.getElementById('cr-pdate').value,
     hdate:document.getElementById('cr-hdate').value,loc:document.getElementById('cr-loc').value.trim(),
     status:document.getElementById('cr-status').value,isForage:document.getElementById('cr-isforage').checked,
@@ -311,7 +333,7 @@ const OP_EXPENSE_CATEGORIES=[
 let opExpenseRows=[];
 function addOpExpenseRow(){
   const rowId='oer_'+uid();
-  opExpenseRows.push({rowId,catId:'labor',amount:'',date:'',vendor:'',notes:'',paytype:'cash'});
+  opExpenseRows.push({rowId,source:'direct',catId:'labor',amount:'',date:'',vendor:'',notes:'',paytype:'cash',invItemId:'',invQty:''});
   renderOpExpenseRows();
 }
 function removeOpExpenseRow(rowId){
@@ -321,36 +343,67 @@ function removeOpExpenseRow(rowId){
 function renderOpExpenseRows(){
   const wrap=document.getElementById('co-expense-rows');
   if(!wrap) return;
-  wrap.innerHTML=opExpenseRows.map(r=>'<div class="op-exp-row" id="row_'+r.rowId+'">'+
-    '<div class="frow" style="margin-bottom:0">'+
-      '<div class="fg"><select class="op-exp-cat" data-row="'+r.rowId+'" onchange="updateOpExpRow(\''+r.rowId+'\',\'catId\',this.value)">'+
-        OP_EXPENSE_CATEGORIES.map(c=>'<option value="'+c.id+'"'+(c.id===r.catId?' selected':'')+'>'+c.label+'</option>').join('')+
+  wrap.innerHTML=opExpenseRows.map(r=>{
+    const isInv = r.source==='inventory';
+    return '<div class="op-exp-row" id="row_'+r.rowId+'" style="margin-bottom:10px;padding:8px;background:var(--bg3);border-radius:var(--r2);border:1px solid var(--brd2)">'+
+    '<div class="frow" style="margin-bottom:6px">'+
+      '<div class="fg"><select onchange="updateOpExpRow(\''+r.rowId+'\',\'source\',this.value)">'+
+        '<option value="direct"'+(!isInv?' selected':'')+'>مصروف مالي مباشر</option>'+
+        '<option value="inventory"'+(isInv?' selected':'')+'>استهلاك من المخزون (بنزين، سماد...)</option>'+
       '</select></div>'+
-      '<div class="fg"><input type="number" class="op-exp-amt" placeholder="المبلغ (ج)" min="0" value="'+r.amount+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'amount\',this.value);calcOpExpTotal()"></div>'+
       '<div class="fg"><input type="date" value="'+r.date+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'date\',this.value)"></div>'+
       '<button class="btn-icon danger" onclick="removeOpExpenseRow(\''+r.rowId+'\')"><i class="fas fa-trash" style="font-size:11px"></i></button>'+
     '</div>'+
-    '<div class="frow" style="margin-bottom:6px">'+
-      '<div class="fg"><input type="text" placeholder="المورد / الجهة (اختياري)" value="'+esc(r.vendor)+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'vendor\',this.value)"></div>'+
-      '<div class="fg"><select onchange="updateOpExpRow(\''+r.rowId+'\',\'paytype\',this.value)">'+
-        '<option value="cash"'+(r.paytype==='cash'?' selected':'')+'>نقدي</option>'+
-        '<option value="credit"'+(r.paytype==='credit'?' selected':'')+'>آجل</option>'+
-      '</select></div>'+
-    '</div>'+
-  '</div>').join('');
+    (isInv ? 
+      '<div class="frow" style="margin-bottom:0">'+
+        '<div class="fg"><select onchange="updateOpExpRow(\''+r.rowId+'\',\'invItemId\',this.value);calcOpInvExpAmount(\''+r.rowId+'\')"><option value="">اختر عنصر المخزون...</option>'+
+          (S.inventoryItems||[]).map(i=>'<option value="'+i.id+'"'+(String(r.invItemId)===String(i.id)?' selected':'')+'>'+esc(i.name)+' (المتاح: '+fN(i.qty)+')</option>').join('')+
+        '</select></div>'+
+        '<div class="fg"><input type="number" placeholder="الكمية المستهلكة" min="0" step="0.1" value="'+r.invQty+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'invQty\',this.value);calcOpInvExpAmount(\''+r.rowId+'\')"></div>'+
+        '<div class="fg"><input type="number" placeholder="التكلفة المحسوبة" disabled value="'+r.amount+'"></div>'+
+      '</div>'
+    : 
+      '<div class="frow" style="margin-bottom:6px">'+
+        '<div class="fg"><select class="op-exp-cat" data-row="'+r.rowId+'" onchange="updateOpExpRow(\''+r.rowId+'\',\'catId\',this.value)">'+
+          OP_EXPENSE_CATEGORIES.map(c=>'<option value="'+c.id+'"'+(c.id===r.catId?' selected':'')+'>'+c.label+'</option>').join('')+
+        '</select></div>'+
+        '<div class="fg"><input type="number" class="op-exp-amt" placeholder="المبلغ (ج)" min="0" value="'+r.amount+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'amount\',this.value);calcOpExpTotal()"></div>'+
+        '<div class="fg"><select onchange="updateOpExpRow(\''+r.rowId+'\',\'paytype\',this.value)">'+
+          '<option value="cash"'+(r.paytype==='cash'?' selected':'')+'>نقدي</option>'+
+          '<option value="credit"'+(r.paytype==='credit'?' selected':'')+'>آجل</option>'+
+        '</select></div>'+
+      '</div>'+
+      '<div class="frow" style="margin-bottom:0">'+
+        '<div class="fg" style="flex:2"><input type="text" placeholder="المورد / الجهة (اختياري)" value="'+esc(r.vendor)+'" oninput="updateOpExpRow(\''+r.rowId+'\',\'vendor\',this.value)"></div>'+
+      '</div>'
+    )+
+  '</div>'
+  }).join('');
   if(!opExpenseRows.length){
-    wrap.innerHTML='<div style="text-align:center;font-size:11px;color:var(--txt4);padding:10px;background:var(--bg3);border-radius:var(--r2);border:1px dashed var(--brd2)">اضغط "+ إضافة بند" لتسجيل تكاليف هذه العملية (مواد + بنزين + أجور... كلها في خطوة واحدة)</div>';
+    wrap.innerHTML='<div style="text-align:center;font-size:11px;color:var(--txt4);padding:10px;background:var(--bg3);border-radius:var(--r2);border:1px dashed var(--brd2)">اضغط "+ إضافة بند" لتسجيل تكاليف هذه العملية أو استهلاك مواد من المخزون</div>';
   }
   calcOpExpTotal();
 }
 function updateOpExpRow(rowId,field,val){
   const r=opExpenseRows.find(x=>x.rowId===rowId);
-  if(r) r[field]=val;
+  if(r) { r[field]=val; if(field==='source') renderOpExpenseRows(); }
+}
+function calcOpInvExpAmount(rowId){
+  const r=opExpenseRows.find(x=>x.rowId===rowId);
+  if(!r) return;
+  const it=(S.inventoryItems||[]).find(x=>x.id===Number(r.invItemId));
+  const qty=parseFloat(r.invQty)||0;
+  if(it && qty>0){
+    r.amount = (qty * Number(it.avgCost||0)).toFixed(2);
+  } else {
+    r.amount = '';
+  }
+  renderOpExpenseRows();
 }
 function calcOpExpTotal(){
   const total=opExpenseRows.reduce((s,r)=>s+parseFloat(r.amount||0),0);
   const el=document.getElementById('co-expense-total');
-  if(el) el.textContent=total>0?'إجمالي التكاليف: '+fMoney(total):'';
+  if(el) el.textContent=total>0?'إجمالي التكاليف المضافة: '+fMoney(total):'';
 }
 
 function openCropOpModal(editId){
@@ -404,11 +457,23 @@ function saveCropOp(){
     const amount=parseFloat(r.amount)||0;
     if(amount<=0) return;
     const expDate=r.date||date;
-    const ex={id:uid(),date:expDate,amount,category:expCatFromOpCat(r.catId),accountCode:guessExpenseAccount(expCatFromOpCat(r.catId)),
-      linkType:'cropop',linkId:opId,vendor:r.vendor||'',paytype:r.paytype||'cash',worker:'',notes:r.notes||r.catId,source:'direct',invItemId:null,invQty:null};
+    const isInv = r.source==='inventory';
+    const finalCat = isInv ? 'inputs' : expCatFromOpCat(r.catId);
+    const finalNotes = isInv ? 'استهلاك من المخزون: '+(invItemName(r.invItemId)||'') : (r.notes||r.catId);
+
+    const ex={id:uid(),date:expDate,amount,category:finalCat,accountCode:guessExpenseAccount(finalCat),
+      linkType:'cropop',linkId:opId,vendor:isInv?'':(r.vendor||''),paytype:isInv?'cash':(r.paytype||'cash'),
+      worker:'',notes:finalNotes,source:r.source||'direct',
+      invItemId:isInv?Number(r.invItemId):null,invQty:isInv?parseFloat(r.invQty):null};
+
     S.expenses=S.expenses||[];
     S.expenses.push(ex);
-    if(r.paytype==='credit'){
+
+    if(isInv && ex.invItemId && ex.invQty>0){
+      addInventoryMove(ex.invItemId,expDate,'out',ex.invQty,0,'expense_consume',ex.id,'استهلاك في عملية زراعية ('+opTypeLabel(data.type)+')');
+    }
+
+    if(!isInv && r.paytype==='credit'){
       S.debts=S.debts||[];
       const crop=(S.crops||[]).find(c=>c.id===cropId);
       S.debts.push({id:uid(),vendor:r.vendor||'مورد',reason:opTypeLabel(data.type)+(crop?' — '+crop.name:''),amount,remaining:amount,status:'open',date:expDate,refId:ex.id,refType:'expense',linkType:'crop',linkId:cropId});

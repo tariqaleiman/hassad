@@ -43,10 +43,18 @@ function renderReproPage(wrap){
     '<tbody>'+(insems.length?insems.map(i=>{
       const cow=(S.cattle||[]).find(c=>c.id===i.cowId);
       const chk=checks.find(p=>p.insemId===i.id);
+      let statusHtml = '';
+      if(chk){
+        statusHtml = chk.result==='positive'?'<span class="tag tag-green">✓ حامل</span>':'<span class="tag tag-red">✗ فاشل</span>';
+      } else {
+        const days = Math.floor((new Date(TODAY) - new Date(i.date))/(1000*60*60*24));
+        const checkNeeded = days >= 21;
+        statusHtml = '<span class="tag '+(checkNeeded?'tag-red':'tag-gold')+'">'+(checkNeeded?'مطلوب فحص (مر '+days+' يوم)':'انتظار كشف (مر '+days+' يوم)')+'</span>';
+      }
       return '<tr><td>'+i.date+'</td><td>'+(cow?esc(cow.name):'—')+'</td>'+
         '<td><span class="tag tag-blue">'+i.type+'</span></td>'+
         '<td>'+(i.bull||'—')+'</td><td>'+fMoney(i.cost)+'</td>'+
-        '<td>'+(chk?(chk.result==='positive'?'<span class="tag tag-green">✓ حامل</span>':'<span class="tag tag-red">✗ فاشل</span>'):'<span class="tag tag-gold">انتظار كشف</span>')+'</td>'+
+        '<td>'+statusHtml+'</td>'+
         '<td><button class="btn-icon danger" onclick="deleteInsem('+i.id+')"><i class="fas fa-trash" style="font-size:11px"></i></button></td></tr>';
     }).join(''):'<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--txt4)">لا توجد تلقيحات</td></tr>')+
     '</tbody></table></div></div>';

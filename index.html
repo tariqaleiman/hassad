@@ -545,9 +545,10 @@
 <div class="modal-body">
   <input type="hidden" id="cr-edit-id">
   <div class="frow">
-    <div class="fg"><label>اسم المحصول / الصنف</label><input type="text" id="cr-name" placeholder="مثال: لب سوبر — برسيم الموسم الثاني"></div>
-    <div class="fg"><label>نوع المحصول</label><input type="text" id="cr-type" list="cr-type-list" placeholder="اختر أو اكتب جديداً"><datalist id="cr-type-list"></datalist></div>
+    <div class="fg"><label>اسم المحصول (عام)</label><input type="text" id="cr-name" placeholder="مثال: ذرة، قمح، برسيم"></div>
+    <div class="fg"><label>الصنف / النوع الفرعي</label><input type="text" id="cr-subtype" placeholder="مثال: هجين ثلاثي، لب سوبر"></div>
   </div>
+  <div class="fg"><label>تصنيف المحصول</label><input type="text" id="cr-type" list="cr-type-list" placeholder="اختر أو اكتب جديداً"><datalist id="cr-type-list"></datalist></div>
   <div class="frow">
     <div class="fg"><label>الموسم</label><select id="cr-season"></select></div>
     <div class="fg"><label>الأرض</label><select id="cr-land"></select></div>
@@ -633,6 +634,7 @@
   </div>
   <div class="fg"><label>الوحدة</label>
     <select id="ct-unit">
+      <option value="عقداية">عقداية</option>
       <option value="حمولة">حمولة</option><option value="بالة">بالة</option>
       <option value="طن">طن</option><option value="كيلو">كيلو</option>
     </select>

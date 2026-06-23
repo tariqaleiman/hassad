@@ -29,14 +29,14 @@
 
 /* ── STOCK / INVENTORY CARDS ── */
 .stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
-.stock-card{background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.stock-card{background:var(--bg2);border:1px solid var(--brd2);border-radius:var(--r);padding:16px;box-shadow:var(--sh);position:relative;overflow:hidden;}
 .stock-card::before{content:"";position:absolute;top:0;right:0;width:4px;height:100%;background:var(--pr3);}
 .stock-card.low::before{background:var(--red);}
-.stock-card .st-name{font-size:13px;font-weight:800;color:var(--txt);margin-bottom:6px;}
-.stock-card .st-qty{font-size:20px;font-weight:900;color:var(--txt);}
-.stock-card .st-unit{font-size:11px;color:var(--txt3);font-weight:600;}
+.stock-card .st-name{font-size:14px;font-weight:800;color:var(--txt);margin-bottom:8px;}
+.stock-card .st-qty{font-size:24px;font-weight:900;color:var(--txt);}
+.stock-card .st-unit{font-size:12px;color:var(--txt3);font-weight:600;}
 .stock-card .st-meta{font-size:11px;color:var(--txt4);margin-top:6px;}
-.stock-card .st-low-badge{position:absolute;top:10px;left:10px;}
+.stock-card .st-low-badge{position:absolute;top:12px;left:12px;}
 
 /* ── STATUS TIMELINE EXTRA ── */
 .tli.ev-status::before{background:#E1BEE7;box-shadow:0 0 0 1.5px #8E24AA;}
