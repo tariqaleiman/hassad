@@ -26,6 +26,23 @@ function cowBadges(c){
       const dynMonths=c.dueDate?Math.max(1,Math.round(9 - left/30.4)):c.pregMonths;
       out+=' <span class="tag tag-gold">حامل'+(dynMonths?' — شهر '+dynMonths:'')+(left!=null?' ('+(left>=0?left+'ي':'تأخر')+')':'')+'</span>';
     }
+    else {
+      // Check for last insemination
+      const cowInsems = (S.insems||[]).filter(i => i.cowId === c.id).sort((a,b) => b.date.localeCompare(a.date));
+      if(cowInsems.length > 0) {
+        const lastInsem = cowInsems[0];
+        const hasCheck = (S.pregChecks||[]).find(p => p.insemId === lastInsem.id);
+        if(!hasCheck) {
+          const days = dBetween(lastInsem.date, TODAY);
+          let alertClass = "tag-gray";
+          let label = "تلقيح: منذ " + days + " يوم";
+          if (days >= 19 && days <= 22) { alertClass = "tag-orange"; label = "صرفان محتمل ("+days+" يوم)"; }
+          else if (days >= 39 && days <= 42) { alertClass = "tag-green"; label = "يُرجى الكشف ("+days+" يوم)"; }
+          else if (days > 42) { alertClass = "tag-red"; label = "تأخر الكشف ("+days+" يوم)"; }
+          out+='<span class="tag '+alertClass+'"><i class="fas fa-dna"></i> '+label+'</span>';
+        }
+      }
+    }
   }
   return out;
 }

@@ -105,6 +105,24 @@ function renderDashboard(wrap){
     if(left<0) alerts+='<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i><span>'+esc(c.name)+': تأخرت الولادة! كان موعدها '+c.dueDate+'</span></div>';
     if(left<=60&&left>30&&c.status!=='dry') alerts+='<div class="alert alert-info"><i class="fas fa-pause-circle"></i><span>'+esc(c.name)+': يُفضّل بدء فترة الجفاف قريباً (متبقي '+left+' يوم على الولادة المتوقعة)</span></div>';
   });
+  // Insemination Alerts
+  (S.cattle||[]).filter(c=>!c.pregnant).forEach(c=>{
+    const cowInsems = (S.insems||[]).filter(i => i.cowId === c.id).sort((a,b) => b.date.localeCompare(a.date));
+    if(cowInsems.length > 0) {
+      const lastInsem = cowInsems[0];
+      const hasCheck = (S.pregChecks||[]).find(p => p.insemId === lastInsem.id);
+      if(!hasCheck) {
+        const days = dBetween(lastInsem.date, TODAY);
+        if (days >= 19 && days <= 22) {
+          alerts+='<div class="alert alert-warn"><i class="fas fa-fire"></i><span>'+esc(c.name)+': انتبه، فترة صرفان (شياع) محتملة! (مر '+days+' يوم على التلقيح)</span></div>';
+        } else if (days >= 39 && days <= 42) {
+          alerts+='<div class="alert alert-success" style="background:#ECFDF5;border-color:var(--pr2);color:var(--pr)"><i class="fas fa-stethoscope"></i><span>'+esc(c.name)+': حان موعد كشف الحمل! (مر '+days+' يوم على التلقيح)</span></div>';
+        } else if (days > 42) {
+          alerts+='<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i><span>'+esc(c.name)+': تأخر كشف الحمل! (مر '+days+' يوم على التلقيح)</span></div>';
+        }
+      }
+    }
+  });
   (S.healthLogs||[]).filter(h=>h.nextDate&&dBetween(TODAY,h.nextDate)>=0&&dBetween(TODAY,h.nextDate)<=3).forEach(h=>{
     const a=(S.cattle||[]).find(c=>c.id===h.cowId);
     alerts+='<div class="alert alert-info"><i class="fas fa-syringe"></i><span>موعد '+h.type+(a?' لـ '+esc(a.name):'')+' بعد '+dBetween(TODAY,h.nextDate)+' يوم</span></div>';
