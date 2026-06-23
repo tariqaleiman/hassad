@@ -123,6 +123,7 @@ html, body { height: 100dvh; background: var(--bg-app); color: var(--txt); overf
 
 /* ── RESPONSIVE RULES ── */
 @media (max-width: 768px) {
+  .app-layout { display: flex; flex-direction: column; width: 100vw; }
   .sidebar { display: none; }
   .bottom-nav { display: block; }
   .main-area { padding-bottom: 64px; }

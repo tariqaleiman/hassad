@@ -126,7 +126,7 @@ async function loadDB(){
   }
 
   // 2) Try Firebase as the source of truth
-  const fbOk = initFirebase();
+  const fbOk = await initFirebase();
   if(fbOk){
     try{
       const remote = await fbLoadOnce();
