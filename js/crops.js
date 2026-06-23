@@ -417,6 +417,12 @@ function updateOpUnits(){
   if(sel) sel.innerHTML=units;
 }
 
+function toggleWorkerField(){
+  const t = document.getElementById('co-type').value;
+  const f = document.getElementById('co-worker-fg');
+  if(f) f.style.display = (t==='plow'||t==='plant'||t==='harvest'||t==='labor') ? 'block' : 'none';
+}
+
 function openCropOpModal(editId){
   populateCropSel('co-crop',false);
   document.getElementById('co-edit-id').value=editId||'';

@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=6">
-  <link rel="stylesheet" href="css/app.css?v=6">
+  <link rel="stylesheet" href="css/style.css?v=7">
+  <link rel="stylesheet" href="css/app.css?v=7">
   <!-- Modern.css MUST be last to override legacy styles with Apple Glassmorphism -->
-  <link rel="stylesheet" href="css/modern.css?v=6">
+  <link rel="stylesheet" href="css/modern.css?v=7">
 </head>
 <body>
 <div class="loading-overlay" id="loading">
@@ -1006,6 +1006,38 @@
 <div class="modal-body" id="vd-body"></div>
 <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('m-vendordetail')">إغلاق</button></div>
 </div></div>
+
+<!-- CROP OPERATION MODAL -->
+<div class="ov" id="m-cropop" onclick="ovClick(event,'m-cropop')">
+<div class="modal"><div class="modal-header"><h3 id="m-cropop-title"><i class="fas fa-tractor"></i> تسجيل عملية زراعية</h3><button class="modal-close" onclick="closeModal('m-cropop')"><i class="fas fa-times"></i></button></div>
+<div class="modal-body">
+  <input type="hidden" id="co-edit-id">
+  <div class="fg"><label>المحصول</label><select id="co-crop"></select></div>
+  <div class="frow">
+    <div class="fg"><label>العملية</label><select id="co-type" onchange="updateOpUnits();toggleWorkerField();"></select></div>
+    <div class="fg"><label>التاريخ</label><input type="date" id="co-date"></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>الكمية (اختياري)</label><input type="number" id="co-qty" min="0" step="0.1" placeholder="مثال: 3"></div>
+    <div class="fg"><label>الوحدة</label><select id="co-unit"></select></div>
+  </div>
+  <div class="fg" id="co-worker-fg"><label>العامل / المنفذ (اختياري)</label><input type="text" id="co-worker" placeholder="اسم العامل أو السائق"></div>
+  <div class="fg"><label>وصف / بيان</label><input type="text" id="co-desc" placeholder="شرح موجز للعملية"></div>
+  <div class="fg"><label>ملاحظات إضافية</label><textarea id="co-notes" rows="2"></textarea></div>
+
+  <!-- MULTI EXPENSES -->
+  <div class="form-divider" style="display:flex;justify-content:space-between;align-items:center">
+    <span>تكاليف واستهلاكات هذه العملية</span>
+    <button class="btn btn-sm btn-outline" onclick="addOpExpenseRow()"><i class="fas fa-plus"></i> إضافة بند تكلفة</button>
+  </div>
+  <div id="co-expense-rows"></div>
+  <div id="co-expense-total" style="text-align:left;font-weight:900;color:var(--red);margin-top:8px"></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-outline" onclick="closeModal('m-cropop')">إلغاء</button>
+  <button class="btn btn-primary" onclick="saveCropOp()"><i class="fas fa-check"></i> حفظ</button>
+</div></div></div>
+
 
 <!-- EXPENSE MODAL -->
 <div class="ov" id="m-expense" onclick="ovClick(event,'m-expense')">
