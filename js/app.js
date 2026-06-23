@@ -99,6 +99,7 @@ function renderPage(name){
     health:    renderHealthPage,
     ration:    renderRationPage,
     inventory: renderInventoryPage,
+    finance:   renderFinancePage,
     partners:  renderPartnersPage,
     debts:     renderDebtsPage,
     reports:   renderReportsPage,

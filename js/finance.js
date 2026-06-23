@@ -2,7 +2,12 @@
 //  حصاد — FINANCE MODULE: CALCULATIONS, DEBTS, REPORTS
 // ═══════════════════════════════════════════════════════
 
-// ---------- Core financial calculations ----------
+function renderFinancePage(wrap){
+  const act = document.getElementById('topbar-actions');
+  if(act) act.innerHTML='<button class="btn btn-outline" onclick="goPage(\'debts\',null)"><i class="fas fa-hand-holding-dollar"></i> الديون والموردين</button> <button class="btn btn-outline" onclick="goPage(\'reports\',null)"><i class="fas fa-chart-line"></i> التقارير</button> <button class="btn btn-primary" onclick="openAddModal(\'expense\')"><i class="fas fa-plus"></i> مصروف</button>';
+  wrap.innerHTML = renderExpensesTab();
+}
+
 function revenueBreakdown(){
   return {
     milk:        (S.fridays||[]).reduce((s,f)=>s+Number(f.received||0),0),
