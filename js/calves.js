@@ -51,8 +51,8 @@ function calfCardInner(c){
       '<div class="ac-actions">'+
         '<button class="btn btn-sm btn-outline" onclick="openAnimalDetail('+c.id+')"><i class="fas fa-file-alt"></i> الملف</button>'+
         '<button class="btn btn-sm btn-outline" onclick="openCalfLogModal('+c.id+')"><i class="fas fa-receipt"></i> مصروف</button>'+
-        (c.gender==='calf_f'?'<button class="btn btn-sm btn-outline" onclick="promoteCalf('+c.id+')"><i class="fas fa-arrow-up"></i> ترقية لبقرة</button>':
-          '<button class="btn btn-sm btn-outline" onclick="openStatusModal('+c.id+')"><i class="fas fa-rotate"></i> الحالة</button>')+
+        (c.gender==='calf_f'?'<button class="btn btn-sm btn-outline" onclick="promoteCalf('+c.id+')"><i class="fas fa-arrow-up"></i> ترقية</button>':'')+
+        '<button class="btn btn-sm btn-outline" onclick="openStatusModal('+c.id+')"><i class="fas fa-rotate"></i> الحالة</button>'+
         '<button class="btn btn-sm btn-outline" onclick="openSellForCow('+c.id+')"><i class="fas fa-hand-holding-usd"></i> بيع</button>'+
       '</div>'+
     '</div></div>';

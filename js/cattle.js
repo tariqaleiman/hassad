@@ -6,16 +6,17 @@ const DRY_PERIOD_DAYS=60;
 
 function isActiveFemale(c){return c.gender==='female' && c.lifecycle==='active';}
 function isActiveAdult(c){return (c.gender==='female'||c.gender==='bull') && c.lifecycle==='active';}
-function isCalf(c){return c.lifecycle==='calf'||c.lifecycle==='fattening';}
+function isCalf(c){return c.lifecycle==='calf'||c.lifecycle==='fattening'||c.lifecycle==='breeding';}
 function isOut(c){return c.lifecycle==='sold'||c.lifecycle==='dead';}
 
-const LIFECYCLE_LABELS={active:'نشطة',calf:'عجل/عجلة (رضاعة)',fattening:'تسمين',sold:'مباعة',dead:'نافقة/خارجة'};
+const LIFECYCLE_LABELS={active:'نشطة',calf:'عجل/عجلة (رضاعة)',breeding:'عجلة (نامية/للتربية)',fattening:'تسمين',sold:'مباعة',dead:'نافقة/خارجة'};
 
 function cowBadges(c){
   let out='';
   if(c.lifecycle==='sold') return '<span class="tag tag-gray">مباعة</span>';
   if(c.lifecycle==='dead') return '<span class="tag tag-gray">نافقة</span>';
   if(c.lifecycle==='calf') out+='<span class="tag tag-blue">'+(c.gender==='female'?'عجلة':'عجل')+' — رضاعة</span>';
+  else if(c.lifecycle==='breeding') out+='<span class="tag tag-purple">نامية / للتربية</span>';
   else if(c.lifecycle==='fattening') out+='<span class="tag tag-orange">تسمين</span>';
   else if(c.gender==='bull') out+='<span class="tag tag-blue">ثور</span>';
   else { // active female
@@ -31,6 +32,7 @@ function cowBadges(c){
 function cowStripe(c){
   if(c.lifecycle==='sold'||c.lifecycle==='dead') return 's-sold';
   if(c.lifecycle==='calf') return 's-calf';
+  if(c.lifecycle==='breeding') return 's-lactating'; /* Using a purple/green color maybe, fallback to lactating stripe */
   if(c.lifecycle==='fattening') return 's-fattening';
   if(c.pregnant) return 's-pregnant';
   return c.milkStatus==='lactating' ? 's-lactating':'s-dry';
@@ -339,7 +341,17 @@ function saveStatusChange(){
     finishStatusChange(c,date,note,newMilk,newPreg,newMonths,logs);
   } else {
     const newLc=document.getElementById('st-lifecycle').value;
-    if(newLc!==c.lifecycle) logs.push({date,field:'lifecycle',from:c.lifecycle,to:newLc,note});
+    if(newLc!==c.lifecycle) {
+      logs.push({date,field:'lifecycle',from:c.lifecycle,to:newLc,note});
+      if(newLc==='active' && (c.gender==='calf_f'||c.gender==='calf_m')) {
+        const oldGender = c.gender;
+        c.gender = (oldGender==='calf_f')?'female':'bull';
+        if(c.gender==='female') {
+          c.milkStatus='dry'; c.pregnant=false; c.pregMonths=null; c.dueDate=null;
+        }
+        logs.push({date,field:'gender',from:oldGender,to:c.gender,note:'تم الترقية لبلوغ الحيوان'});
+      }
+    }
     c.lifecycle=newLc;
     c.statusLog=(c.statusLog||[]).concat(logs);
     schedSave();closeModal('m-status');renderPage(currentPage);toast('تم تحديث الحالة');
