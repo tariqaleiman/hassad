@@ -57,12 +57,16 @@ function openAddModal(type) {
 
 function openMenuModal() {
   // Mobile Only - show sidebar links inside a bottom sheet modal
-  const linksHtml = Array.from(document.querySelectorAll('#sidebar .nav-item')).map(el => {
+  const linksHtml = `<div class="ios-list">` + Array.from(document.querySelectorAll('#sidebar .nav-item')).map(el => {
     const isLogout = el.textContent.includes('تسجيل الخروج');
-    return `<button class="btn btn-outline" style="width:100%; justify-content:flex-start; margin-bottom:12px; ${isLogout?'border-color:var(--red);color:var(--red)':''}" onclick="${el.getAttribute('onclick')}">
-      <i class="${el.querySelector('i').className}"></i> <span style="margin-right:12px">${el.textContent.trim()}</span>
+    return `<button class="ios-list-item" style="${isLogout?'color:var(--red)':''}" onclick="${el.getAttribute('onclick')}">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <i class="${el.querySelector('i').className}" style="font-size:18px; width:24px; text-align:center;"></i> 
+        <span style="font-size:16px; font-weight:700;">${el.textContent.trim()}</span>
+      </div>
+      <i class="fas fa-chevron-left" style="color:var(--txt4); font-size:14px;"></i>
     </button>`;
-  }).join('');
+  }).join('') + `</div>`;
   
   const mHtml = `
     <div class="ov" id="m-menu" onclick="if(event.target===this)closeModal('m-menu')">
