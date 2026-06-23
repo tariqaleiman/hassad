@@ -276,3 +276,27 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--brd); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--txt4); }
+
+/* ── ANIMAL CARD ── */
+.animal-card { background: var(--bg2); border-radius: var(--r); border: 1px solid var(--brd); overflow: hidden; box-shadow: var(--sh); transition: transform 0.2s, box-shadow 0.2s; }
+.animal-card:hover { transform: translateY(-4px); box-shadow: var(--sh2); }
+.ac-stripe { height: 6px; }
+.ac-stripe.s-lactating { background: linear-gradient(90deg, var(--pr2), var(--pr3)); }
+.ac-stripe.s-pregnant { background: linear-gradient(90deg, var(--gold), #FBBF24); }
+.ac-stripe.s-dry { background: linear-gradient(90deg, #94A3B8, #CBD5E1); }
+.ac-stripe.s-calf { background: linear-gradient(90deg, var(--blue), #60A5FA); }
+.ac-stripe.s-fattening { background: linear-gradient(90deg, var(--orange), #FB923C); }
+.ac-stripe.s-sold, .ac-stripe.s-dead { background: #E2E8F0; }
+.ac-head { padding: 20px 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ac-info { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.ac-avatar { width: 56px; height: 56px; border-radius: 14px; background: var(--pr5); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--pr2); font-size: 28px; box-shadow: 0 4px 10px rgba(16,185,129,0.15); }
+.ac-name { font-size: 18px; font-weight: 900; color: var(--txt); font-family: "Cairo", sans-serif; }
+.ac-sub { font-size: 13px; color: var(--txt3); margin-top: 4px; font-weight: 600; }
+.ac-body { padding: 0 24px 20px; }
+.ac-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.ac-stat { text-align: center; padding: 12px 8px; background: var(--bg3); border-radius: var(--r2); border: 1px solid var(--brd2); transition: background 0.2s; }
+.ac-stat:hover { background: var(--bg); }
+.ac-stat-val { font-size: 16px; font-weight: 900; color: var(--txt); font-family: "Tajawal", sans-serif; }
+.ac-stat-lbl { font-size: 11px; color: var(--txt4); margin-top: 4px; font-weight: 700; }
+.ac-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; }
+.ac-actions .btn { font-size: 12px; padding: 8px; justify-content: center; }
