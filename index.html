@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css?v=5">
-  <link rel="stylesheet" href="css/app.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
+  <link rel="stylesheet" href="css/app.css?v=6">
   <!-- Modern.css MUST be last to override legacy styles with Apple Glassmorphism -->
-  <link rel="stylesheet" href="css/modern.css?v=5">
+  <link rel="stylesheet" href="css/modern.css?v=6">
 </head>
 <body>
 <div class="loading-overlay" id="loading">
@@ -95,16 +95,16 @@
   </nav>
   <div class="sidebar-bottom">
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button class="btn btn-sm btn-outline" style="flex:1;font-size:11px;color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2)" onclick="exportBackup()"><i class="fas fa-download"></i> نسخة احتياطية</button>
-      <label class="btn btn-sm btn-outline" style="flex:1;font-size:11px;color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2);cursor:pointer;text-align:center">
+      <button class="btn btn-sm btn-outline" style="flex:1;font-size:11px;" onclick="exportBackup()"><i class="fas fa-download"></i> نسخة احتياطية</button>
+      <label class="btn btn-sm btn-outline" style="flex:1;font-size:11px;cursor:pointer;text-align:center">
         <i class="fas fa-upload"></i> استيراد
         <input type="file" accept=".json" style="display:none" onchange="importBackupFile(this)">
       </label>
     </div>
-    <div class="sidebar-date" id="sidebar-date"></div>
-    <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+    <div class="sidebar-date" id="sidebar-date" style="text-align:center;font-size:10px;color:var(--txt3);margin-bottom:8px"></div>
+    <div style="margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
       <span class="sdot" id="status-dot" style="background:#4CAF50"></span>
-      <span style="color:rgba(255,255,255,.5);font-size:11px" id="status-txt">متصل</span>
+      <span style="color:var(--txt3);font-size:11px" id="status-txt">متصل</span>
     </div>
   </div>
 </aside>
