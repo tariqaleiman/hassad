@@ -12,52 +12,131 @@ const firebaseConfig = {
   measurementId: "G-2GGHPFFYJ6"
 };
 
-let fbApp=null, fbDb=null, fbRef=null, fbReady=false, fbSyncing=false;
-let fbLastRemoteUpdate=0; // timestamp guard against echo loops
-const FB_PATH='farms/main'; // single-farm path; could be extended to multi-tenant later
+let fbApp=null, fbDb=null, fbRef=null, fbAuth=null, fbReady=false, fbSyncing=false;
+let fbUser=null;
+let authResolve=null;
 
 function initFirebase(){
-  try{
-    if(typeof firebase==='undefined'){
-      console.warn('Firebase SDK not loaded — falling back to local storage only');
+  return new Promise((resolve) => {
+    try{
+      if(typeof firebase==='undefined'){
+        console.warn('Firebase SDK not loaded — falling back to local storage only');
+        setStatus('offline');
+        resolve(false);
+        return;
+      }
+      fbApp = firebase.initializeApp(firebaseConfig);
+      fbDb = firebase.database();
+      fbAuth = firebase.auth();
+      fbReady = true;
+
+      authResolve = resolve; // save resolve to be called when auth state settles
+
+      fbAuth.onAuthStateChanged((user) => {
+        fbUser = user;
+        if(user) {
+          fbRef = fbDb.ref('farms/users/' + user.uid);
+          document.getElementById('auth-overlay').style.display='none';
+          if(authResolve) { authResolve(true); authResolve=null; }
+          else {
+            // Logged in later (after initial boot), reload db
+            loadDB().then(()=> { if(typeof renderPage==='function') renderPage(currentPage); });
+          }
+        } else {
+          document.getElementById('auth-overlay').style.display='flex';
+          document.getElementById('loading').style.display='none';
+          if(authResolve) { authResolve(false); authResolve=null; }
+        }
+      });
+    }catch(e){
+      console.error('Firebase init failed:',e);
       setStatus('offline');
-      return false;
+      resolve(false);
     }
-    fbApp = firebase.initializeApp(firebaseConfig);
-    fbDb = firebase.database();
-    fbRef = fbDb.ref(FB_PATH);
-    fbReady = true;
-    return true;
-  }catch(e){
-    console.error('Firebase init failed:',e);
-    setStatus('offline');
-    return false;
+  });
+}
+
+function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  fbAuth.signInWithPopup(provider).catch(err => {
+    document.getElementById('auth-error').textContent = err.message;
+    document.getElementById('auth-error').style.display='block';
+  });
+}
+
+let authMode = 'login';
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
+  document.getElementById('auth-toggle-mode').textContent = authMode === 'login' ? 'ليس لديك حساب؟ إنشاء حساب' : 'لديك حساب؟ تسجيل الدخول';
+}
+
+function handleEmailAuth(e) {
+  e.preventDefault();
+  const email = document.getElementById('auth-email').value;
+  const pass = document.getElementById('auth-password').value;
+  document.getElementById('auth-error').style.display='none';
+  
+  if (authMode === 'login') {
+    fbAuth.signInWithEmailAndPassword(email, pass).catch(err => {
+      document.getElementById('auth-error').textContent = err.message;
+      document.getElementById('auth-error').style.display='block';
+    });
+  } else {
+    fbAuth.createUserWithEmailAndPassword(email, pass).catch(err => {
+      document.getElementById('auth-error').textContent = err.message;
+      document.getElementById('auth-error').style.display='block';
+    });
   }
 }
 
-// Pull initial data from Firebase once on load. Falls back gracefully if offline.
+function signOutUser() {
+  if(fbAuth) fbAuth.signOut().then(() => {
+    window.location.reload();
+  });
+}
+
+async function fbMigrateIfNeeded(uid) {
+  // Check if we have legacy data in 'farms/main'
+  try {
+    const mainRef = fbDb.ref('farms/main');
+    const snap = await mainRef.once('value');
+    const legacyData = snap.val();
+    if(legacyData && Object.keys(legacyData).length > 0) {
+      // Migrate it to the current user
+      await fbDb.ref('farms/users/' + uid).set(legacyData);
+      console.log('Migrated legacy data from farms/main to user profile.');
+      return legacyData;
+    }
+  } catch(e) { console.error('Migration check failed', e); }
+  return null;
+}
+
 function fbLoadOnce(){
-  return new Promise((resolve)=>{
-    if(!fbReady){resolve(null);return;}
+  return new Promise(async (resolve)=>{
+    if(!fbReady || !fbUser || !fbRef){resolve(null);return;}
     fbRef.once('value',
-      snap=>{ resolve(snap.val()); },
+      async snap=>{ 
+        let data = snap.val();
+        // If no data, check for migration from main
+        if(!data) {
+          data = await fbMigrateIfNeeded(fbUser.uid);
+        }
+        resolve(data);
+      },
       err=>{ console.error('Firebase read error:',err); resolve(null); }
     );
   });
 }
 
-// Push current state to Firebase (debounced via schedSave in core.js)
 function fbPush(data){
-  if(!fbReady) return Promise.resolve(false);
+  if(!fbReady || !fbUser || !fbRef) return Promise.resolve(false);
   fbSyncing=true;
   return fbRef.set(data)
     .then(()=>{ fbSyncing=false; return true; })
     .catch(err=>{
       console.error('Firebase write error:',err);
       fbSyncing=false;
-      // Surface permission errors clearly instead of silently falling back —
-      // this is almost always caused by Realtime Database Security Rules
-      // blocking writes (default rules require auth, or are fully locked).
       if(err && (err.code==='PERMISSION_DENIED' || /permission/i.test(err.message||''))){
         toast('⚠ Firebase رفض الحفظ بسبب قواعد الأمان (Security Rules) — البيانات محفوظة محلياً فقط حالياً. راجع Realtime Database → Rules.');
       }
@@ -65,16 +144,13 @@ function fbPush(data){
     });
 }
 
-// Listen for changes made from other devices/sessions and merge them in live.
-// Uses a "last write timestamp" field (_syncTs) to avoid reacting to our own writes.
 function fbListenLive(){
-  if(!fbReady) return;
+  if(!fbReady || !fbUser || !fbRef) return;
   fbRef.on('value', snap=>{
     const remote=snap.val();
     if(!remote) return;
-    if(remote._syncTs && remote._syncTs===S._syncTs) return; // our own echo, ignore
-    if(fbSyncing) return; // we're mid-write, ignore until settled
-    // Only auto-merge if this looks like a genuinely newer remote change
+    if(remote._syncTs && remote._syncTs===S._syncTs) return; 
+    if(fbSyncing) return; 
     if(remote._syncTs && remote._syncTs>(S._syncTs||0)){
       Object.assign(S, remote);
       migrateData();

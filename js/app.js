@@ -24,16 +24,63 @@ let currentPage='dashboard';
 function goPage(name,btn){
   currentPage=name;
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+  
   if(btn) btn.classList.add('active');
-  else { const b=document.querySelector('.nav-item[data-page="'+name+'"]'); if(b) b.classList.add('active'); }
+  
+  const snb = document.querySelector('.nav-item[data-page="'+name+'"]');
+  if(snb) snb.classList.add('active');
+  const bnb = document.querySelector('.bnav-item[data-page="'+name+'"]');
+  if(bnb) bnb.classList.add('active');
+
   document.getElementById('topbar-title').textContent=PAGE_TITLES[name]||name;
   document.getElementById('topbar-actions').innerHTML='';
   renderPage(name);
-  if(window.innerWidth<=768){const s=document.getElementById('sidebar');s.classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+  
+  // Also close mobile menu modal if open
+  closeModal('m-menu');
 }
-function toggleSidebar(){
-  const s=document.getElementById('sidebar'),o=document.getElementById('sb-overlay');
-  s.classList.toggle('open');o.classList.toggle('open');
+
+function toggleFab() {
+  const m = document.getElementById('fab-menu');
+  const f = document.getElementById('main-fab');
+  m.classList.toggle('show');
+  f.classList.toggle('rotate');
+}
+
+function openAddModal(type) {
+  toggleFab();
+  if (type==='cattle') { goPage('cattle'); setTimeout(()=>openModal('m-cow'),100); }
+  else if (type==='expense') { goPage('debts'); setTimeout(()=>openModal('m-payment'),100); }
+  else if (type==='milk') { goPage('milk'); setTimeout(()=>openModal('m-milk'),100); }
+}
+
+function openMenuModal() {
+  // Mobile Only - show sidebar links inside a bottom sheet modal
+  const linksHtml = Array.from(document.querySelectorAll('#sidebar .nav-item')).map(el => {
+    const isLogout = el.textContent.includes('تسجيل الخروج');
+    return `<button class="btn btn-outline" style="width:100%; justify-content:flex-start; margin-bottom:12px; ${isLogout?'border-color:var(--red);color:var(--red)':''}" onclick="${el.getAttribute('onclick')}">
+      <i class="${el.querySelector('i').className}"></i> <span style="margin-right:12px">${el.textContent.trim()}</span>
+    </button>`;
+  }).join('');
+  
+  const mHtml = `
+    <div class="ov" id="m-menu" onclick="if(event.target===this)closeModal('m-menu')">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">القائمة السريعة</div>
+          <button class="modal-close" onclick="closeModal('m-menu')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          ${linksHtml}
+        </div>
+      </div>
+    </div>
+  `;
+  const existing = document.getElementById('m-menu');
+  if(existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', mHtml);
+  openModal('m-menu');
 }
 
 function renderPage(name){
