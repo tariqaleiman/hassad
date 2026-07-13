@@ -1,0 +1,88 @@
+rules_version = '2';
+
+// قواعد أمان أساسية لمشروع "حصاد" — الإصدار الأول (MVP)
+// المبدأ: لا وصول لأي بيانات إلا لمستخدم مسجّل دخوله (Firebase Authentication)
+// عدّل هذه القواعد لاحقًا لإضافة صلاحيات متعددة المستخدمين وتعدد الشركات
+// (مذكورة في "الوحدات المستقبلية" ضمن وثيقة التأسيس)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // كل الوحدات الأساسية للإصدار الأول: نفس القاعدة تنطبق على الجميع
+    match /farms/{farmId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /lands/{landId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /seasons/{seasonId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /crops/{cropId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /cropCycles/{cycleId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /operations/{operationId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /inventoryItems/{itemId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /suppliers/{supplierId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /customers/{customerId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /debts/{debtId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /payments/{paymentId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /expenses/{expenseId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /revenues/{revenueId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /workers/{workerId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /equipment/{equipmentId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // سجل النشاط: يُكتب من النظام فقط، لا يُعدَّل أو يُحذف يدويًا
+    match /activityLog/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // أي مسار غير معرّف صراحة: مرفوض افتراضيًا
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

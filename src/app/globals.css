@@ -1,0 +1,222 @@
+@import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
+/* ============================================================
+   نظام تصميم "حصاد" — Design Tokens
+   لوحة الألوان مستوحاة من المخطط الجديد
+   ============================================================ */
+
+:root {
+  /* ورقة — الخلفيات */
+  --paper: #f9f9f9;
+  /* Slightly darker than pure white to make cards pop */
+  --paper-raised: #ffffff;
+  --paper-sunken: #f2f2f2;
+  /* YouTube input background */
+
+  /* حبر — النصوص */
+  --ink: #0f0f0f;
+  /* YouTube pure dark text */
+  --ink-muted: #606060;
+  --ink-faint: #909090;
+
+  /* محصول — اللون الأساسي (Flat Green) */
+  --crop-50: #e6f4ea;
+  --crop-100: #ceead6;
+  --crop-400: #34a853;
+  --crop-500: #0f9d58;
+  --crop-600: #0b8043;
+  --crop-700: #0b8043;
+
+  /* قمح — لون التمييز */
+  --wheat-100: #FEF3C7;
+  --wheat-400: #FBBF24;
+  --wheat-500: #F59E0B;
+  --wheat-600: #D97706;
+
+  /* سماء — معلومات وروابط */
+  --sky-500: #065fd4;
+  /* YouTube blue */
+
+  /* حالات */
+  --danger: #cc0000;
+  /* YouTube red */
+  --danger-bg: #f9e5e5;
+  --success: #0f9d58;
+  --success-bg: #e6f4ea;
+
+  --border: #e5e5e5;
+  --ring: #0f0f0f;
+  --radius: 0.5rem;
+
+  /* Glassmorphism Disabled (Flat) */
+  --glass-bg: #ffffff;
+  --glass-border: var(--border);
+  --glass-blur: 0px;
+  --glass-shadow: none;
+}
+
+.dark {
+  /* ورقة — الخلفيات */
+  --paper: #0f0f0f;
+  /* YouTube deep dark */
+  --paper-raised: #211e1e;
+  /* YouTube cards/modals */
+  --paper-sunken: #222222;
+
+  /* حبر — النصوص */
+  --ink: #f1f1f1;
+  --ink-muted: #aaaaaa;
+  --ink-faint: #717171;
+
+  /* محصول — اللون الأساسي */
+  --crop-50: #133320;
+  --crop-100: #1b4b30;
+  --crop-400: #5bb974;
+  --crop-500: #81c995;
+  --crop-600: #81c995;
+  --crop-700: #5bb974;
+
+  /* قمح — لون التمييز */
+  --wheat-100: #451A03;
+  --wheat-400: #FBBF24;
+  --wheat-500: #F59E0B;
+  --wheat-600: #FCD34D;
+
+  /* سماء — معلومات وروابط */
+  --sky-500: #3ea6ff;
+  /* YouTube dark mode blue */
+
+  /* حالات */
+  --danger: #ff4e45;
+  --danger-bg: #4d1414;
+  --success: #2ebd59;
+  --success-bg: #133320;
+
+  --border: #272727;
+  --ring: #f1f1f1;
+
+  /* Glassmorphism Disabled */
+  --glass-bg: var(--paper-raised);
+  --glass-border: var(--border);
+  --glass-shadow: none;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunken: var(--paper-sunken);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-crop-50: var(--crop-50);
+  --color-crop-100: var(--crop-100);
+  --color-crop-400: var(--crop-400);
+  --color-crop-500: var(--crop-500);
+  --color-crop-600: var(--crop-600);
+  --color-crop-700: var(--crop-700);
+
+  --color-wheat-100: var(--wheat-100);
+  --color-wheat-400: var(--wheat-400);
+  --color-wheat-500: var(--wheat-500);
+  --color-wheat-600: var(--wheat-600);
+
+  --color-sky-500: var(--sky-500);
+
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-display: var(--font-cairo);
+  --font-sans: var(--font-plex-arabic);
+}
+
+* {
+  border-color: var(--border);
+}
+
+/* Fix for Chrome/Edge Autofill background color */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--paper-sunken) inset !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: var(--ink);
+}
+
+html {
+  color-scheme: light;
+  font-size: 15px;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1, "cv02" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Flat Utilities */
+.glass-panel {
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

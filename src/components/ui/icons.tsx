@@ -1,0 +1,90 @@
+import {
+  LayoutDashboard,
+  Sprout,
+  MapPin,
+  CalendarRange,
+  Wheat,
+  ClipboardList,
+  Boxes,
+  Truck,
+  Users,
+  HandCoins,
+  HardHat,
+  Tractor,
+  Receipt,
+  FileBarChart,
+  Settings,
+  Bell,
+  User as UserIcon,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  CheckCircle2,
+  Clock,
+  ArrowUpRight,
+  UserPlus,
+  Moon,
+  Sun,
+  Menu,
+  LogOut,
+  Plus,
+  Search,
+  Phone,
+  Pencil,
+  Trash2,
+  Home,
+  Key,
+} from "lucide-react";
+
+export const Icons = {
+  // Navigation & Sidebar
+  Dashboard: LayoutDashboard,
+  Farms: Sprout,
+  Lands: MapPin,
+  Seasons: CalendarRange,
+  Crops: Wheat,
+  Operations: ClipboardList,
+  Inventory: Boxes,
+  Suppliers: Truck,
+  Customers: Users,
+  Debts: HandCoins,
+  Workers: Users, // The mockup shows "عمال" with a multiple users icon (similar to Users)
+  Equipment: Tractor,
+  Finance: Receipt,
+  Reports: FileBarChart,
+  Settings: Settings,
+
+  // Topbar
+  Bell: Bell,
+  User: UserIcon,
+  Moon: Moon,
+  Sun: Sun,
+  Menu: Menu,
+  LogOut: LogOut,
+
+  // Dashboard Stats & Lists
+  Task: ClipboardList,
+  ChevronDown: ChevronDown,
+  ChevronUp: ChevronUp,
+  Check: Check,
+  CheckCircle: CheckCircle2,
+  Clock: Clock,
+  TrendingUp: ArrowUpRight,
+  UserPlus: UserPlus,
+
+  // Added missing direct aliases
+  CalendarRange: CalendarRange,
+  ArrowUpRight: ArrowUpRight,
+  MapPin: MapPin,
+
+  // Common UI Actions
+  Plus: Plus,
+  Search: Search,
+  Phone: Phone,
+  Edit: Pencil,
+  Delete: Trash2,
+  Home: Home,
+  Key: Key,
+};
+
+export type IconType = typeof Icons[keyof typeof Icons];
