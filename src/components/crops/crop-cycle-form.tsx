@@ -14,11 +14,14 @@ import type { Land } from "@/lib/types/land";
 import type { Season } from "@/lib/types/season";
 import type { Crop } from "@/lib/types/crop";
 
+import type { CropCycle } from "@/lib/types/crop-cycle";
+
 export function CropCycleForm({
   farms,
   lands,
   seasons,
   crops,
+  defaultValues,
   onSubmit,
   loading,
   onCancel,
@@ -27,6 +30,7 @@ export function CropCycleForm({
   lands: Land[];
   seasons: Season[];
   crops: Crop[];
+  defaultValues?: CropCycle | null;
   onSubmit: (values: CropCycleSchema) => void;
   loading?: boolean;
   onCancel: () => void;
@@ -40,7 +44,21 @@ export function CropCycleForm({
     formState: { errors },
   } = useForm<CropCycleSchema>({
     resolver: zodResolver(cropCycleSchema) as any,
-    defaultValues: { farmId: "", landId: "", seasonId: "", cropId: "", cropVariety: "", cropSubVariety: "", plantDate: "", areaValue: 0, areaUnit: "feddan" },
+    defaultValues: defaultValues ? {
+      farmId: defaultValues.farmId,
+      landId: defaultValues.landId,
+      seasonId: defaultValues.seasonId,
+      cropId: defaultValues.cropId,
+      cropVariety: defaultValues.cropVariety || "",
+      cropSubVariety: defaultValues.cropSubVariety || "",
+      plantDate: defaultValues.plantDate || "",
+      areaValue: defaultValues.areaValue,
+      areaUnit: defaultValues.areaUnit,
+      plantingMethod: defaultValues.plantingMethod,
+      isNursery: defaultValues.isNursery,
+      sourceNurseryId: defaultValues.sourceNurseryId,
+      notes: defaultValues.notes || "",
+    } : { farmId: "", landId: "", seasonId: "", cropId: "", cropVariety: "", cropSubVariety: "", plantDate: "", areaValue: 0, areaUnit: "feddan" },
   });
 
   const selectedFarmId = watch("farmId");

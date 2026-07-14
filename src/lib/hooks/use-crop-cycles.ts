@@ -30,6 +30,20 @@ export function useCreateCropCycle() {
   });
 }
 
+export function useUpdateCropCycle() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: ({ id, values }: { id: string; values: Partial<CropCycleFormValues> }) =>
+      cropCycleService.update(id, values, user?.uid),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [...CROP_CYCLES_KEY, user?.uid] });
+      toast.success("تم تحديث دورة المحصول بنجاح");
+    },
+    onError: () => toast.error("حدث خطأ أثناء تحديث الدورة"),
+  });
+}
+
 export function useMarkCropCycleHarvested() {
   const qc = useQueryClient();
   const { user } = useAuth();

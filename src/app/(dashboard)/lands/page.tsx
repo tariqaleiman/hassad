@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, MapPin, Droplets, Pencil, Trash2, Sprout, Briefcase, Handshake, Landmark } from "lucide-react";
+import { Plus, MapPin, Droplets, Pencil, Trash2, Sprout, Briefcase, Handshake, Landmark, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
@@ -141,7 +142,9 @@ export default function LandsPage() {
                       </div>
                     </div>
 
-                    <h3 className="font-display text-xl font-bold text-ink truncate">{land.name}</h3>
+                    <Link href={`/lands/details?id=${land.id}`} className="hover:underline">
+                      <h3 className="font-display text-xl font-bold text-ink truncate">{land.name}</h3>
+                    </Link>
                     
                     <div className="mt-4 flex flex-wrap gap-2">
                       <span className="tabular inline-flex items-center rounded-lg bg-paper-sunken px-3 py-1 text-sm font-bold text-ink">
@@ -165,6 +168,15 @@ export default function LandsPage() {
                           <span className="truncate">شريك: {land.tenure.partner.name} ({land.tenure.partner.partnerSharePercent}%)</span>
                         </div>
                       )}
+                    </div>
+                    <div className="mt-5 pt-4 border-t border-border/40 text-center">
+                      <Link 
+                        href={`/lands/details?id=${land.id}`}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-crop-600 hover:text-crop-700 transition-colors"
+                      >
+                        عرض التفاصيل
+                        <ArrowLeft className="h-4 w-4" />
+                      </Link>
                     </div>
                   </div>
                 </CardContent>

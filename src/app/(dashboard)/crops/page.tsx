@@ -9,6 +9,7 @@ import {
   Download,
   CheckCircle2,
   Sprout,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { CropForm } from "@/components/crops/crop-form";
 import { CropCycleForm } from "@/components/crops/crop-cycle-form";
+import { CropCycleDetails } from "@/components/crops/crop-cycle-details";
 import {
   useCreateCrop,
   useCrops,
@@ -30,6 +32,7 @@ import {
 import {
   useCreateCropCycle,
   useCropCycles,
+  useUpdateCropCycle,
   useDeleteCropCycle,
   useMarkCropCycleHarvested,
 } from "@/lib/hooks/use-crop-cycles";
@@ -246,12 +249,25 @@ function CycleTab() {
   const { data: crops, isLoading: loadingCrops } = useCrops();
 
   const createCycle = useCreateCropCycle();
+  const updateCycle = useUpdateCropCycle();
   const markHarvested = useMarkCropCycleHarvested();
   const deleteCycle = useDeleteCropCycle();
 
   const [formOpen, setFormOpen] = useState(false);
+  const [editingCycle, setEditingCycle] = useState<CropCycle | null>(null);
+  const [viewingCycle, setViewingCycle] = useState<CropCycle | null>(null);
   const [deletingCycle, setDeletingCycle] = useState<CropCycle | null>(null);
   const [harvestingCycle, setHarvestingCycle] = useState<CropCycle | null>(null);
+
+  const openCreate = () => {
+    setEditingCycle(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (cycle: CropCycle) => {
+    setEditingCycle(cycle);
+    setFormOpen(true);
+  };
 
   const isLoading =
     loadingCycles || loadingFarms || loadingLands || loadingSeasons || loadingCrops;
@@ -268,7 +284,14 @@ function CycleTab() {
     (farms?.length ?? 0) > 0 && (lands?.length ?? 0) > 0 && (seasons?.length ?? 0) > 0;
 
   const handleSubmit = (values: CropCycleSchema) => {
-    createCycle.mutate(values, { onSuccess: () => setFormOpen(false) });
+    if (editingCycle) {
+      updateCycle.mutate(
+        { id: editingCycle.id, values },
+        { onSuccess: () => setFormOpen(false) }
+      );
+    } else {
+      createCycle.mutate(values, { onSuccess: () => setFormOpen(false) });
+    }
   };
 
   const handleDelete = () => {
@@ -294,7 +317,7 @@ function CycleTab() {
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
-        <Button onClick={() => setFormOpen(true)} disabled={!hasPrerequisites}>
+        <Button onClick={openCreate} disabled={!hasPrerequisites}>
           <Plus className="h-4 w-4" />
           دورة محصول جديدة
         </Button>
@@ -310,7 +333,7 @@ function CycleTab() {
           title="لا توجد دورات محاصيل بعد"
           description="أنشئ أول دورة محصول لتبدأ في تسجيل العمليات الزراعية عليها."
           action={
-            <Button onClick={() => setFormOpen(true)}>
+            <Button onClick={openCreate}>
               <Plus className="h-4 w-4" />
               دورة محصول جديدة
             </Button>
@@ -331,6 +354,20 @@ function CycleTab() {
                       <Badge variant={cycle.status === "نشطة" ? "default" : "neutral"}>
                         {cycle.status}
                       </Badge>
+                      <button
+                        onClick={() => setViewingCycle(cycle)}
+                        aria-label="تفاصيل"
+                        className="rounded-md p-1.5 text-ink-muted opacity-0 transition-opacity hover:bg-paper-sunken hover:text-ink group-hover:opacity-100"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => openEdit(cycle)}
+                        aria-label="تعديل"
+                        className="rounded-md p-1.5 text-ink-muted opacity-0 transition-opacity hover:bg-paper-sunken hover:text-ink group-hover:opacity-100"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => setDeletingCycle(cycle)}
                         aria-label="حذف"
@@ -372,16 +409,29 @@ function CycleTab() {
         </div>
       )}
 
-      <Dialog open={formOpen} onClose={() => setFormOpen(false)} title="دورة محصول جديدة">
+      <Dialog open={formOpen} onClose={() => setFormOpen(false)} title={editingCycle ? "تعديل دورة المحصول" : "دورة محصول جديدة"}>
         <CropCycleForm
           farms={farms ?? []}
           lands={lands ?? []}
           seasons={seasons ?? []}
           crops={crops ?? []}
+          defaultValues={editingCycle}
           onSubmit={handleSubmit}
           onCancel={() => setFormOpen(false)}
-          loading={createCycle.isPending}
+          loading={createCycle.isPending || updateCycle.isPending}
         />
+      </Dialog>
+
+      <Dialog open={!!viewingCycle} onClose={() => setViewingCycle(null)} title="تفاصيل الدورة الزراعية" className="max-w-2xl">
+        {viewingCycle && (
+          <CropCycleDetails 
+            cycle={viewingCycle}
+            farm={farmsById.get(viewingCycle.farmId)}
+            land={landsById.get(viewingCycle.landId)}
+            season={seasonsById.get(viewingCycle.seasonId)}
+            crop={cropsById.get(viewingCycle.cropId)}
+          />
+        )}
       </Dialog>
 
       <ConfirmDialog

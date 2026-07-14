@@ -10,15 +10,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { landLeaseSchema, type LandLeaseSchema } from "./land-lease-schema";
 import type { Land } from "@/lib/types/land";
 
+import type { LandLeaseOut } from "@/lib/types/land-lease";
+
 export function LandLeaseForm({
   farmId,
   lands,
+  defaultValues,
   onSubmit,
   loading,
   onCancel,
 }: {
   farmId: string;
   lands: Land[];
+  defaultValues?: LandLeaseOut | null;
   onSubmit: (values: LandLeaseSchema) => void;
   loading?: boolean;
   onCancel: () => void;
@@ -30,7 +34,21 @@ export function LandLeaseForm({
     formState: { errors },
   } = useForm<LandLeaseSchema>({
     resolver: zodResolver(landLeaseSchema),
-    defaultValues: {
+    defaultValues: defaultValues ? {
+      farmId: defaultValues.farmId,
+      landId: defaultValues.landId,
+      seasonId: defaultValues.seasonId,
+      tenantName: defaultValues.tenantName,
+      tenantPhone: defaultValues.tenantPhone || "",
+      areaValue: defaultValues.areaValue,
+      areaUnit: defaultValues.areaUnit,
+      duration: defaultValues.duration,
+      startDate: defaultValues.startDate || "",
+      endDate: defaultValues.endDate || "",
+      rentAmount: defaultValues.rentAmount,
+      notes: defaultValues.notes || "",
+      status: defaultValues.status,
+    } : {
       farmId,
       landId: "",
       tenantName: "",
