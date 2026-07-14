@@ -40,6 +40,7 @@ export function CropCycleForm({
     handleSubmit,
     control,
     setValue,
+    reset,
     watch,
     formState: { errors },
   } = useForm<CropCycleSchema>({
@@ -61,6 +62,29 @@ export function CropCycleForm({
     } : { farmId: "", landId: "", seasonId: "", cropId: "", cropVariety: "", cropSubVariety: "", plantDate: "", areaValue: 0, areaUnit: "feddan" },
   });
 
+  // تحديث القيم عند فتح النافذة ببيانات جديدة
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        farmId: defaultValues.farmId,
+        landId: defaultValues.landId,
+        seasonId: defaultValues.seasonId,
+        cropId: defaultValues.cropId,
+        cropVariety: defaultValues.cropVariety || "",
+        cropSubVariety: defaultValues.cropSubVariety || "",
+        plantDate: defaultValues.plantDate || "",
+        areaValue: defaultValues.areaValue,
+        areaUnit: defaultValues.areaUnit,
+        plantingMethod: defaultValues.plantingMethod,
+        isNursery: defaultValues.isNursery,
+        sourceNurseryId: defaultValues.sourceNurseryId,
+        notes: defaultValues.notes || "",
+      });
+    } else {
+      reset({ farmId: "", landId: "", seasonId: "", cropId: "", cropVariety: "", cropSubVariety: "", plantDate: "", areaValue: 0, areaUnit: "feddan" });
+    }
+  }, [defaultValues, reset]);
+
   const selectedFarmId = watch("farmId");
   const selectedCropId = useWatch({ control, name: "cropId" });
   const selectedVarietyName = useWatch({ control, name: "cropVariety" });
@@ -73,14 +97,18 @@ export function CropCycleForm({
 
   // مسح الصنف والسلالة عند تغيير المحصول
   useEffect(() => {
-    setValue("cropVariety", "");
-    setValue("cropSubVariety", "");
-  }, [selectedCropId, setValue]);
+    if (selectedCropId && selectedCropId !== defaultValues?.cropId) {
+      setValue("cropVariety", "");
+      setValue("cropSubVariety", "");
+    }
+  }, [selectedCropId, defaultValues?.cropId, setValue]);
 
   // مسح السلالة عند تغيير الصنف
   useEffect(() => {
-    setValue("cropSubVariety", "");
-  }, [selectedVarietyName, setValue]);
+    if (selectedVarietyName && selectedVarietyName !== defaultValues?.cropVariety) {
+      setValue("cropSubVariety", "");
+    }
+  }, [selectedVarietyName, defaultValues?.cropVariety, setValue]);
 
   const farmLands = useMemo(
     () => lands.filter((l) => l.farmId === selectedFarmId),

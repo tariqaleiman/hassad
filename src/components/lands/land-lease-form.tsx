@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ export function LandLeaseForm({
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<LandLeaseSchema>({
     resolver: zodResolver(landLeaseSchema),
@@ -62,6 +64,40 @@ export function LandLeaseForm({
       startDate: new Date().toISOString().slice(0, 10),
     },
   });
+
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        farmId: defaultValues.farmId,
+        landId: defaultValues.landId,
+        seasonId: defaultValues.seasonId,
+        tenantName: defaultValues.tenantName,
+        tenantPhone: defaultValues.tenantPhone || "",
+        areaValue: defaultValues.areaValue,
+        areaUnit: defaultValues.areaUnit,
+        duration: defaultValues.duration,
+        startDate: defaultValues.startDate || "",
+        endDate: defaultValues.endDate || "",
+        rentAmount: defaultValues.rentAmount,
+        notes: defaultValues.notes || "",
+        status: defaultValues.status,
+      });
+    } else {
+      reset({
+        farmId,
+        landId: "",
+        tenantName: "",
+        tenantPhone: "",
+        areaValue: 0,
+        areaUnit: "feddan",
+        duration: "season",
+        rentAmount: 0,
+        status: "نشط",
+        notes: "",
+        startDate: new Date().toISOString().slice(0, 10),
+      });
+    }
+  }, [defaultValues, farmId, reset]);
 
   const duration = useWatch({ control, name: "duration" });
 
