@@ -20,6 +20,7 @@ import { useFarms } from "@/lib/hooks/use-farms";
 import { useSeasons } from "@/lib/hooks/use-seasons";
 import { useCropCycles } from "@/lib/hooks/use-crop-cycles";
 import { useLandLeases, useCreateLandLease, useUpdateLandLease, useDeleteLandLease } from "@/lib/hooks/use-land-leases";
+import { useCrops } from "@/lib/hooks/use-crops";
 
 import { LandForm } from "@/components/lands/land-form";
 import { LandLeaseForm } from "@/components/lands/land-lease-form";
@@ -43,6 +44,7 @@ function LandDetailsContent() {
   const { data: seasons, isLoading: loadingSeasons } = useSeasons();
   const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
   const { data: leases, isLoading: loadingLeases } = useLandLeases();
+  const { data: crops, isLoading: loadingCrops } = useCrops();
 
   // Mutations
   const updateLand = useUpdateLand();
@@ -62,7 +64,7 @@ function LandDetailsContent() {
   const [viewingCycle, setViewingCycle] = useState<CropCycle | null>(null);
 
   // Derived Data
-  const isLoading = loadingLands || loadingFarms || loadingSeasons || loadingCycles || loadingLeases;
+  const isLoading = loadingLands || loadingFarms || loadingSeasons || loadingCycles || loadingLeases || loadingCrops;
   const land = lands?.find((l) => l.id === id);
   const farm = farms?.find((f) => f.id === land?.farmId);
   const activeSeasons = seasons?.filter(s => s.status === "مفتوح") || [];
@@ -168,7 +170,7 @@ function LandDetailsContent() {
       </div>
 
       {/* Area Summary Cards */}
-      <div className="bg-paper-raised border border-border/50 rounded-3xl p-6 shadow-sm">
+      <div className="bg-paper border border-border/50 rounded-3xl p-6 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
             <h2 className="text-lg font-bold text-ink">ملخص المساحة والاستخدام</h2>
@@ -191,8 +193,8 @@ function LandDetailsContent() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-paper rounded-2xl p-4 border border-border/40 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-2 h-full bg-slate-400/50 rounded-r-2xl"></div>
+          <div className="bg-paper-sunken rounded-2xl p-4 border border-border/40 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-1.5 h-full bg-slate-400 rounded-r-2xl opacity-50"></div>
             <p className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-2">
               <Scale className="h-4 w-4" />
               المساحة الكلية
@@ -201,34 +203,34 @@ function LandDetailsContent() {
             <p className="text-xs text-ink-muted mt-1">فدان</p>
           </div>
 
-          <div className="bg-crop-50/50 rounded-2xl p-4 border border-crop-100/50 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-2 h-full bg-crop-500 rounded-r-2xl"></div>
-            <p className="text-sm font-medium text-crop-700 mb-1 flex items-center gap-2">
-              <Wheat className="h-4 w-4" />
+          <div className="bg-paper-sunken rounded-2xl p-4 border border-border/40 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-1.5 h-full bg-crop-500 rounded-r-2xl opacity-80"></div>
+            <p className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-2">
+              <Wheat className="h-4 w-4 text-crop-500" />
               المزروعة بالمحاصيل
             </p>
-            <p className="text-2xl font-bold font-display text-crop-700">{usedByCrops.toFixed(2)}</p>
-            <p className="text-xs text-crop-600/70 mt-1">فدان</p>
+            <p className="text-2xl font-bold font-display text-ink">{usedByCrops.toFixed(2)}</p>
+            <p className="text-xs text-ink-muted mt-1">فدان</p>
           </div>
 
-          <div className="bg-amber-50/50 rounded-2xl p-4 border border-amber-100/50 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-2 h-full bg-amber-500 rounded-r-2xl"></div>
-            <p className="text-sm font-medium text-amber-700 mb-1 flex items-center gap-2">
-              <Handshake className="h-4 w-4" />
+          <div className="bg-paper-sunken rounded-2xl p-4 border border-border/40 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-1.5 h-full bg-amber-500 rounded-r-2xl opacity-80"></div>
+            <p className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-2">
+              <Handshake className="h-4 w-4 text-amber-500" />
               مؤجرة للغير
             </p>
-            <p className="text-2xl font-bold font-display text-amber-700">{usedByLeases.toFixed(2)}</p>
-            <p className="text-xs text-amber-600/70 mt-1">فدان</p>
+            <p className="text-2xl font-bold font-display text-ink">{usedByLeases.toFixed(2)}</p>
+            <p className="text-xs text-ink-muted mt-1">فدان</p>
           </div>
 
-          <div className="bg-sky-50/50 rounded-2xl p-4 border border-sky-100/50 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-2 h-full bg-sky-500 rounded-r-2xl"></div>
-            <p className="text-sm font-medium text-sky-700 mb-1 flex items-center gap-2">
-              <Sprout className="h-4 w-4" />
+          <div className="bg-paper-sunken rounded-2xl p-4 border border-border/40 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-1.5 h-full bg-sky-500 rounded-r-2xl opacity-80"></div>
+            <p className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-2">
+              <Sprout className="h-4 w-4 text-sky-500" />
               المساحة المتبقية
             </p>
-            <p className="text-2xl font-bold font-display text-sky-700">{availableAreaInFeddan.toFixed(2)}</p>
-            <p className="text-xs text-sky-600/70 mt-1">فدان (قابلة للزراعة أو التأجير)</p>
+            <p className="text-2xl font-bold font-display text-ink">{availableAreaInFeddan.toFixed(2)}</p>
+            <p className="text-xs text-ink-muted mt-1">فدان (متاحة)</p>
           </div>
         </div>
 
@@ -236,7 +238,7 @@ function LandDetailsContent() {
         <div className="mt-6 flex h-3 w-full overflow-hidden rounded-full bg-paper-sunken border border-border/40">
           <div className="bg-crop-500 transition-all duration-500" style={{ width: `${totalAreaInFeddan > 0 ? (usedByCrops / totalAreaInFeddan) * 100 : 0}%` }} title="مزروعة"></div>
           <div className="bg-amber-400 transition-all duration-500" style={{ width: `${totalAreaInFeddan > 0 ? (usedByLeases / totalAreaInFeddan) * 100 : 0}%` }} title="مؤجرة للغير"></div>
-          <div className="bg-sky-200 transition-all duration-500" style={{ width: `${totalAreaInFeddan > 0 ? (availableAreaInFeddan / totalAreaInFeddan) * 100 : 0}%` }} title="متبقية"></div>
+          <div className="bg-sky-500 transition-all duration-500" style={{ width: `${totalAreaInFeddan > 0 ? (availableAreaInFeddan / totalAreaInFeddan) * 100 : 0}%` }} title="متبقية"></div>
         </div>
       </div>
 
@@ -315,7 +317,7 @@ function LandDetailsContent() {
                             <Wheat className="h-5 w-5" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-ink font-display text-base">دورة زراعية</h4>
+                            <h4 className="font-bold text-ink font-display text-base">{crops?.find(c => c.id === cycle.cropId)?.name || "دورة زراعية"}</h4>
                             <p className="text-xs text-ink-muted">{formatDate(cycle.createdAt || "")}</p>
                           </div>
                         </div>
@@ -576,6 +578,7 @@ function LandDetailsContent() {
             farm={farm}
             land={land}
             season={seasons?.find(s => s.id === viewingCycle.seasonId)}
+            crop={crops?.find(c => c.id === viewingCycle.cropId)}
           />
         )}
       </Dialog>
