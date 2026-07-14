@@ -20,6 +20,7 @@ export function LandLeaseForm({
   onSubmit,
   loading,
   onCancel,
+  defaultLandId,
 }: {
   farmId: string;
   lands: Land[];
@@ -27,6 +28,7 @@ export function LandLeaseForm({
   onSubmit: (values: LandLeaseSchema) => void;
   loading?: boolean;
   onCancel: () => void;
+  defaultLandId?: string;
 }) {
   const {
     register,
@@ -54,7 +56,7 @@ export function LandLeaseForm({
       status: defaultValues.status,
     } : {
       farmId,
-      landId: "",
+      landId: defaultLandId || "",
       tenantName: "",
       tenantPhone: "",
       areaValue: 0,
@@ -87,7 +89,7 @@ export function LandLeaseForm({
     } else {
       reset({
         farmId,
-        landId: "",
+        landId: defaultLandId || "",
         tenantName: "",
         tenantPhone: "",
         areaValue: 0,

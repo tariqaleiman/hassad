@@ -61,6 +61,7 @@ function LandDetailsContent() {
   const [leaseFormOpen, setLeaseFormOpen] = useState(false);
   const [editingLease, setEditingLease] = useState<LandLeaseOut | null>(null);
   const [deletingLease, setDeletingLease] = useState<LandLeaseOut | null>(null);
+  const [endingLease, setEndingLease] = useState<LandLeaseOut | null>(null);
 
   const [viewingCycle, setViewingCycle] = useState<CropCycle | null>(null);
 
@@ -85,8 +86,8 @@ function LandDetailsContent() {
   const usedByCrops = useMemo(() => landCrops.reduce((acc, curr) => acc + (curr.areaInFeddan || 0), 0), [landCrops]);
   const usedByLeases = useMemo(() => {
     return landLeases.reduce((acc, curr) => {
-      // If it's a yearly lease or a seasonal lease for this season
-      if (curr.duration === "year" || (curr.duration === "season" && curr.seasonId === selectedSeasonId)) {
+      // If it's a yearly lease or a seasonal lease for this season (or without seasonId)
+      if (curr.duration === "year" || (curr.duration === "season" && (!curr.seasonId || curr.seasonId === selectedSeasonId))) {
         return acc + (curr.areaInFeddan || 0);
       }
       return acc;
@@ -373,7 +374,7 @@ function LandDetailsContent() {
                 {landLeases.map(lease => (
                   <Card key={lease.id} className="group relative hover:shadow-md transition-shadow overflow-hidden rounded-2xl border-border/60">
                     <CardContent className="p-0">
-                      <div className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">
+                      <div className="absolute top-0 right-0 bg-amber-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-sm">
                         {lease.duration === "year" ? "إيجار سنوي" : "إيجار موسمي"}
                       </div>
                       <div className="p-5">
@@ -403,12 +404,16 @@ function LandDetailsContent() {
                           </div>
                         </div>
                         <div className="flex gap-2 mt-4 pt-4 border-t border-border/40">
-                          <Button variant="outline" size="sm" onClick={() => { setEditingLease(lease); setLeaseFormOpen(true); }} className="flex-1 text-ink-muted hover:text-ink">
-                            <Pencil className="h-3.5 w-3.5 ml-2" />
+                          <Button variant="outline" size="sm" onClick={() => { setEditingLease(lease); setLeaseFormOpen(true); }} className="flex-1 px-1 text-ink-muted hover:text-ink">
+                            <Pencil className="h-3.5 w-3.5 ml-1" />
                             تعديل
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => setDeletingLease(lease)} className="flex-1 text-danger hover:bg-danger/10 hover:text-danger hover:border-danger/30 border-danger/30">
-                            <Trash2 className="h-3.5 w-3.5 ml-2" />
+                          <Button variant="outline" size="sm" onClick={() => setEndingLease(lease)} className="flex-1 px-1 text-sky-600 hover:bg-sky-50 hover:text-sky-700 border-sky-200">
+                            <CheckCircle2 className="h-3.5 w-3.5 ml-1" />
+                            إنهاء
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setDeletingLease(lease)} className="flex-1 px-1 text-danger hover:bg-danger/10 hover:text-danger hover:border-danger/30 border-danger/30">
+                            <Trash2 className="h-3.5 w-3.5 ml-1" />
                             إلغاء
                           </Button>
                         </div>
@@ -546,15 +551,20 @@ function LandDetailsContent() {
           <LandLeaseForm
             farmId={farm.id}
             lands={lands || []}
+            defaultLandId={land.id}
             defaultValues={editingLease}
             onSubmit={(values) => {
+              const finalValues = { ...values };
+              if (finalValues.duration === "season") {
+                finalValues.seasonId = selectedSeasonId;
+              }
               if (editingLease) {
                 updateLease.mutate(
-                  { id: editingLease.id, values },
+                  { id: editingLease.id, values: finalValues },
                   { onSuccess: () => setLeaseFormOpen(false) }
                 );
               } else {
-                createLease.mutate(values, { onSuccess: () => setLeaseFormOpen(false) });
+                createLease.mutate(finalValues, { onSuccess: () => setLeaseFormOpen(false) });
               }
             }}
             onCancel={() => setLeaseFormOpen(false)}
@@ -562,6 +572,15 @@ function LandDetailsContent() {
           />
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={!!endingLease}
+        onClose={() => setEndingLease(null)}
+        onConfirm={() => endingLease && updateLease.mutate({ id: endingLease.id, values: { status: "منتهي" } }, { onSuccess: () => setEndingLease(null) })}
+        title={`إنهاء عقد الإيجار؟`}
+        description={`هل أنت متأكد من إنهاء عقد تأجير "${endingLease?.tenantName}"؟ سيتم تفريغ مساحة الأرض المؤجرة لتصبح متاحة من جديد.`}
+        loading={updateLease.isPending}
+      />
 
       <ConfirmDialog
         open={!!deletingLease}
