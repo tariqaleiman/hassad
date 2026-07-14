@@ -459,6 +459,12 @@ function LandDetailsContent() {
                               <span className="text-ink-muted">قيمة الإيجار:</span>
                               <span className="font-bold text-slate-500">{lease.rentAmount.toLocaleString()} ج.م</span>
                             </div>
+                            <div className="flex justify-between border-t border-border/20 pt-2 mt-2">
+                              <span className="text-ink-muted text-xs">الفترة:</span>
+                              <span className="text-[11px] font-medium text-ink-faint">
+                                {lease.startDate ? formatDate(lease.startDate) : "—"} / {lease.endDate ? formatDate(lease.endDate) : "—"}
+                              </span>
+                            </div>
                           </div>
                           <div className="flex gap-2 mt-4 pt-4 border-t border-border/20">
                             <Button variant="ghost" size="sm" onClick={() => setDeletingLease(lease)} className="flex-1 px-1 text-danger hover:bg-danger/10 hover:text-danger">
@@ -626,7 +632,7 @@ function LandDetailsContent() {
       <ConfirmDialog
         open={!!endingLease}
         onClose={() => setEndingLease(null)}
-        onConfirm={() => endingLease && updateLease.mutate({ id: endingLease.id, values: { status: "منتهي" } }, { onSuccess: () => setEndingLease(null) })}
+        onConfirm={() => endingLease && updateLease.mutate({ id: endingLease.id, values: { status: "منتهي", endDate: new Date().toISOString().slice(0, 10) } }, { onSuccess: () => setEndingLease(null) })}
         title={`إنهاء عقد الإيجار؟`}
         description={`هل أنت متأكد من إنهاء عقد تأجير "${endingLease?.tenantName}"؟ سيتم تفريغ مساحة الأرض المؤجرة لتصبح متاحة من جديد.`}
         loading={updateLease.isPending}
