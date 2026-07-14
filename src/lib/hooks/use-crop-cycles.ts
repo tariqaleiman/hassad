@@ -40,7 +40,10 @@ export function useUpdateCropCycle() {
       qc.invalidateQueries({ queryKey: [...CROP_CYCLES_KEY, user?.uid] });
       toast.success("تم تحديث دورة المحصول بنجاح");
     },
-    onError: () => toast.error("حدث خطأ أثناء تحديث الدورة"),
+    onError: (err: any) => {
+      console.error("Update Crop Cycle Error:", err);
+      toast.error(err.message || "حدث خطأ أثناء تحديث الدورة");
+    },
   });
 }
 

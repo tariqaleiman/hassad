@@ -136,8 +136,15 @@ export class FirestoreRepository<
 
   async update(id: string, data: Partial<TCreate>, userId?: string): Promise<T> {
     const ref = doc(this.collectionRef, id);
+    
+    // Remove undefined values to avoid Firestore errors
+    const cleanedData = Object.entries(data).reduce((acc, [key, value]) => {
+      if (value !== undefined) acc[key] = value;
+      return acc;
+    }, {} as any);
+
     await updateDoc(ref, {
-      ...data,
+      ...cleanedData,
       updatedAt: serverTimestamp(),
       updatedBy: userId ?? null,
     });
