@@ -88,6 +88,9 @@ export function CropCycleForm({
   const selectedFarmId = watch("farmId");
   const selectedCropId = useWatch({ control, name: "cropId" });
   const selectedVarietyName = useWatch({ control, name: "cropVariety" });
+  
+  // نراقب كل الحقول التي تستخدم مكون Select المخصص لتحديث قيمته الداخلية عند استدعاء reset
+  const formValues = watch();
 
   const selectedCrop = useMemo(() => crops.find(c => c.id === selectedCropId), [crops, selectedCropId]);
   const varieties = selectedCrop?.varieties || [];
@@ -128,38 +131,39 @@ export function CropCycleForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-      <div>
-        <Label htmlFor="farmId">المزرعة *</Label>
-        <Select id="farmId" {...register("farmId")}>
-          <option value="">اختر المزرعة</option>
-          {farms.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
-            </option>
-          ))}
-        </Select>
-        {errors.farmId && <p className="mt-1 text-xs text-danger">{errors.farmId.message}</p>}
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <Label htmlFor="farmId">المزرعة *</Label>
+          <Select id="farmId" {...register("farmId")} value={formValues.farmId} className="mt-1.5" disabled={!!defaultValues}>
+            <option value="">اختر المزرعة</option>
+            {farms.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </Select>
+          {errors.farmId && <p className="mt-1 text-xs text-danger">{errors.farmId.message}</p>}
+        </div>
+
         <div>
           <Label htmlFor="landId">قطعة الأرض *</Label>
-          <Select id="landId" {...register("landId")} disabled={!selectedFarmId}>
+          <Select id="landId" {...register("landId")} value={formValues.landId} className="mt-1.5" disabled={!!defaultValues || !selectedFarmId}>
             <option value="">اختر الأرض</option>
             {farmLands.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.name}
+                {l.name} - {l.areaValue} {l.areaUnit === "feddan" ? "فدان" : "قيراط"}
               </option>
             ))}
           </Select>
           {errors.landId && <p className="mt-1 text-xs text-danger">{errors.landId.message}</p>}
-          {selectedFarmId && farmLands.length === 0 && (
-            <p className="mt-1 text-xs text-ink-faint">لا توجد أراضٍ لهذه المزرعة بعد.</p>
-          )}
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="seasonId">الموسم المفتوح *</Label>
-          <Select id="seasonId" {...register("seasonId")} disabled={!selectedFarmId}>
+          <Select id="seasonId" {...register("seasonId")} value={formValues.seasonId} className="mt-1.5" disabled={!!defaultValues || !selectedFarmId}>
             <option value="">اختر الموسم</option>
             {farmSeasons.map((s) => (
               <option key={s.id} value={s.id}>
@@ -190,7 +194,7 @@ export function CropCycleForm({
         </div>
         <div>
           <Label htmlFor="areaUnit">الوحدة *</Label>
-          <Select id="areaUnit" {...register("areaUnit")} disabled={!selectedFarmId}>
+          <Select id="areaUnit" {...register("areaUnit")} value={formValues.areaUnit} className="mt-1.5" disabled={!selectedFarmId}>
             <option value="feddan">فدان</option>
             <option value="qirat">قيراط</option>
             <option value="meter">متر مربع</option>
@@ -201,27 +205,27 @@ export function CropCycleForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="cropId">المحصول *</Label>
-          <Select id="cropId" {...register("cropId")}>
-            <option value="">اختر المحصول</option>
-            {crops.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
-          {errors.cropId && <p className="mt-1 text-xs text-danger">{errors.cropId.message}</p>}
-          {crops.length === 0 && (
+        <Label htmlFor="cropId">المحصول *</Label>
+        <Select id="cropId" {...register("cropId")} value={formValues.cropId} className="mt-1.5 bg-paper" disabled={!!defaultValues}>
+          <option value="">اختر المحصول</option>
+          {crops.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        {errors.cropId && <p className="mt-1 text-xs text-danger">{errors.cropId.message}</p>}
+        {crops.length === 0 && (
             <p className="mt-1 text-xs text-ink-faint">
               قاعدة بيانات المحاصيل فارغة — أضف محصولًا أولًا.
             </p>
           )}
-        </div>
+      </div> 
 
         {varieties.length > 0 && (
           <div>
             <Label htmlFor="cropVariety">الصنف (اختياري)</Label>
-            <Select id="cropVariety" {...register("cropVariety")}>
+            <Select id="cropVariety" {...register("cropVariety")} value={formValues.cropVariety}>
               <option value="">اختر الصنف</option>
               {varieties.map((v) => (
                 <option key={v.name} value={v.name}>
@@ -235,7 +239,7 @@ export function CropCycleForm({
         {subVarieties.length > 0 && (
           <div className="md:col-span-2">
             <Label htmlFor="cropSubVariety">السلالة (اختياري)</Label>
-            <Select id="cropSubVariety" {...register("cropSubVariety")}>
+            <Select id="cropSubVariety" {...register("cropSubVariety")} value={formValues.cropSubVariety}>
               <option value="">اختر السلالة</option>
               {subVarieties.map((s) => (
                 <option key={s} value={s}>
@@ -249,7 +253,7 @@ export function CropCycleForm({
 
       <div>
         <Label htmlFor="plantingMethod">طريقة الزراعة *</Label>
-        <Select id="plantingMethod" {...register("plantingMethod")}>
+        <Select id="plantingMethod" {...register("plantingMethod")} value={formValues.plantingMethod}>
           <option value="">اختر طريقة الزراعة</option>
           <option value="بدار">بدار (مباشرة في الأرض)</option>
           <option value="زراعة بالجورة">زراعة بالجورة (نقر / خطوط)</option>

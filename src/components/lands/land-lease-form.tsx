@@ -33,6 +33,7 @@ export function LandLeaseForm({
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { errors },
   } = useForm<LandLeaseSchema>({
     resolver: zodResolver(landLeaseSchema),
@@ -99,7 +100,8 @@ export function LandLeaseForm({
     }
   }, [defaultValues, farmId, reset]);
 
-  const duration = useWatch({ control, name: "duration" });
+  const formValues = watch();
+  const duration = formValues.duration;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -108,7 +110,7 @@ export function LandLeaseForm({
 
       <div>
         <Label htmlFor="landId">قطعة الأرض المستأجرة *</Label>
-        <Select id="landId" {...register("landId")} className="mt-1.5">
+        <Select id="landId" {...register("landId")} value={formValues.landId} className="mt-1.5">
           <option value="">اختر الأرض</option>
           {lands.map((land) => (
             <option key={land.id} value={land.id}>
@@ -146,7 +148,7 @@ export function LandLeaseForm({
 
         <div>
           <Label htmlFor="areaUnit">وحدة المساحة *</Label>
-          <Select id="areaUnit" {...register("areaUnit")} className="mt-1.5">
+          <Select id="areaUnit" {...register("areaUnit")} value={formValues.areaUnit} className="mt-1.5">
             <option value="feddan">فدان</option>
             <option value="qirat">قيراط</option>
             <option value="meter">متر مربع</option>
@@ -158,7 +160,7 @@ export function LandLeaseForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="duration">مدة الإيجار *</Label>
-          <Select id="duration" {...register("duration")} className="mt-1.5">
+          <Select id="duration" {...register("duration")} value={formValues.duration} className="mt-1.5">
             <option value="season">لموسم واحد</option>
             <option value="year">لمدة سنة فأكثر</option>
           </Select>
