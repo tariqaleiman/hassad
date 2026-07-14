@@ -9,9 +9,11 @@ import { useAuth } from "@/lib/providers/auth-provider";
 const SEASONS_KEY = ["seasons"] as const;
 
 export function useSeasons() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: SEASONS_KEY,
-    queryFn: () => seasonService.list(),
+    queryKey: [...SEASONS_KEY, user?.uid],
+    queryFn: () => seasonService.list(user?.uid ?? ""),
+    enabled: !!user?.uid,
   });
 }
 
@@ -21,7 +23,7 @@ export function useCreateSeason() {
   return useMutation({
     mutationFn: (values: SeasonFormValues) => seasonService.create(values, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: SEASONS_KEY });
+      qc.invalidateQueries({ queryKey: [...SEASONS_KEY, user?.uid] });
       toast.success("تم إنشاء الموسم بنجاح");
     },
     onError: () => toast.error("حدث خطأ أثناء إنشاء الموسم"),
@@ -35,7 +37,7 @@ export function useUpdateSeason() {
     mutationFn: ({ id, values }: { id: string; values: Partial<SeasonFormValues> }) =>
       seasonService.update(id, values, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: SEASONS_KEY });
+      qc.invalidateQueries({ queryKey: [...SEASONS_KEY, user?.uid] });
       toast.success("تم حفظ التعديلات");
     },
     onError: () => toast.error("حدث خطأ أثناء التعديل"),
@@ -48,7 +50,7 @@ export function useCloseSeason() {
   return useMutation({
     mutationFn: (id: string) => seasonService.close(id, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: SEASONS_KEY });
+      qc.invalidateQueries({ queryKey: [...SEASONS_KEY, user?.uid] });
       toast.success("تم إغلاق الموسم");
     },
     onError: () => toast.error("حدث خطأ أثناء إغلاق الموسم"),
@@ -61,7 +63,7 @@ export function useDeleteSeason() {
   return useMutation({
     mutationFn: (id: string) => seasonService.remove(id, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: SEASONS_KEY });
+      qc.invalidateQueries({ queryKey: [...SEASONS_KEY, user?.uid] });
       toast.success("تم حذف الموسم");
     },
     onError: () => toast.error("حدث خطأ أثناء الحذف"),

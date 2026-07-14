@@ -11,6 +11,8 @@ export interface IRepository<T extends BaseEntity, TCreate = Partial<T>> {
   getById(id: string): Promise<T | null>;
   create(data: TCreate, userId?: string): Promise<T>;
   update(id: string, data: Partial<TCreate>, userId?: string): Promise<T>;
+  /** الحذف النهائي من قاعدة البيانات */
+  delete(id: string, userId?: string): Promise<void>;
   /** حذف منطقي (Soft Delete) — لا يحذف السجل فعليًا */
   softDelete(id: string, userId?: string): Promise<void>;
   /** استعادة سجل تم حذفه منطقيًا */

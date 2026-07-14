@@ -9,9 +9,11 @@ import { useAuth } from "@/lib/providers/auth-provider";
 const LANDS_KEY = ["lands"] as const;
 
 export function useLands() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: LANDS_KEY,
-    queryFn: () => landService.list(),
+    queryKey: [...LANDS_KEY, user?.uid],
+    queryFn: () => landService.list(user?.uid ?? ""),
+    enabled: !!user?.uid,
   });
 }
 
@@ -21,7 +23,7 @@ export function useCreateLand() {
   return useMutation({
     mutationFn: (values: LandFormValues) => landService.create(values, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: LANDS_KEY });
+      qc.invalidateQueries({ queryKey: [...LANDS_KEY, user?.uid] });
       toast.success("تم إضافة قطعة الأرض بنجاح");
     },
     onError: () => toast.error("حدث خطأ أثناء إضافة قطعة الأرض"),
@@ -35,7 +37,7 @@ export function useUpdateLand() {
     mutationFn: ({ id, values }: { id: string; values: Partial<LandFormValues> }) =>
       landService.update(id, values, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: LANDS_KEY });
+      qc.invalidateQueries({ queryKey: [...LANDS_KEY, user?.uid] });
       toast.success("تم حفظ التعديلات");
     },
     onError: () => toast.error("حدث خطأ أثناء التعديل"),
@@ -48,7 +50,7 @@ export function useDeleteLand() {
   return useMutation({
     mutationFn: (id: string) => landService.remove(id, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: LANDS_KEY });
+      qc.invalidateQueries({ queryKey: [...LANDS_KEY, user?.uid] });
       toast.success("تم حذف قطعة الأرض");
     },
     onError: () => toast.error("حدث خطأ أثناء الحذف"),

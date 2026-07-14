@@ -9,9 +9,11 @@ import { useAuth } from "@/lib/providers/auth-provider";
 const CROP_CYCLES_KEY = ["cropCycles"] as const;
 
 export function useCropCycles() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: CROP_CYCLES_KEY,
-    queryFn: () => cropCycleService.list(),
+    queryKey: [...CROP_CYCLES_KEY, user?.uid],
+    queryFn: () => cropCycleService.list(user?.uid ?? ""),
+    enabled: !!user?.uid,
   });
 }
 
@@ -21,7 +23,7 @@ export function useCreateCropCycle() {
   return useMutation({
     mutationFn: (values: CropCycleFormValues) => cropCycleService.create(values, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CROP_CYCLES_KEY });
+      qc.invalidateQueries({ queryKey: [...CROP_CYCLES_KEY, user?.uid] });
       toast.success("تم إنشاء دورة المحصول بنجاح");
     },
     onError: () => toast.error("حدث خطأ أثناء إنشاء دورة المحصول"),
@@ -34,7 +36,7 @@ export function useMarkCropCycleHarvested() {
   return useMutation({
     mutationFn: (id: string) => cropCycleService.markHarvested(id, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CROP_CYCLES_KEY });
+      qc.invalidateQueries({ queryKey: [...CROP_CYCLES_KEY, user?.uid] });
       toast.success("تم تسجيل حصاد الدورة");
     },
     onError: () => toast.error("حدث خطأ أثناء تسجيل الحصاد"),
@@ -47,7 +49,7 @@ export function useDeleteCropCycle() {
   return useMutation({
     mutationFn: (id: string) => cropCycleService.remove(id, user?.uid),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: CROP_CYCLES_KEY });
+      qc.invalidateQueries({ queryKey: [...CROP_CYCLES_KEY, user?.uid] });
       toast.success("تم حذف دورة المحصول");
     },
     onError: () => toast.error("حدث خطأ أثناء الحذف"),

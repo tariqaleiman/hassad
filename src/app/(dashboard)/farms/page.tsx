@@ -7,10 +7,13 @@ import { Dialog } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { FarmForm } from "@/components/farms/farm-form";
 import { useFarms, useCreateFarm, useUpdateFarm } from "@/lib/hooks/use-farms";
+import { useOwnerProfile } from "@/lib/hooks/use-owner";
 import type { Farm } from "@/lib/types/farm";
 
 export default function FarmProfilePage() {
-  const { data: farms, isLoading } = useFarms();
+  const { data: farms, isLoading: loadingFarms } = useFarms();
+  const { data: owner } = useOwnerProfile();
+  const isLoading = loadingFarms;
   const createFarm = useCreateFarm();
   const updateFarm = useUpdateFarm();
 
@@ -108,7 +111,7 @@ export default function FarmProfilePage() {
                 </div>
                 <div>
                   <p className="text-[10px] text-ink-faint font-medium">المالك</p>
-                  <p className="text-sm font-bold text-ink mt-0.5">{myFarm.ownerName || "المالك الأساسي"}</p>
+                  <p className="text-sm font-bold text-ink mt-0.5">{owner?.name || myFarm.ownerName || "جاري التحميل..."}</p>
                 </div>
               </div>
             </div>

@@ -85,6 +85,8 @@ export const Icons = {
   Delete: Trash2,
   Home: Home,
   Key: Key,
+  Users: Users,
+  Trash: Trash2,
 };
 
 export type IconType = typeof Icons[keyof typeof Icons];

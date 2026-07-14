@@ -2,8 +2,8 @@ import { seasonRepository } from "@/lib/repositories/season-repository";
 import type { Season, SeasonFormValues } from "@/lib/types/season";
 
 export const seasonService = {
-  list: (): Promise<Season[]> => seasonRepository.getAll(),
-  listByFarm: (farmId: string): Promise<Season[]> => seasonRepository.getByFarm(farmId),
+  list: (userId?: string): Promise<Season[]> => seasonRepository.getAll({ userId }),
+  listByFarm: (farmId: string, userId?: string): Promise<Season[]> => seasonRepository.getByField("farmId", farmId, userId),
   get: (id: string): Promise<Season | null> => seasonRepository.getById(id),
   create: (data: SeasonFormValues, userId?: string): Promise<Season> =>
     seasonRepository.create(

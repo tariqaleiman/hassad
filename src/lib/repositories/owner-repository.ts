@@ -2,12 +2,11 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import type { OwnerProfile } from "@/lib/types/owner";
 
-const DOC_PATH = "settings/ownerProfile";
-
-/** مستودع بيانات المالك — مستند واحد في Firestore */
+/** مستودع بيانات المالك — مستند خاص بكل مستخدم */
 export const ownerRepository = {
-  async get(): Promise<OwnerProfile | null> {
-    const ref = doc(db, DOC_PATH);
+  async get(userId: string): Promise<OwnerProfile | null> {
+    if (!userId) return null;
+    const ref = doc(db, `users/${userId}`);
     const snap = await getDoc(ref);
     if (!snap.exists()) return null;
     const data = snap.data();
@@ -21,8 +20,9 @@ export const ownerRepository = {
     };
   },
 
-  async save(profile: OwnerProfile): Promise<void> {
-    const ref = doc(db, DOC_PATH);
-    await setDoc(ref, { ...profile, updatedAt: serverTimestamp() });
+  async save(profile: OwnerProfile, userId: string): Promise<void> {
+    if (!userId) throw new Error("userId is required to save profile");
+    const ref = doc(db, `users/${userId}`);
+    await setDoc(ref, { ...profile, updatedAt: serverTimestamp() }, { merge: true });
   },
 };

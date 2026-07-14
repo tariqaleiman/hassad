@@ -1,9 +1,7 @@
 rules_version = '2';
 
-// قواعد أمان أساسية لمشروع "حصاد" — الإصدار الأول (MVP)
-// المبدأ: لا وصول لأي بيانات إلا لمستخدم مسجّل دخوله (Firebase Authentication)
-// عدّل هذه القواعد لاحقًا لإضافة صلاحيات متعددة المستخدمين وتعدد الشركات
-// (مذكورة في "الوحدات المستقبلية" ضمن وثيقة التأسيس)
+// قواعد أمان مشروع "حصاد" — Multi-Tenancy (تعدد المستخدمين)
+// المبدأ: البيانات معزولة بالكامل، ولا يحق لأي مستخدم الوصول إلا للبيانات التي أنشأها
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -12,77 +10,108 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // كل الوحدات الأساسية للإصدار الأول: نفس القاعدة تنطبق على الجميع
-    match /farms/{farmId} {
-      allow read, write: if isSignedIn();
+    function isOwner() {
+      return isSignedIn() && resource.data.createdBy == request.auth.uid;
     }
 
-    match /lands/{landId} {
-      allow read, write: if isSignedIn();
+    function isOwnerCreate() {
+      return isSignedIn() && request.resource.data.createdBy == request.auth.uid;
     }
 
-    match /seasons/{seasonId} {
-      allow read, write: if isSignedIn();
+    function isOwnerUpdate() {
+      return isOwner() && request.resource.data.createdBy == request.auth.uid;
     }
 
-    match /crops/{cropId} {
-      allow read, write: if isSignedIn();
+    // ملفات المستخدمين (الملف الشخصي والإعدادات)
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    match /cropCycles/{cycleId} {
-      allow read, write: if isSignedIn();
+    // تطبيق قاعدة العزل (Owner Only) على كل الكيانات
+    match /farms/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /operations/{operationId} {
-      allow read, write: if isSignedIn();
+    match /lands/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /inventoryItems/{itemId} {
-      allow read, write: if isSignedIn();
+    match /seasons/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /suppliers/{supplierId} {
-      allow read, write: if isSignedIn();
+    match /crops/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /customers/{customerId} {
-      allow read, write: if isSignedIn();
+    match /cropCycles/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /debts/{debtId} {
-      allow read, write: if isSignedIn();
+    match /operations/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /payments/{paymentId} {
-      allow read, write: if isSignedIn();
+    match /inventoryItems/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /expenses/{expenseId} {
-      allow read, write: if isSignedIn();
+    match /suppliers/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /revenues/{revenueId} {
-      allow read, write: if isSignedIn();
+    match /customers/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /workers/{workerId} {
-      allow read, write: if isSignedIn();
+    match /debts/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    match /equipment/{equipmentId} {
-      allow read, write: if isSignedIn();
+    match /payments/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
     }
 
-    // سجل النشاط: يُكتب من النظام فقط، لا يُعدَّل أو يُحذف يدويًا
-    match /activityLog/{logId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+    match /expenses/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
+    }
+
+    match /revenues/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
+    }
+
+    match /workers/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
+    }
+
+    match /equipment/{document} {
+      allow create: if isOwnerCreate();
+      allow read, update, delete: if isOwner();
+    }
+
+    match /activityLog/{document} {
+      allow create: if isOwnerCreate();
+      allow read: if isOwner();
       allow update, delete: if false;
     }
 
-    // أي مسار غير معرّف صراحة: مرفوض افتراضيًا
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
+

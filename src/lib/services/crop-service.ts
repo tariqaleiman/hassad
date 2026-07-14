@@ -3,7 +3,7 @@ import type { Crop, CropFormValues } from "@/lib/types/crop";
 import { seedCrops } from "@/lib/data/seed-crops";
 
 export const cropService = {
-  list: (): Promise<Crop[]> => cropRepository.getAll(),
+  list: (userId?: string): Promise<Crop[]> => cropRepository.getAll({ userId }),
   get: (id: string): Promise<Crop | null> => cropRepository.getById(id),
   create: (data: CropFormValues, userId?: string): Promise<Crop> =>
     cropRepository.create(data, userId),

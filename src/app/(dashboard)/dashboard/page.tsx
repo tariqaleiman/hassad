@@ -5,14 +5,20 @@ import { Icons } from "@/components/ui/icons";
 import { useFarms } from "@/lib/hooks/use-farms";
 import { useLands } from "@/lib/hooks/use-lands";
 import { useSeasons } from "@/lib/hooks/use-seasons";
+import { useAuth } from "@/lib/providers/auth-provider";
+import { useOwnerProfile } from "@/lib/hooks/use-owner";
 import type { IconType } from "@/components/ui/icons";
 
 export default function DashboardPage() {
   const { data: farms, isLoading } = useFarms();
   const { data: lands, isLoading: loadingLands } = useLands();
   const { data: seasons, isLoading: loadingSeasons } = useSeasons();
+  const { user } = useAuth();
+  const { data: owner } = useOwnerProfile();
 
   const openSeasons = seasons?.filter((s) => s.status === "مفتوح").length ?? 0;
+  const userName = owner?.name || user?.displayName || user?.email?.split('@')[0] || "صديقنا";
+  const currentDate = new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date());
 
   return (
     <div className="space-y-6">
@@ -20,13 +26,13 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1 md:px-0">
         <div>
           <h2 className="font-display text-2xl font-bold text-ink flex items-center gap-2">
-            مرحباً أحمد <span className="text-2xl animate-wave">👋</span>
+            مرحباً {userName} <span className="text-2xl animate-wave">👋</span>
           </h2>
           <p className="text-ink-muted mt-1 text-sm">إليك نظرة عامة على مزرعتك اليوم</p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-paper-sunken/30 px-3 py-2 text-sm text-ink-muted">
           <Icons.CalendarRange className="h-4 w-4" />
-          <span>اليوم، 20 مايو 2024</span>
+          <span>اليوم، {currentDate}</span>
           <Icons.ChevronDown className="h-4 w-4 ms-2" />
         </div>
       </div>

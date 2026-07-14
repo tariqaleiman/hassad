@@ -7,7 +7,7 @@ import { Icons } from "@/components/ui/icons";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { useOwnerProfile } from "@/lib/hooks/use-owner";
 import { useFarms } from "@/lib/hooks/use-farms";
-import { useActiveFarm } from "@/lib/stores/use-active-farm";
+import { useTheme } from "@/lib/providers/theme-provider";
 import { Button } from "@/components/ui/button";
 
 export function Topbar({
@@ -18,11 +18,12 @@ export function Topbar({
   onMenuClick?: () => void;
 }) {
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { data: owner } = useOwnerProfile();
   const { data: farms, isLoading: loadingFarms } = useFarms();
-  const { activeFarmId } = useActiveFarm();
   
-  const activeFarm = farms?.find((f) => f.id === activeFarmId) || farms?.[0];
+  // بما أن المستخدم لديه كيان/مزرعة واحدة، نأخذ الأول دائماً
+  const activeFarm = farms && farms.length > 0 ? farms[0] : null;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -32,7 +33,7 @@ export function Topbar({
 
   /* إغلاق القائمة عند النقر خارجها */
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !notificationsOpen) return;
     const handler = (e: MouseEvent) => {
       const target = e.target as Node;
       if (menuOpen && menuRef.current && !menuRef.current.contains(target)) {
@@ -91,8 +92,12 @@ export function Topbar({
         <div className="hidden sm:block w-px h-5 bg-border/60 mx-1" />
 
         {/* Quick Action Icons */}
-        <button className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full text-ink-muted hover:text-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors tooltip-trigger" aria-label="المظهر">
-          <Icons.Moon className="h-5 w-5" />
+        <button 
+          onClick={toggleTheme}
+          className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full text-ink-muted hover:text-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors tooltip-trigger" 
+          aria-label="المظهر"
+        >
+          {theme === "dark" ? <Icons.Sun className="h-5 w-5" /> : <Icons.Moon className="h-5 w-5" />}
         </button>
 
         <button className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full text-ink-muted hover:text-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors tooltip-trigger" aria-label="الدعم والمساعدة">

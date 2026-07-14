@@ -5,17 +5,15 @@ import { User, Moon, Sun, Globe, LogOut, MapPin, Settings as SettingsIcon } from
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OwnerProfileForm } from "@/components/settings/owner-profile-form";
-import { FarmProfileForm } from "@/components/settings/farm-profile-form";
 import { useOwnerProfile, useSaveOwnerProfile } from "@/lib/hooks/use-owner";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { useTheme } from "@/lib/providers/theme-provider";
 import { useLocale } from "@/lib/providers/locale-provider";
 import { Spinner } from "@/components/ui/spinner";
 import type { OwnerProfileSchema } from "@/components/settings/owner-profile-schema";
-import type { FarmProfileSchema } from "@/components/settings/farm-profile-schema";
 import { cn } from "@/lib/utils";
 
-type SettingsTab = "profile" | "farm" | "appearance";
+type SettingsTab = "profile" | "appearance";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
@@ -34,18 +32,9 @@ export default function SettingsPage() {
     });
   };
 
-  const handleFarmSave = (values: FarmProfileSchema) => {
-    saveProfile.mutate({
-      ...profile,
-      name: profile?.name ?? user?.displayName ?? "", 
-      farmName: values.farmName,
-      farmLocation: values.farmLocation,
-    });
-  };
 
   const tabs = [
     { id: "profile", label: "الحساب الشخصي", icon: User },
-    { id: "farm", label: "بيانات المزرعة", icon: MapPin },
     { id: "appearance", label: "المظهر واللغة", icon: SettingsIcon },
   ];
 
@@ -105,29 +94,7 @@ export default function SettingsPage() {
             </Card>
           )}
 
-          {activeTab === "farm" && (
-            <Card>
-              <CardHeader className="border-b border-border mb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="h-5 w-5 text-ink-muted" />
-                  بيانات المزرعة الرئيسية
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Spinner className="h-6 w-6" />
-                  </div>
-                ) : (
-                  <FarmProfileForm
-                    defaultValues={profile}
-                    onSubmit={handleFarmSave}
-                    loading={saveProfile.isPending}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          )}
+
 
           {activeTab === "appearance" && (
             <div className="space-y-6">

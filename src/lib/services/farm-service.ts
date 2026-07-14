@@ -15,11 +15,12 @@ function prepareForSave(data: FarmFormValues): FarmFormValues {
     clean.partners = clean.partners.filter(p => p.name && p.name.trim() !== "");
   }
 
-  return clean;
+  // Firestore doesn't support undefined values, so we strip them
+  return JSON.parse(JSON.stringify(clean));
 }
 
 export const farmService = {
-  list: (): Promise<Farm[]> => farmRepository.getAll(),
+  list: (userId?: string): Promise<Farm[]> => farmRepository.getAll({ userId }),
   get: (id: string): Promise<Farm | null> => farmRepository.getById(id),
   create: (data: FarmFormValues, userId?: string): Promise<Farm> =>
     farmRepository.create(prepareForSave(data), userId),

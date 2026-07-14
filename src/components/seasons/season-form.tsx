@@ -14,15 +14,13 @@ import type { Farm } from "@/lib/types/farm";
 
 export function SeasonForm({
   defaultValues,
-  farms,
-  defaultFarmId,
+  farmId,
   onSubmit,
   loading,
   onCancel,
 }: {
   defaultValues?: Season | null;
-  farms: Farm[];
-  defaultFarmId?: string;
+  farmId: string;
   onSubmit: (values: SeasonSchema) => void;
   loading?: boolean;
   onCancel: () => void;
@@ -35,44 +33,33 @@ export function SeasonForm({
   } = useForm<SeasonSchema>({
     resolver: zodResolver(seasonSchema),
     defaultValues: {
-      farmId: defaultValues?.farmId ?? defaultFarmId ?? "",
+      farmId: defaultValues?.farmId ?? farmId,
       name: defaultValues?.name ?? "",
       type: defaultValues?.type ?? "صيفي",
-      startDate: defaultValues?.startDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+      expectedBudget: defaultValues?.expectedBudget ?? null,
+      description: defaultValues?.description ?? "",
       notes: defaultValues?.notes ?? "",
     },
   });
 
   useEffect(() => {
     reset({
-      farmId: defaultValues?.farmId ?? defaultFarmId ?? "",
+      farmId: defaultValues?.farmId ?? farmId,
       name: defaultValues?.name ?? "",
       type: defaultValues?.type ?? "صيفي",
-      startDate: defaultValues?.startDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+      expectedBudget: defaultValues?.expectedBudget ?? null,
+      description: defaultValues?.description ?? "",
       notes: defaultValues?.notes ?? "",
     });
-  }, [defaultValues, defaultFarmId, reset]);
+  }, [defaultValues, farmId, reset]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div>
-        <Label htmlFor="farmId">المزرعة *</Label>
-        <Select id="farmId" {...register("farmId")} disabled={!!defaultValues}>
-          <option value="">اختر المزرعة</option>
-          {farms.map((farm) => (
-            <option key={farm.id} value={farm.id}>
-              {farm.name}
-            </option>
-          ))}
-        </Select>
-        {errors.farmId && (
-          <p className="mt-1 text-xs text-danger">{errors.farmId.message}</p>
-        )}
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <input type="hidden" {...register("farmId")} />
 
       <div>
         <Label htmlFor="name">اسم الموسم *</Label>
-        <Input id="name" {...register("name")} placeholder="مثال: موسم صيف 2026" />
+        <Input id="name" {...register("name")} placeholder="مثال: موسم صيف 2026" className="mt-1.5" />
         {errors.name && (
           <p className="mt-1 text-xs text-danger">{errors.name.message}</p>
         )}
@@ -81,20 +68,27 @@ export function SeasonForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="type">نوع الموسم *</Label>
-          <Select id="type" {...register("type")}>
+          <Select id="type" {...register("type")} className="mt-1.5">
             <option value="صيفي">صيفي</option>
             <option value="شتوي">شتوي</option>
             <option value="نيلي">نيلي</option>
+            <option value="مستديم">مستديم</option>
+            <option value="محيّر">محيّر</option>
             <option value="مخصص">مخصص</option>
           </Select>
         </div>
         <div>
-          <Label htmlFor="startDate">تاريخ البداية *</Label>
-          <Input id="startDate" type="date" {...register("startDate")} />
-          {errors.startDate && (
-            <p className="mt-1 text-xs text-danger">{errors.startDate.message}</p>
+          <Label htmlFor="expectedBudget">الميزانية التقديرية (ج.م)</Label>
+          <Input id="expectedBudget" type="number" {...register("expectedBudget", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 50000" />
+          {errors.expectedBudget && (
+            <p className="mt-1 text-xs text-danger">{errors.expectedBudget.message}</p>
           )}
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="description">وصف الموسم وأهدافه</Label>
+        <Textarea id="description" {...register("description")} rows={2} className="mt-1.5" placeholder="أهداف الموسم أو أي معلومات هامة..." />
       </div>
 
       <div>

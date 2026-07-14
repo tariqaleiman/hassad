@@ -8,6 +8,7 @@ import {
   query,
   serverTimestamp,
   updateDoc,
+  deleteDoc,
   where,
   type CollectionReference,
   type QueryConstraint,
@@ -36,20 +37,32 @@ export class FirestoreRepository<
   async getAll(options?: {
     includeDeleted?: boolean;
     constraints?: QueryConstraint[];
+    userId?: string;
   }): Promise<T[]> {
     try {
       const constraints: QueryConstraint[] = [
-        orderBy("createdAt", "desc"),
         ...(options?.constraints ?? []),
       ];
       
       if (!options?.includeDeleted) {
         constraints.unshift(where("isDeleted", "==", false));
       }
+
+      if (options?.userId) {
+        constraints.push(where("createdBy", "==", options.userId));
+      }
       
       const q = query(this.collectionRef, ...constraints);
       const snap = await getDocs(q);
-      const items = snap.docs.map((d) => this.fromDoc(d.id, d.data()));
+      let items = snap.docs.map((d) => this.fromDoc(d.id, d.data()));
+      
+      // Sort in-memory to avoid requiring a composite index in Firestore
+      items.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA; // desc
+      });
+      
       return items;
     } catch (error: any) {
       if (error.name === "AbortError" || error.message?.includes("abort")) {
@@ -60,16 +73,29 @@ export class FirestoreRepository<
     }
   }
 
-  async getByField(field: string, value: unknown): Promise<T[]> {
+  async getByField(field: string, value: unknown, userId?: string): Promise<T[]> {
     try {
-      const q = query(
-        this.collectionRef,
+      const constraints: QueryConstraint[] = [
         where(field, "==", value),
-        where("isDeleted", "==", false),
-        orderBy("createdAt", "desc")
-      );
+        where("isDeleted", "==", false)
+      ];
+
+      if (userId) {
+        constraints.push(where("createdBy", "==", userId));
+      }
+
+      const q = query(this.collectionRef, ...constraints);
       const snap = await getDocs(q);
-      return snap.docs.map((d) => this.fromDoc(d.id, d.data()));
+      let items = snap.docs.map((d) => this.fromDoc(d.id, d.data()));
+      
+      // Sort in-memory to avoid requiring a composite index
+      items.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA; // desc
+      });
+      
+      return items;
     } catch (error: any) {
       if (error.name === "AbortError" || error.message?.includes("abort")) return [];
       throw error;
@@ -118,6 +144,11 @@ export class FirestoreRepository<
     const updated = await this.getById(id);
     if (!updated) throw new Error("السجل غير موجود");
     return updated;
+  }
+
+  async delete(id: string, userId?: string): Promise<void> {
+    const ref = doc(this.collectionRef, id);
+    await deleteDoc(ref);
   }
 
   async softDelete(id: string, userId?: string): Promise<void> {

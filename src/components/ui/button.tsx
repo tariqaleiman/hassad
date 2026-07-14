@@ -14,7 +14,7 @@ const buttonVariants = cva(
         outline: "border border-border bg-transparent text-ink hover:bg-black/5 dark:hover:bg-white/10",
         ghost: "text-ink hover:bg-black/5 dark:hover:bg-white/10",
         danger: "bg-danger text-white hover:bg-danger/90",
-        wheat: "bg-wheat-500 text-ink hover:bg-wheat-600",
+        wheat: "bg-wheat-500 text-[#0f0f0f] hover:bg-wheat-600",
         link: "text-sky-500 underline-offset-4 hover:underline p-0 h-auto font-medium",
       },
       size: {

@@ -1,21 +1,49 @@
 import { cropCycleRepository } from "@/lib/repositories/crop-cycle-repository";
+import { landRepository } from "@/lib/repositories/land-repository";
 import type { CropCycle, CropCycleFormValues } from "@/lib/types/crop-cycle";
+import { convertToFeddan } from "@/lib/utils/area";
+
+async function validateAreaConstraint(data: CropCycleFormValues, idToIgnore?: string, userId?: string) {
+  const newAreaInFeddan = convertToFeddan(data.areaValue, data.areaUnit);
+  
+  const { landService } = await import("./land-service");
+  const areaInfo = await landService.getAvailableArea(data.landId, data.seasonId, idToIgnore, undefined, userId);
+
+  if (newAreaInFeddan > areaInfo.available + 0.001) { // 0.001 for floating point errors
+    throw new Error(`لا يمكن إضافة مساحة ${data.areaValue}. المساحة المتاحة في هذه الأرض هي: ${areaInfo.available.toFixed(2)} فدان`);
+  }
+
+  return newAreaInFeddan;
+}
 
 export const cropCycleService = {
-  list: (): Promise<CropCycle[]> => cropCycleRepository.getAll(),
-  listBySeason: (seasonId: string): Promise<CropCycle[]> =>
-    cropCycleRepository.getBySeason(seasonId),
+  list: (userId?: string): Promise<CropCycle[]> => cropCycleRepository.getAll({ userId }),
+  listByFarm: (farmId: string, userId?: string): Promise<CropCycle[]> => cropCycleRepository.getByField("farmId", farmId, userId),
+  listBySeason: (seasonId: string, userId?: string): Promise<CropCycle[]> =>
+    cropCycleRepository.getByField("seasonId", seasonId, userId),
   get: (id: string): Promise<CropCycle | null> => cropCycleRepository.getById(id),
-  create: (data: CropCycleFormValues, userId?: string): Promise<CropCycle> =>
-    cropCycleRepository.create(
-      { ...data, status: "نشطة", harvestDate: null } as unknown as CropCycleFormValues,
+  
+  create: async (data: CropCycleFormValues, userId?: string): Promise<CropCycle> => {
+    const areaInFeddan = await validateAreaConstraint(data, undefined, userId);
+    return cropCycleRepository.create(
+      { ...data, status: "نشطة", harvestDate: null, areaInFeddan } as unknown as CropCycleFormValues,
       userId
-    ),
-  update: (
+    );
+  },
+  
+  update: async (
     id: string,
     data: Partial<CropCycleFormValues>,
     userId?: string
-  ): Promise<CropCycle> => cropCycleRepository.update(id, data, userId),
+  ): Promise<CropCycle> => {
+    let areaInFeddan;
+    if (data.areaValue && data.areaUnit && data.landId && data.seasonId) {
+      areaInFeddan = await validateAreaConstraint(data as CropCycleFormValues, id, userId);
+    }
+    const updateData = areaInFeddan !== undefined ? { ...data, areaInFeddan } : data;
+    return cropCycleRepository.update(id, updateData, userId);
+  },
+  
   markHarvested: (id: string, userId?: string): Promise<void> =>
     cropCycleRepository.markHarvested(id, userId),
   remove: (id: string, userId?: string): Promise<void> =>
