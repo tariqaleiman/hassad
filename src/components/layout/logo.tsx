@@ -1,12 +1,13 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import logoImg from "../../../../public/logo-trans.png";
 
 export function Logo({ className, showText = true }: { className?: string; showText?: boolean }) {
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
       <div className="relative flex items-center justify-center h-6 w-6 shrink-0">
         <Image
-          src="/logo-trans.png"
+          src={logoImg}
           alt="شعار نظام حصاد"
           fill
           sizes="16px"
