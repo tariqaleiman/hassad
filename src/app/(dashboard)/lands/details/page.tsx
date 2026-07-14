@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
 
 import { useLands, useUpdateLand, useDeleteLand } from "@/lib/hooks/use-lands";
 import { useFarms } from "@/lib/hooks/use-farms";
@@ -158,11 +159,11 @@ function LandDetailsContent() {
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setFormOpen(true)} className="gap-2 rounded-full px-5">
+          <Button variant="outline" onClick={() => setFormOpen(true)} className="gap-2">
             <Pencil className="h-4 w-4" />
             تعديل الأرض
           </Button>
-          <Button variant="outline" onClick={() => setDeletingLand(true)} className="gap-2 rounded-full px-5 text-danger border-danger/30 hover:bg-danger-bg hover:text-danger">
+          <Button variant="outline" onClick={() => setDeletingLand(true)} className="gap-2 text-danger hover:bg-danger/10 hover:text-danger hover:border-danger/30">
             <Trash2 className="h-4 w-4" />
             حذف
           </Button>
@@ -179,16 +180,16 @@ function LandDetailsContent() {
           
           <div className="flex items-center gap-3 bg-paper-sunken p-1.5 rounded-xl border border-border/40">
             <span className="text-sm font-medium text-ink-muted px-2">الموسم:</span>
-            <select 
+            <Select 
               value={selectedSeasonId} 
               onChange={(e) => setSelectedSeasonId(e.target.value)}
-              className="bg-paper border border-border rounded-lg px-3 py-1.5 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-crop-500/50"
+              className="w-48 bg-paper border-border shadow-none h-8 text-xs font-medium"
             >
               {activeSeasons.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
               {activeSeasons.length === 0 && <option value="">لا يوجد مواسم مفتوحة</option>}
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -293,7 +294,7 @@ function LandDetailsContent() {
                 <p className="text-sm text-ink-muted">المحاصيل المزروعة حالياً في هذه الأرض خلال الموسم المحدد.</p>
               </div>
               <Link href="/crops">
-                <Button variant="outline" className="gap-2 rounded-full">
+                <Button className="gap-2">
                   <Plus className="h-4 w-4" />
                   إضافة دورة جديدة
                 </Button>
@@ -355,7 +356,7 @@ function LandDetailsContent() {
                 <h3 className="text-lg font-bold text-ink">الإيجارات الصادرة (تأجير للغير)</h3>
                 <p className="text-sm text-ink-muted">سجل الأجزاء التي قمت بتأجيرها من هذه الأرض لآخرين.</p>
               </div>
-              <Button onClick={() => { setEditingLease(null); setLeaseFormOpen(true); }} className="gap-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/20">
+              <Button onClick={() => { setEditingLease(null); setLeaseFormOpen(true); }} className="gap-2">
                 <Plus className="h-4 w-4" />
                 تأجير للغير
               </Button>
@@ -406,7 +407,7 @@ function LandDetailsContent() {
                             <Pencil className="h-3.5 w-3.5 ml-2" />
                             تعديل
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => setDeletingLease(lease)} className="flex-1 text-danger border-danger/30 hover:bg-danger-bg hover:text-danger">
+                          <Button variant="outline" size="sm" onClick={() => setDeletingLease(lease)} className="flex-1 text-danger hover:bg-danger/10 hover:text-danger hover:border-danger/30 border-danger/30">
                             <Trash2 className="h-3.5 w-3.5 ml-2" />
                             إلغاء
                           </Button>
