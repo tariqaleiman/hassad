@@ -83,6 +83,10 @@ function LandDetailsContent() {
     return leases?.filter(l => l.landId === id && l.status === "نشط") || [];
   }, [leases, id]);
 
+  const pastLeases = useMemo(() => {
+    return leases?.filter(l => l.landId === id && l.status === "منتهي") || [];
+  }, [leases, id]);
+
   const usedByCrops = useMemo(() => landCrops.reduce((acc, curr) => acc + (curr.areaInFeddan || 0), 0), [landCrops]);
   const usedByLeases = useMemo(() => {
     return landLeases.reduce((acc, curr) => {
@@ -421,6 +425,52 @@ function LandDetailsContent() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+
+            {pastLeases.length > 0 && (
+              <div className="pt-8 mt-8 border-t border-border/40">
+                <h3 className="text-lg font-bold text-ink mb-4">السجل (عقود منتهية)</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-75 grayscale-[30%]">
+                  {pastLeases.map(lease => (
+                    <Card key={lease.id} className="group relative overflow-hidden rounded-2xl border-border/60 bg-paper-sunken/50">
+                      <CardContent className="p-0">
+                        <div className="absolute top-0 right-0 bg-slate-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-sm">
+                          {lease.duration === "year" ? "إيجار سنوي" : "إيجار موسمي"} (منتهي)
+                        </div>
+                        <div className="p-5">
+                          <div className="flex justify-between items-start mb-4 mt-2">
+                            <div className="flex items-center gap-3">
+                              <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400">
+                                <Briefcase className="h-6 w-6" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-lg line-through text-ink-muted">{lease.tenantName}</h4>
+                                <p className="text-xs text-ink-faint">{lease.tenantPhone || "بدون رقم"}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-2 text-sm p-3 rounded-xl border border-border/20 bg-paper-sunken/30">
+                            <div className="flex justify-between">
+                              <span className="text-ink-muted">المساحة المؤجرة:</span>
+                              <span className="font-bold text-ink-muted">{lease.areaValue} {lease.areaUnit === "feddan" ? "فدان" : "قيراط"}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-ink-muted">قيمة الإيجار:</span>
+                              <span className="font-bold text-slate-500">{lease.rentAmount.toLocaleString()} ج.م</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-4 pt-4 border-t border-border/20">
+                            <Button variant="ghost" size="sm" onClick={() => setDeletingLease(lease)} className="flex-1 px-1 text-danger hover:bg-danger/10 hover:text-danger">
+                              <Trash2 className="h-3.5 w-3.5 ml-1" />
+                              حذف نهائياً
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
           </div>
