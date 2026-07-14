@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ export function LandLeaseForm({
     control,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<LandLeaseSchema>({
     resolver: zodResolver(landLeaseSchema),
@@ -103,6 +104,17 @@ export function LandLeaseForm({
   const formValues = watch();
   const duration = formValues.duration;
 
+  const [rentInputMode, setRentInputMode] = useState<"total" | "per_unit">("total");
+  const [unitPrice, setUnitPrice] = useState<number | "">("");
+
+  const currentArea = watch("areaValue");
+  
+  useEffect(() => {
+    if (rentInputMode === "per_unit" && typeof unitPrice === "number" && currentArea) {
+      setValue("rentAmount", parseFloat((unitPrice * currentArea).toFixed(2)));
+    }
+  }, [rentInputMode, unitPrice, currentArea, setValue]);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <input type="hidden" {...register("farmId")} />
@@ -166,14 +178,63 @@ export function LandLeaseForm({
           </Select>
           {errors.duration && <p className="mt-1 text-xs text-danger">{errors.duration.message}</p>}
         </div>
-        <div>
-          <Label htmlFor="rentAmount">قيمة الإيجار (إيراد) *</Label>
-          <Input 
-            id="rentAmount" 
-            type="number" 
-            {...register("rentAmount", { valueAsNumber: true })} 
-            className="mt-1.5 bg-paper" 
-          />
+        <div className="md:col-span-2 space-y-4 bg-paper-sunken p-4 rounded-xl border border-border/40">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-base font-bold">قيمة الإيجار (إيراد) *</Label>
+            <div className="flex bg-paper border border-border/50 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setRentInputMode("total")}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${rentInputMode === "total" ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-500" : "text-ink-muted hover:text-ink"}`}
+              >
+                إجمالي
+              </button>
+              <button
+                type="button"
+                onClick={() => setRentInputMode("per_unit")}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${rentInputMode === "per_unit" ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-500" : "text-ink-muted hover:text-ink"}`}
+              >
+                للوحدة (للفدان/القيراط)
+              </button>
+            </div>
+          </div>
+
+          {rentInputMode === "per_unit" ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="unitPrice" className="text-xs text-ink-muted">القيمة للوحدة الواحدة</Label>
+                <Input 
+                  id="unitPrice" 
+                  type="number" 
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="مثال: 15000"
+                  className="mt-1.5 bg-paper" 
+                />
+              </div>
+              <div>
+                <Label htmlFor="calculatedTotal" className="text-xs text-ink-muted">الإجمالي التلقائي</Label>
+                <Input 
+                  id="calculatedTotal" 
+                  type="number" 
+                  disabled
+                  value={watch("rentAmount")}
+                  className="mt-1.5 bg-paper-raised font-bold text-amber-600 disabled:opacity-100" 
+                />
+                <input type="hidden" {...register("rentAmount", { valueAsNumber: true })} />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <Label htmlFor="rentAmount" className="text-xs text-ink-muted">المبلغ الإجمالي</Label>
+              <Input 
+                id="rentAmount" 
+                type="number" 
+                {...register("rentAmount", { valueAsNumber: true })} 
+                className="mt-1.5 bg-paper max-w-sm" 
+              />
+            </div>
+          )}
           {errors.rentAmount && <p className="mt-1 text-xs text-danger">{errors.rentAmount.message}</p>}
         </div>
       </div>
@@ -199,7 +260,7 @@ export function LandLeaseForm({
           إلغاء
         </Button>
         <Button type="submit" loading={loading} className="shadow-md hover:shadow-lg transition-all">
-          حفظ عقد الإيجار
+          {defaultValues ? "حفظ التعديلات" : "حفظ عقد الإيجار"}
         </Button>
       </div>
     </form>
