@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, CalendarRange, Pencil, Trash2, Lock, Sprout, Wallet, ArrowLeft, Leaf } from "lucide-react";
+import { Plus, CalendarRange, Pencil, Trash2, Lock, Sprout, Wallet, ArrowLeft, Leaf, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,8 @@ import {
   useUpdateSeason,
 } from "@/lib/hooks/use-seasons";
 import { useFarms } from "@/lib/hooks/use-farms";
+import { useCropCycles } from "@/lib/hooks/use-crop-cycles";
+import { useLands } from "@/lib/hooks/use-lands";
 import { formatDate, cn } from "@/lib/utils";
 import type { Season } from "@/lib/types/season";
 import type { SeasonSchema } from "@/components/seasons/season-schema";
@@ -35,6 +37,8 @@ const seasonColors: Record<string, string> = {
 export default function SeasonsPage() {
   const { data: seasons, isLoading: loadingSeasons } = useSeasons();
   const { data: farms, isLoading: loadingFarms } = useFarms();
+  const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
+  const { data: lands, isLoading: loadingLands } = useLands();
   const createSeason = useCreateSeason();
   const updateSeason = useUpdateSeason();
   const deleteSeason = useDeleteSeason();
@@ -45,10 +49,12 @@ export default function SeasonsPage() {
   const [deletingSeason, setDeletingSeason] = useState<Season | null>(null);
   const [closingSeason, setClosingSeason] = useState<Season | null>(null);
 
-  const isLoading = loadingSeasons || loadingFarms;
+  const isLoading = loadingSeasons || loadingFarms || loadingCycles || loadingLands;
   const activeFarm = farms?.[0];
 
   const filteredSeasons = seasons?.filter((s) => s.farmId === activeFarm?.id) || [];
+  
+  const farmTotalArea = lands?.reduce((acc, l) => acc + l.areaInFeddan, 0) || 0;
 
   const openCreate = () => {
     setEditingSeason(null);
@@ -129,10 +135,14 @@ export default function SeasonsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredSeasons.map((season) => (
-            <Card key={season.id} className="group relative overflow-hidden rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
-              <CardContent className="p-0">
-                <div className="p-6">
+          {filteredSeasons.map((season) => {
+            const seasonCycles = cropCycles?.filter(c => c.seasonId === season.id) || [];
+            const plantedArea = seasonCycles.reduce((acc, curr) => acc + (curr.areaInFeddan || 0), 0);
+            
+            return (
+              <Card key={season.id} className="group relative overflow-hidden rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+                <CardContent className="p-0">
+                  <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <Badge variant="neutral" className={cn("px-3 py-1 font-medium border text-xs shadow-sm", seasonColors[season.type] || seasonColors["مخصص"])}>
                       {season.type}
@@ -185,6 +195,17 @@ export default function SeasonsPage() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="mt-5 grid grid-cols-2 gap-3 text-sm border-t border-border/40 pt-5">
+                    <div className="flex items-center gap-2 text-ink-muted">
+                      <Leaf className="h-4 w-4 text-crop-500" />
+                      <span>{seasonCycles.length} محصول</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-ink-muted">
+                      <MapIcon className="h-4 w-4 text-sky-500" />
+                      <span>{plantedArea > 0 ? `${plantedArea.toFixed(2)} فدان مزروع` : "لم يُزرع شيء"}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-5 pt-4 border-t border-border/40 text-center bg-paper-sunken/30">
@@ -215,7 +236,8 @@ export default function SeasonsPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

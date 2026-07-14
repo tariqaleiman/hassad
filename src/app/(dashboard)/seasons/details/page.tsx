@@ -80,6 +80,10 @@ function SeasonDetailsContent() {
   const activeCycles = cycles.filter(c => c.status === "نشطة").length;
   const harvestedCycles = cycles.filter(c => c.status === "محصودة").length;
 
+  const farmTotalArea = lands?.reduce((acc, l) => acc + (l.areaInFeddan || 0), 0) || 0;
+  const plantedArea = cycles.reduce((acc, c) => acc + (c.areaInFeddan || 0), 0);
+  const plantedPercentage = farmTotalArea > 0 ? Math.min((plantedArea / farmTotalArea) * 100, 100) : 0;
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -108,7 +112,22 @@ function SeasonDetailsContent() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="bg-amber-100 text-amber-600 p-3 rounded-xl shadow-sm">
+              <MapIcon className="h-6 w-6" />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium text-ink-muted mb-1">استغلال الأراضي</p>
+              <div className="flex justify-between items-end">
+                <p className="text-xl font-bold text-ink truncate">{plantedArea > 0 ? plantedArea.toFixed(2) : "0"} / {farmTotalArea.toFixed(1)} <span className="text-sm font-normal text-ink-muted">فدان</span></p>
+                <span className="text-xs font-bold text-amber-600 mr-2">{plantedPercentage.toFixed(0)}%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex items-center gap-4">
             <div className="bg-crop-100 text-crop-600 p-3 rounded-xl shadow-sm">
@@ -196,6 +215,12 @@ function SeasonDetailsContent() {
                           <MapIcon className="h-4 w-4 text-crop-500" />
                         </div>
                         <span className="font-medium text-ink/80">{landsById.get(cycle.landId)?.name ?? "أرض غير معروفة"}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-ink-muted">
+                        <div className="bg-paper-sunken p-1.5 rounded-md border border-border/40">
+                          <Activity className="h-4 w-4 text-crop-500" />
+                        </div>
+                        <span className="font-medium text-ink/80">المساحة: <strong className="text-ink">{cycle.areaValue}</strong> {cycle.areaUnit === "feddan" ? "فدان" : "قيراط"}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-ink-muted">
                         <div className="bg-paper-sunken p-1.5 rounded-md border border-border/40">
