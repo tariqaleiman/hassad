@@ -130,9 +130,7 @@ export default function SeasonsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredSeasons.map((season) => (
-            <Card key={season.id} className="group relative overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 bg-gradient-to-br from-paper to-paper-sunken border-border/40">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-crop-400 to-crop-600 opacity-0 transition-opacity group-hover:opacity-100" />
-              
+            <Card key={season.id} className="group relative overflow-hidden rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
               <CardContent className="p-0">
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -140,27 +138,24 @@ export default function SeasonsPage() {
                       {season.type}
                     </Badge>
                     
-                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 bg-paper/80 backdrop-blur-md rounded-full shadow-sm border border-border/50 p-1">
+                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         onClick={(e) => { e.preventDefault(); openEdit(season); }}
-                        className="rounded-full p-2 text-ink-muted hover:bg-crop-50 hover:text-crop-600 transition-colors"
+                        className="rounded-xl p-2 text-ink-muted hover:bg-paper-sunken hover:text-ink transition-colors"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={(e) => { e.preventDefault(); setDeletingSeason(season); }}
-                        className="rounded-full p-2 text-ink-muted hover:bg-danger-bg hover:text-danger transition-colors"
+                        className="rounded-xl p-2 text-ink-muted hover:bg-danger-bg hover:text-danger transition-colors"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
 
                   <Link href={`/seasons/details?id=${season.id}`} className="block focus:outline-none group/link">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-display text-xl font-bold text-ink group-hover/link:text-crop-600 transition-colors">{season.name}</h3>
-                      <ArrowLeft className="h-5 w-5 text-ink-muted opacity-0 -translate-x-4 transition-all group-hover/link:opacity-100 group-hover/link:translate-x-0 group-hover/link:text-crop-600" />
-                    </div>
+                    <h3 className="font-display text-xl font-bold text-ink truncate group-hover/link:text-crop-600 transition-colors">{season.name}</h3>
                     {season.description && (
                       <p className="mt-2 text-sm text-ink-muted line-clamp-2 leading-relaxed">
                         {season.description}
@@ -192,22 +187,31 @@ export default function SeasonsPage() {
                   </div>
                 </div>
 
-                <div className="border-t border-border/50 bg-paper-sunken/50 p-4 flex items-center justify-between">
-                  <Badge variant={season.status === "مفتوح" ? "default" : "neutral"} className="shadow-sm">
-                    {season.status}
-                  </Badge>
-                  
-                  {season.status === "مفتوح" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-ink-muted hover:text-ink hover:bg-paper font-medium"
-                      onClick={() => setClosingSeason(season)}
-                    >
-                      <Lock className="h-3.5 w-3.5 rtl:ml-1.5 ltr:mr-1.5" />
-                      إغلاق الموسم
-                    </Button>
-                  )}
+                <div className="mt-5 pt-4 border-t border-border/40 text-center bg-paper-sunken/30">
+                  <div className="p-4 flex items-center justify-between">
+                    <Badge variant={season.status === "مفتوح" ? "default" : "neutral"} className="shadow-sm">
+                      {season.status}
+                    </Badge>
+                    
+                    {season.status === "مفتوح" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-ink-muted hover:text-ink hover:bg-paper font-medium"
+                        onClick={() => setClosingSeason(season)}
+                      >
+                        <Lock className="h-3.5 w-3.5 rtl:ml-1.5 ltr:mr-1.5" />
+                        إغلاق الموسم
+                      </Button>
+                    )}
+                  </div>
+                  <Link 
+                    href={`/seasons/details?id=${season.id}`}
+                    className="inline-flex w-full justify-center items-center gap-2 pb-4 text-sm font-semibold text-crop-600 hover:text-crop-700 transition-colors"
+                  >
+                    عرض التفاصيل
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
                 </div>
               </CardContent>
             </Card>

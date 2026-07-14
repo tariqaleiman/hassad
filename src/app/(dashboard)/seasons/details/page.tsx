@@ -109,7 +109,7 @@ function SeasonDetailsContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-paper to-paper-sunken border-border/40 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex items-center gap-4">
             <div className="bg-crop-100 text-crop-600 p-3 rounded-xl shadow-sm">
               <Activity className="h-6 w-6" />
@@ -121,7 +121,7 @@ function SeasonDetailsContent() {
           </CardContent>
         </Card>
         
-        <Card className="bg-gradient-to-br from-paper to-paper-sunken border-border/40 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex items-center gap-4">
             <div className="bg-emerald-100 text-emerald-600 p-3 rounded-xl shadow-sm">
               <CheckCircle2 className="h-6 w-6" />
@@ -133,7 +133,7 @@ function SeasonDetailsContent() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-paper to-paper-sunken border-border/40 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex items-center gap-4">
             <div className="bg-sky-100 text-sky-600 p-3 rounded-xl shadow-sm">
               <Wallet className="h-6 w-6" />
@@ -171,8 +171,7 @@ function SeasonDetailsContent() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {cycles.map((cycle) => (
-              <Card key={cycle.id} className="group overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 border-border/40 bg-gradient-to-br from-paper to-paper-sunken relative">
-                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-crop-300 to-crop-500 opacity-0 transition-opacity group-hover:opacity-100" />
+              <Card key={cycle.id} className="group overflow-hidden rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
                 <CardContent className="p-0">
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -181,7 +180,7 @@ function SeasonDetailsContent() {
                       </Badge>
                       <button
                         onClick={() => setDeletingCycle(cycle)}
-                        className="text-ink-muted hover:text-danger hover:bg-danger-bg p-2 rounded-full transition-colors opacity-0 group-hover:opacity-100 bg-paper/80 backdrop-blur-md shadow-sm border border-border/50"
+                        className="rounded-xl p-2 text-ink-muted hover:bg-danger-bg hover:text-danger transition-colors opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -208,7 +207,7 @@ function SeasonDetailsContent() {
                   </div>
                   
                   {cycle.status === "نشطة" && (
-                    <div className="bg-paper-sunken/50 p-4 border-t border-border/50 flex justify-end">
+                    <div className="bg-paper-sunken/30 p-4 border-t border-border/40 flex justify-end">
                       <Button variant="outline" size="sm" onClick={() => setHarvestingCycle(cycle)} className="gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 font-medium">
                         <CheckCircle2 className="h-4 w-4" />
                         تسجيل الحصاد
