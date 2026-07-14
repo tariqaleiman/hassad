@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, CalendarRange, Plus, Leaf, Map as MapIcon, Activity, CheckCircle2, Trash2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,9 @@ import { formatDate } from "@/lib/utils";
 import type { CropCycleSchema } from "@/components/crop-cycles/crop-cycle-schema";
 import type { CropCycle } from "@/lib/types/crop-cycle";
 
-export default function SeasonDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+function SeasonDetailsContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
   
   const { data: seasons, isLoading: loadingSeasons } = useSeasons();
   const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
@@ -251,5 +253,17 @@ export default function SeasonDetailsPage({ params }: { params: Promise<{ id: st
         loading={deleteCropCycle.isPending}
       />
     </div>
+  );
+}
+
+export default function SeasonDetailsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-20">
+        <Spinner className="h-8 w-8 text-crop-500" />
+      </div>
+    }>
+      <SeasonDetailsContent />
+    </Suspense>
   );
 }

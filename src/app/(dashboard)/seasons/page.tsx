@@ -156,7 +156,7 @@ export default function SeasonsPage() {
                     </div>
                   </div>
 
-                  <Link href={`/seasons/${season.id}`} className="block focus:outline-none group/link">
+                  <Link href={`/seasons/details?id=${season.id}`} className="block focus:outline-none group/link">
                     <div className="flex items-center justify-between">
                       <h3 className="font-display text-xl font-bold text-ink group-hover/link:text-crop-600 transition-colors">{season.name}</h3>
                       <ArrowLeft className="h-5 w-5 text-ink-muted opacity-0 -translate-x-4 transition-all group-hover/link:opacity-100 group-hover/link:translate-x-0 group-hover/link:text-crop-600" />
