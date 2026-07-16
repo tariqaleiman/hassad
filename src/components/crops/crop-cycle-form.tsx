@@ -288,7 +288,7 @@ export function CropCycleForm({
           إلغاء
         </Button>
         <Button type="submit" loading={loading}>
-          إنشاء دورة المحصول
+          {defaultValues ? "حفظ التعديلات" : "إنشاء دورة المحصول"}
         </Button>
       </div>
     </form>

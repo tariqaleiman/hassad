@@ -14,7 +14,9 @@ import type { InventoryItem } from "@/lib/types/inventory";
 import { seasonService } from "@/lib/services/season-service";
 import { cropCycleService } from "@/lib/services/crop-cycle-service";
 import { cropService } from "@/lib/services/crop-service";
+import { contractorService } from "@/lib/services/contractor-service";
 import type { Crop } from "@/lib/types/crop";
+import type { Contractor } from "@/lib/types/contractor";
 
 export default function OperationsPage() {
   const { user } = useAuth();
@@ -24,6 +26,7 @@ export default function OperationsPage() {
   const [cropCycles, setCropCycles] = useState<CropCycle[]>([]);
   const [crops, setCrops] = useState<Crop[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [contractors, setContractors] = useState<Contractor[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -35,19 +38,22 @@ export default function OperationsPage() {
       const allSeasons: Season[] = [];
       const allCrops: CropCycle[] = [];
       const allItems: InventoryItem[] = [];
+      const allContractors: Contractor[] = [];
 
       for (const farm of activeFarms) {
-        const [farmOps, farmSeasons, farmCrops, farmItems] = await Promise.all([
+        const [farmOps, farmSeasons, farmCrops, farmItems, farmContractors] = await Promise.all([
           farmingOperationService.listOperationsByFarm(farm.id),
           seasonService.listByFarm(farm.id),
           cropCycleService.listByFarm(farm.id),
-          inventoryService.listItems(farm.id)
+          inventoryService.listItems(farm.id),
+          contractorService.getContractorsByFarm(farm.id)
         ]);
         
         allOps.push(...farmOps);
         allSeasons.push(...farmSeasons);
         allCrops.push(...farmCrops);
         allItems.push(...farmItems);
+        allContractors.push(...farmContractors);
       }
       
       allOps.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -59,6 +65,7 @@ export default function OperationsPage() {
       setCropCycles(allCrops);
       setCrops(allCropsData);
       setInventoryItems(allItems);
+      setContractors(allContractors);
     } catch (error) {
       console.error("Error loading operations data:", error);
     } finally {
@@ -99,6 +106,7 @@ export default function OperationsPage() {
           cropCycles={cropCycles}
           crops={crops}
           inventoryItems={inventoryItems}
+          contractors={contractors}
           operations={operations}
           userId={user?.uid || ""}
           onUpdate={loadData}

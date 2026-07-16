@@ -16,6 +16,7 @@ export const cropCycleSchema = z.object({
   areaUnit: z.enum(["feddan", "qirat", "meter"]),
   plantDate: z.string().optional(),
   notes: z.string().optional(),
+  expectedRevenue: z.number().min(0, "لا يمكن أن يكون سالباً").nullable().optional(),
 });
 
 export type CropCycleSchema = z.infer<typeof cropCycleSchema>;

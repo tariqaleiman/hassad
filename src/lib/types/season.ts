@@ -10,6 +10,7 @@ export interface Season extends BaseEntity {
   startDate?: string | null; // يُستنتج من تاريخ زراعة أول محصول
   endDate?: string | null; // يسجل عند إغلاق الموسم أو يُستنتج من حصاد آخر محصول
   expectedBudget?: number | null;
+  expectedRevenue?: number | null;
   description?: string;
   status: SeasonStatus;
   notes?: string;
@@ -20,6 +21,7 @@ export interface SeasonFormValues {
   name: string;
   type: SeasonType;
   expectedBudget?: number | null;
+  expectedRevenue?: number | null;
   description?: string;
   notes?: string;
 }

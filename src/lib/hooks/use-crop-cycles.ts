@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { cropCycleService } from "@/lib/services/crop-cycle-service";
 import type { CropCycleFormValues } from "@/lib/types/crop-cycle";
+import type { HarvestSchema } from "@/components/crop-cycles/harvest-schema";
 import { useAuth } from "@/lib/providers/auth-provider";
 
 const CROP_CYCLES_KEY = ["cropCycles"] as const;
@@ -51,7 +52,8 @@ export function useMarkCropCycleHarvested() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: (id: string) => cropCycleService.markHarvested(id, user?.uid),
+    mutationFn: ({ id, harvestData }: { id: string; harvestData: HarvestSchema }) => 
+      cropCycleService.markHarvested(id, harvestData, user?.uid),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...CROP_CYCLES_KEY, user?.uid] });
       toast.success("تم تسجيل حصاد الدورة");

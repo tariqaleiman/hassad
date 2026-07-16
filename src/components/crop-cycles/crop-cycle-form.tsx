@@ -48,6 +48,7 @@ export function CropCycleForm({
       areaUnit: "feddan",
       plantDate: new Date().toISOString().slice(0, 10),
       notes: "",
+      expectedRevenue: null,
     },
   });
 
@@ -183,9 +184,17 @@ export function CropCycleForm({
         )}
       </div>
 
-      <div>
-        <Label htmlFor="plantDate">تاريخ الزراعة التقريبي (اختياري)</Label>
-        <Input id="plantDate" type="date" {...register("plantDate")} className="mt-1.5" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="plantDate">تاريخ الزراعة التقريبي (اختياري)</Label>
+          <Input id="plantDate" type="date" {...register("plantDate")} className="mt-1.5" />
+        </div>
+
+        <div>
+          <Label htmlFor="expectedRevenue">الإيراد المتوقع (ج.م) - اختياري</Label>
+          <Input id="expectedRevenue" type="number" step="0.01" {...register("expectedRevenue", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 50000" />
+          {errors.expectedRevenue && <p className="mt-1 text-xs text-danger">{errors.expectedRevenue.message}</p>}
+        </div>
       </div>
 
       <div>

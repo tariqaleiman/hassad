@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   Sprout,
   Info,
+  TrendingUp,
+  Wallet,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,6 +25,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { CropForm } from "@/components/crops/crop-form";
 import { CropCycleForm } from "@/components/crops/crop-cycle-form";
 import { CropCycleDetails } from "@/components/crops/crop-cycle-details";
+import { HarvestForm } from "@/components/crop-cycles/harvest-form";
+import type { HarvestSchema } from "@/components/crop-cycles/harvest-schema";
 import {
   useCreateCrop,
   useCrops,
@@ -39,6 +44,7 @@ import {
 import { useFarms } from "@/lib/hooks/use-farms";
 import { useLands } from "@/lib/hooks/use-lands";
 import { useSeasons } from "@/lib/hooks/use-seasons";
+import { useOperations } from "@/lib/hooks/use-operations";
 import { formatDate } from "@/lib/utils";
 import type { Crop } from "@/lib/types/crop";
 import type { CropCycle } from "@/lib/types/crop-cycle";
@@ -247,6 +253,7 @@ function CycleTab() {
   const { data: lands, isLoading: loadingLands } = useLands();
   const { data: seasons, isLoading: loadingSeasons } = useSeasons();
   const { data: crops, isLoading: loadingCrops } = useCrops();
+  const { data: operations, isLoading: loadingOps } = useOperations();
 
   const createCycle = useCreateCropCycle();
   const updateCycle = useUpdateCropCycle();
@@ -270,7 +277,7 @@ function CycleTab() {
   };
 
   const isLoading =
-    loadingCycles || loadingFarms || loadingLands || loadingSeasons || loadingCrops;
+    loadingCycles || loadingFarms || loadingLands || loadingSeasons || loadingCrops || loadingOps;
 
   const landsById = useMemo(() => new Map((lands ?? []).map((l) => [l.id, l])), [lands]);
   const seasonsById = useMemo(
@@ -299,9 +306,9 @@ function CycleTab() {
     deleteCycle.mutate(deletingCycle.id, { onSuccess: () => setDeletingCycle(null) });
   };
 
-  const handleHarvest = () => {
+  const handleHarvest = (harvestData: HarvestSchema) => {
     if (!harvestingCycle) return;
-    markHarvested.mutate(harvestingCycle.id, { onSuccess: () => setHarvestingCycle(null) });
+    markHarvested.mutate({ id: harvestingCycle.id, harvestData }, { onSuccess: () => setHarvestingCycle(null) });
   };
 
   if (!isLoading && !hasPrerequisites) {
@@ -343,6 +350,12 @@ function CycleTab() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cycles.map((cycle) => {
             const crop = cropsById.get(cycle.cropId);
+            const cycleOps = operations?.filter(op => op.cropCycleId === cycle.id) || [];
+            const totalSpent = cycleOps.reduce((acc, op) => acc + (op.totalCost || 0), 0);
+            const actualRevenue = cycle.actualRevenue || 0;
+            const expectedRevenue = cycle.expectedRevenue || 0;
+            const netProfit = actualRevenue - totalSpent;
+            
             return (
               <Card key={cycle.id} className="group relative">
                 <CardContent className="p-5">
@@ -391,6 +404,25 @@ function CycleTab() {
                     {cycle.harvestDate && <p>تاريخ الحصاد: {formatDate(cycle.harvestDate)}</p>}
                   </div>
 
+                  <div className="mt-4 pt-4 border-t border-border/40 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1 text-ink-muted"><Receipt className="h-3.5 w-3.5 text-amber-500" /> المصروفات:</span>
+                      <span className="font-bold text-ink">{totalSpent.toLocaleString()} ج.م</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1 text-ink-muted"><TrendingUp className="h-3.5 w-3.5 text-emerald-500" /> الإيرادات:</span>
+                      <span className="font-bold text-ink">{actualRevenue > 0 ? actualRevenue.toLocaleString() : expectedRevenue ? `${expectedRevenue.toLocaleString()} (متوقع)` : "0"} ج.م</span>
+                    </div>
+                    {cycle.status === "محصودة" && netProfit !== 0 && (
+                      <div className="flex items-center justify-between text-xs bg-paper-sunken p-1.5 rounded-md mt-1 border border-border/50">
+                        <span className="font-medium text-ink-muted">صافي الربح:</span>
+                        <span className={cn("font-bold", netProfit > 0 ? "text-emerald-600" : "text-danger")}>
+                          {netProfit > 0 ? "+" : ""}{netProfit.toLocaleString()} ج.م
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   {cycle.status === "نشطة" && (
                     <Button
                       variant="outline"
@@ -430,6 +462,7 @@ function CycleTab() {
             land={landsById.get(viewingCycle.landId)}
             season={seasonsById.get(viewingCycle.seasonId)}
             crop={cropsById.get(viewingCycle.cropId)}
+            operations={operations?.filter(op => op.cropCycleId === viewingCycle.id) || []}
           />
         )}
       </Dialog>
@@ -443,15 +476,21 @@ function CycleTab() {
         loading={deleteCycle.isPending}
       />
 
-      <ConfirmDialog
-        open={!!harvestingCycle}
-        onClose={() => setHarvestingCycle(null)}
-        onConfirm={handleHarvest}
-        title="تسجيل حصاد هذه الدورة؟"
-        description="سيُسجَّل تاريخ اليوم كتاريخ حصاد."
-        confirmLabel="تسجيل الحصاد"
-        loading={markHarvested.isPending}
-      />
+      <Dialog 
+        open={!!harvestingCycle} 
+        onClose={() => setHarvestingCycle(null)} 
+        title="تسجيل حصاد المحصول"
+        className="max-w-xl"
+      >
+        {harvestingCycle && (
+          <HarvestForm
+            cycle={harvestingCycle}
+            onSubmit={handleHarvest}
+            onCancel={() => setHarvestingCycle(null)}
+            loading={markHarvested.isPending}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }

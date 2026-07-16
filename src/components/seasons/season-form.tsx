@@ -37,6 +37,8 @@ export function SeasonForm({
       name: defaultValues?.name ?? "",
       type: defaultValues?.type ?? "صيفي",
       expectedBudget: defaultValues?.expectedBudget ?? null,
+      expectedRevenue: defaultValues?.expectedRevenue ?? null,
+      startDate: defaultValues?.startDate ?? new Date().toISOString().split("T")[0],
       description: defaultValues?.description ?? "",
       notes: defaultValues?.notes ?? "",
     },
@@ -48,6 +50,8 @@ export function SeasonForm({
       name: defaultValues?.name ?? "",
       type: defaultValues?.type ?? "صيفي",
       expectedBudget: defaultValues?.expectedBudget ?? null,
+      expectedRevenue: defaultValues?.expectedRevenue ?? null,
+      startDate: defaultValues?.startDate ?? new Date().toISOString().split("T")[0],
       description: defaultValues?.description ?? "",
       notes: defaultValues?.notes ?? "",
     });
@@ -65,25 +69,42 @@ export function SeasonForm({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div>
+        <Label htmlFor="startDate">تاريخ بداية الموسم *</Label>
+        <Input id="startDate" type="date" {...register("startDate")} className="mt-1.5" />
+        {errors.startDate && (
+          <p className="mt-1 text-xs text-danger">{errors.startDate.message}</p>
+        )}
+      </div>
+
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="type">نوع الموسم *</Label>
-          <Select id="type" {...register("type")} className="mt-1.5">
-            <option value="صيفي">صيفي</option>
-            <option value="شتوي">شتوي</option>
-            <option value="نيلي">نيلي</option>
-            <option value="مستديم">مستديم</option>
-            <option value="محيّر">محيّر</option>
-            <option value="مخصص">مخصص</option>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="expectedBudget">الميزانية التقديرية (ج.م)</Label>
-          <Input id="expectedBudget" type="number" {...register("expectedBudget", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 50000" />
+          <Label htmlFor="expectedBudget">الميزانية التقديرية (ج.م) - المصروفات</Label>
+          <Input id="expectedBudget" type="number" step="0.01" {...register("expectedBudget", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 50000" />
           {errors.expectedBudget && (
             <p className="mt-1 text-xs text-danger">{errors.expectedBudget.message}</p>
           )}
         </div>
+        <div>
+          <Label htmlFor="expectedRevenue">الإيراد المتوقع (ج.م) - المبيعات</Label>
+          <Input id="expectedRevenue" type="number" step="0.01" {...register("expectedRevenue", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 80000" />
+          {errors.expectedRevenue && (
+            <p className="mt-1 text-xs text-danger">{errors.expectedRevenue.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="type">نوع الموسم *</Label>
+        <Select id="type" {...register("type")} className="mt-1.5">
+          <option value="صيفي">صيفي</option>
+          <option value="شتوي">شتوي</option>
+          <option value="نيلي">نيلي</option>
+          <option value="مستديم">مستديم</option>
+          <option value="محيّر">محيّر</option>
+          <option value="مخصص">مخصص</option>
+        </Select>
       </div>
 
       <div>

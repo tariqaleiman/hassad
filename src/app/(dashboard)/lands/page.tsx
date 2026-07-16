@@ -11,6 +11,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { LandForm } from "@/components/lands/land-form";
 import { useCreateLand, useDeleteLand, useLands, useUpdateLand } from "@/lib/hooks/use-lands";
+import { useOperations } from "@/lib/hooks/use-operations";
+import { useCropCycles } from "@/lib/hooks/use-crop-cycles";
+import { useLandLeases } from "@/lib/hooks/use-land-leases";
 import { useFarms } from "@/lib/hooks/use-farms";
 import type { Land, OwnershipCategory } from "@/lib/types/land";
 import type { LandSchema } from "@/components/lands/land-schema";
@@ -18,6 +21,10 @@ import type { LandSchema } from "@/components/lands/land-schema";
 export default function LandsPage() {
   const { data: lands, isLoading: loadingLands } = useLands();
   const { data: farms, isLoading: loadingFarms } = useFarms();
+  const { data: operations, isLoading: loadingOps } = useOperations();
+  const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
+  const { data: landLeases, isLoading: loadingLeases } = useLandLeases();
+  
   const createLand = useCreateLand();
   const updateLand = useUpdateLand();
   const deleteLand = useDeleteLand();
@@ -27,7 +34,7 @@ export default function LandsPage() {
   const [deletingLand, setDeletingLand] = useState<Land | null>(null);
 
   const myFarm = farms?.[0];
-  const isLoading = loadingLands || loadingFarms;
+  const isLoading = loadingLands || loadingFarms || loadingOps || loadingCycles || loadingLeases;
 
   const openCreate = () => {
     setEditingLand(null);
@@ -118,6 +125,23 @@ export default function LandsPage() {
             const tenureInfo = getTenureDetails(land.tenure?.category || "owned_full");
             const TenureIcon = tenureInfo.icon;
 
+            // Financial Calculations
+            const landCycles = cropCycles?.filter(c => c.landId === land.id) || [];
+            
+            // 1. Costs
+            const landOps = operations?.filter(op => landCycles.some(c => c.id === op.cropCycleId)) || [];
+            const operationsCost = landOps.reduce((acc, op) => acc + (op.totalCost || 0), 0);
+            const rentCost = land.tenure?.category === "rented_cash" ? (land.tenure.rentCash?.amount || 0) : 0;
+            const totalCost = operationsCost + rentCost;
+
+            // 2. Revenues
+            const cropsRevenue = landCycles.reduce((acc, cycle) => acc + (cycle.actualRevenue || 0), 0);
+            const landLeasesOut = landLeases?.filter(l => l.landId === land.id && l.status === "نشط") || [];
+            const leaseRevenue = landLeasesOut.reduce((acc, l) => acc + l.rentAmount, 0);
+            const totalRevenue = cropsRevenue + leaseRevenue;
+
+            const netProfit = totalRevenue - totalCost;
+
             return (
               <Card key={land.id} className="group relative overflow-hidden rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
                 <CardContent className="p-0">
@@ -169,7 +193,27 @@ export default function LandsPage() {
                         </div>
                       )}
                     </div>
-                    <div className="mt-5 pt-4 border-t border-border/40 text-center">
+
+                    {(totalCost > 0 || totalRevenue > 0) && (
+                      <div className="mt-4 bg-paper-sunken/40 rounded-xl p-3 border border-border/50">
+                        <div className="flex justify-between items-center text-sm mb-2">
+                          <span className="text-ink-muted">الإيرادات:</span>
+                          <span className="font-bold text-emerald-600">{totalRevenue.toLocaleString()} ج.م</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm mb-2">
+                          <span className="text-ink-muted">المصروفات:</span>
+                          <span className="font-bold text-ink">{totalCost.toLocaleString()} ج.م</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm pt-2 border-t border-border/50">
+                          <span className="text-ink-muted font-bold">الربح:</span>
+                          <span className={netProfit > 0 ? "font-bold text-emerald-600" : netProfit < 0 ? "font-bold text-danger" : "font-bold text-ink"}>
+                            {netProfit > 0 ? "+" : ""}{netProfit.toLocaleString()} ج.م
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4 border-t border-border/40 bg-paper-sunken/30 text-center">
                       <Link 
                         href={`/lands/details?id=${land.id}`}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-crop-600 hover:text-crop-700 transition-colors"

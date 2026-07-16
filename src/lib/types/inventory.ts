@@ -18,7 +18,9 @@ export interface InventoryItem extends BaseEntity {
   name: string; // e.g., يوريا 46%
   category: ItemCategory;
   unit: string; // e.g., شيكارة 50ك, لتر, طن
-  quantity: number; // Current stock available
+  quantity: number; // Current stock available (always in main unit, could be fractional)
+  subUnit?: string; // e.g. "كيلو"
+  subUnitRatio?: number; // e.g. 50 (1 unit = 50 subUnits)
   averageCost: number; // Moving average cost per unit
   notes?: string;
 }
@@ -41,6 +43,8 @@ export interface InventoryItemFormValues {
   name: string;
   category: ItemCategory;
   unit: string;
+  subUnit?: string;
+  subUnitRatio?: number;
   initialQuantity?: number;
   initialUnitPrice?: number;
   notes?: string;

@@ -119,8 +119,14 @@ export class FirestoreRepository<
   }
 
   async create(data: TCreate, userId?: string): Promise<T> {
+    // Remove undefined values to avoid Firestore errors
+    const cleanedData = Object.entries(data as any).reduce((acc, [key, value]) => {
+      if (value !== undefined) acc[key] = value;
+      return acc;
+    }, {} as any);
+
     const payload = {
-      ...data,
+      ...cleanedData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: userId ?? null,

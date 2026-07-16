@@ -1,5 +1,6 @@
 import { farmingOperationRepository } from "../repositories/farming-operation-repository";
 import { inventoryService } from "./inventory-service";
+import { contractorService } from "./contractor-service";
 import type { FarmingOperation } from "../types/farming-operation";
 
 export const farmingOperationService = {
@@ -38,6 +39,14 @@ export const farmingOperationService = {
       }
     }
 
+    // 4. Update contractor balances
+    if (operationData.laborContractorId && operationData.laborPaymentMethod === "credit" && (operationData.laborCost || 0) > 0) {
+      await contractorService.updateBalance(operationData.laborContractorId, operationData.laborCost || 0, userId);
+    }
+    if (operationData.equipmentContractorId && operationData.equipmentPaymentMethod === "credit" && (operationData.equipmentCost || 0) > 0) {
+      await contractorService.updateBalance(operationData.equipmentContractorId, operationData.equipmentCost || 0, userId);
+    }
+
     return operation;
   },
 
@@ -65,6 +74,14 @@ export const farmingOperationService = {
           notes: `إرجاع مخزون بسبب تعديل عملية زراعية: ${existingOp.operationType}`,
         }, userId);
       }
+    }
+
+    // 2.5 Reverse existing contractor balances
+    if (existingOp.laborContractorId && existingOp.laborPaymentMethod === "credit" && (existingOp.laborCost || 0) > 0) {
+      await contractorService.updateBalance(existingOp.laborContractorId, -(existingOp.laborCost || 0), userId);
+    }
+    if (existingOp.equipmentContractorId && existingOp.equipmentPaymentMethod === "credit" && (existingOp.equipmentCost || 0) > 0) {
+      await contractorService.updateBalance(existingOp.equipmentContractorId, -(existingOp.equipmentCost || 0), userId);
     }
 
     // 3. Calculate new costs
@@ -95,6 +112,23 @@ export const farmingOperationService = {
           notes: `سحب للعملية الزراعية: ${data.operationType || existingOp.operationType} - محصول: ${data.cropCycleId || existingOp.cropCycleId}`,
         }, userId);
       }
+    }
+
+    // 6. Update new contractor balances
+    const finalLaborContractorId = operationData.laborContractorId !== undefined ? operationData.laborContractorId : existingOp.laborContractorId;
+    const finalLaborPaymentMethod = operationData.laborPaymentMethod !== undefined ? operationData.laborPaymentMethod : existingOp.laborPaymentMethod;
+    const finalLaborCost = operationData.laborCost !== undefined ? operationData.laborCost : existingOp.laborCost;
+    
+    if (finalLaborContractorId && finalLaborPaymentMethod === "credit" && (finalLaborCost || 0) > 0) {
+      await contractorService.updateBalance(finalLaborContractorId, finalLaborCost || 0, userId);
+    }
+
+    const finalEquipmentContractorId = operationData.equipmentContractorId !== undefined ? operationData.equipmentContractorId : existingOp.equipmentContractorId;
+    const finalEquipmentPaymentMethod = operationData.equipmentPaymentMethod !== undefined ? operationData.equipmentPaymentMethod : existingOp.equipmentPaymentMethod;
+    const finalEquipmentCost = operationData.equipmentCost !== undefined ? operationData.equipmentCost : existingOp.equipmentCost;
+
+    if (finalEquipmentContractorId && finalEquipmentPaymentMethod === "credit" && (finalEquipmentCost || 0) > 0) {
+      await contractorService.updateBalance(finalEquipmentContractorId, finalEquipmentCost || 0, userId);
     }
 
     return operation;
@@ -128,6 +162,14 @@ export const farmingOperationService = {
           notes: `إرجاع مخزون بسبب حذف عملية زراعية: ${existingOp.operationType}`,
         }, userId);
       }
+    }
+
+    // 2.5 Reverse existing contractor balances
+    if (existingOp.laborContractorId && existingOp.laborPaymentMethod === "credit" && (existingOp.laborCost || 0) > 0) {
+      await contractorService.updateBalance(existingOp.laborContractorId, -(existingOp.laborCost || 0), userId);
+    }
+    if (existingOp.equipmentContractorId && existingOp.equipmentPaymentMethod === "credit" && (existingOp.equipmentCost || 0) > 0) {
+      await contractorService.updateBalance(existingOp.equipmentContractorId, -(existingOp.equipmentCost || 0), userId);
     }
 
     // 3. Soft delete the operation

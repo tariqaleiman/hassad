@@ -1,6 +1,7 @@
 import { query, where, orderBy, getDocs, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { FirestoreRepository } from "./firestore-repository";
 import type { CropCycle, CropCycleFormValues } from "@/lib/types/crop-cycle";
+import type { HarvestSchema } from "@/components/crop-cycles/harvest-schema";
 
 class CropCycleRepository extends FirestoreRepository<CropCycle, CropCycleFormValues> {
   constructor() {
@@ -19,11 +20,16 @@ class CropCycleRepository extends FirestoreRepository<CropCycle, CropCycleFormVa
       .filter((item) => !item.isDeleted);
   }
 
-  async markHarvested(id: string, userId?: string): Promise<void> {
+  async markHarvested(id: string, harvestData: HarvestSchema, userId?: string): Promise<void> {
     const ref = doc(this.collectionRef, id);
     await updateDoc(ref, {
       status: "محصودة",
-      harvestDate: new Date().toISOString(),
+      harvestDate: harvestData.harvestDate,
+      yieldQuantity: harvestData.yieldQuantity ?? null,
+      yieldUnit: harvestData.yieldUnit ?? null,
+      yieldGrade: harvestData.yieldGrade ?? null,
+      actualRevenue: harvestData.actualRevenue ?? null,
+      harvestNotes: harvestData.harvestNotes ?? null,
       updatedAt: serverTimestamp(),
       updatedBy: userId ?? null,
     });

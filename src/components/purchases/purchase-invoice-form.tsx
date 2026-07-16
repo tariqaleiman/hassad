@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Spinner } from "../ui/spinner";
+import { parseUnitString } from "@/lib/utils/unit-parser";
 import { cn } from "@/lib/utils";
 import { purchaseInvoiceSchema, type PurchaseInvoiceSchema } from "./purchase-invoice-schema";
 import type { Farm } from "@/lib/types/farm";
@@ -276,27 +278,80 @@ export function PurchaseInvoiceForm({
                 </div>
 
                 {/* Row 2: Quantity, Price, Total */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-black/5 dark:bg-white/5 p-3 rounded-xl border border-border">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-border items-start">
                   {/* الكمية */}
-                  <div className="space-y-1.5">
-                    <Label>الكمية</Label>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        className="bg-paper"
-                        {...register(`items.${index}.quantity`, { valueAsNumber: true })} 
-                      />
-                      {!isNew && selectedInventoryItem?.unit && (
-                        <span className="text-sm text-ink-muted whitespace-nowrap">{selectedInventoryItem.unit}</span>
-                      )}
-                    </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <Label className="text-sm font-semibold">الكمية</Label>
+                    {(() => {
+                      let ratio = selectedInventoryItem?.subUnitRatio;
+                      let sUnit = selectedInventoryItem?.subUnit;
+                      let mUnit = selectedInventoryItem?.unit;
+                      
+                      if (isNew && items?.[index]?.dictionaryId) {
+                        const dictItem = dictionaryItems?.find(d => d.id === items[index].dictionaryId);
+                        if (dictItem) {
+                          const parsed = parseUnitString(dictItem.unit);
+                          ratio = parsed?.subUnitRatio;
+                          sUnit = parsed?.subUnit;
+                          mUnit = dictItem.unit;
+                        }
+                      }
+
+                      if (ratio && sUnit) {
+                        return (
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <Input
+                                type="number"
+                                step="1"
+                                className="bg-paper"
+                                placeholder={mUnit || "الوحدة"}
+                                onChange={(e) => {
+                                  const main = parseFloat(e.target.value) || 0;
+                                  const currentTotal = Number(items?.[index]?.quantity) || 0;
+                                  const currentSub = (currentTotal % 1) * ratio!;
+                                  setValue(`items.${index}.quantity`, main + (currentSub / ratio!));
+                                }}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <Input
+                                type="number"
+                                step="1"
+                                className="bg-paper"
+                                placeholder={sUnit}
+                                onChange={(e) => {
+                                  const sub = parseFloat(e.target.value) || 0;
+                                  const currentTotal = Number(items?.[index]?.quantity) || 0;
+                                  const main = Math.floor(currentTotal);
+                                  setValue(`items.${index}.quantity`, main + (sub / ratio!));
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            className="bg-paper"
+                            {...register(`items.${index}.quantity`, { valueAsNumber: true })} 
+                          />
+                          {mUnit && (
+                            <span className="text-sm text-ink-muted whitespace-nowrap">{mUnit}</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {errors.items?.[index]?.quantity && <p className="text-xs text-danger">{errors.items[index]?.quantity?.message}</p>}
                   </div>
 
                   {/* السعر */}
-                  <div className="space-y-1.5">
-                    <Label>سعر الوحدة (ج.م)</Label>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">سعر الوحدة (ج.م)</Label>
                     <Input 
                       type="number" 
                       step="0.01" 
@@ -307,9 +362,9 @@ export function PurchaseInvoiceForm({
                   </div>
 
                   {/* الإجمالي */}
-                  <div className="col-span-2 sm:col-span-1 space-y-1.5">
-                    <Label>إجمالي السطر</Label>
-                    <div className="h-10 flex items-center px-3 bg-paper border border-border rounded-xl font-bold text-ink">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">إجمالي السطر</Label>
+                    <div className="h-10 flex items-center justify-center bg-paper border border-border rounded-xl font-bold text-ink text-lg">
                       {itemTotal.toLocaleString()} ج.م
                     </div>
                   </div>

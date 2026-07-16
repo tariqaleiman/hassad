@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { seasonService } from "@/lib/services/season-service";
 import type { SeasonFormValues } from "@/lib/types/season";
+import type { CloseSeasonSchema } from "@/components/seasons/close-season-schema";
 import { useAuth } from "@/lib/providers/auth-provider";
 
 const SEASONS_KEY = ["seasons"] as const;
@@ -48,7 +49,7 @@ export function useCloseSeason() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: (id: string) => seasonService.close(id, user?.uid),
+    mutationFn: ({ id, closeData }: { id: string; closeData: CloseSeasonSchema }) => seasonService.close(id, closeData, user?.uid),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...SEASONS_KEY, user?.uid] });
       toast.success("تم إغلاق الموسم");

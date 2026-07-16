@@ -23,6 +23,8 @@ export const inventoryService = {
       name: data.name,
       category: data.category,
       unit: data.unit,
+      subUnit: data.subUnit || undefined,
+      subUnitRatio: data.subUnitRatio || undefined,
       quantity: 0,
       averageCost: 0,
       notes: data.notes,
@@ -57,6 +59,8 @@ export const inventoryService = {
       name: data.name,
       category: data.category,
       unit: data.unit,
+      subUnit: data.subUnit || undefined,
+      subUnitRatio: data.subUnitRatio || undefined,
       notes: data.notes,
     };
     // Note: We don't update quantity or averageCost directly through this method

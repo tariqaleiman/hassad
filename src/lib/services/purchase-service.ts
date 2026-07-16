@@ -25,11 +25,16 @@ export const purchaseService = {
         
         actualName = [dictItem.mainType, dictItem.subType, dictItem.variety].filter(Boolean).join(" - ");
 
+        const { parseUnitString } = await import("./../utils/unit-parser");
+        const parsed = parseUnitString(dictItem.unit);
+
         const newItem = await inventoryRepository.create({
           farmId: data.farmId,
           name: actualName,
           category: dictItem.category,
           unit: dictItem.unit,
+          subUnit: parsed?.subUnit || undefined,
+          subUnitRatio: parsed?.subUnitRatio || undefined,
           quantity: 0,
           averageCost: 0,
         }, userId);

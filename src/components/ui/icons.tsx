@@ -47,6 +47,7 @@ export const Icons = {
   Inventory: Boxes,
   Suppliers: Truck,
   Customers: Users,
+  Contractors: HardHat,
   Debts: HandCoins,
   Workers: Users, // The mockup shows "عمال" with a multiple users icon (similar to Users)
   Equipment: Tractor,

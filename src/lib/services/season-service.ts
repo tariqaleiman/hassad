@@ -1,5 +1,6 @@
 import { seasonRepository } from "@/lib/repositories/season-repository";
 import type { Season, SeasonFormValues } from "@/lib/types/season";
+import type { CloseSeasonSchema } from "@/components/seasons/close-season-schema";
 
 export const seasonService = {
   list: (userId?: string): Promise<Season[]> => seasonRepository.getAll({ userId }),
@@ -12,7 +13,7 @@ export const seasonService = {
     ),
   update: (id: string, data: Partial<SeasonFormValues>, userId?: string): Promise<Season> =>
     seasonRepository.update(id, data, userId),
-  close: (id: string, userId?: string): Promise<void> => seasonRepository.close(id, userId),
+  close: (id: string, data: CloseSeasonSchema, userId?: string): Promise<void> => seasonRepository.close(id, data, userId),
   remove: (id: string, userId?: string): Promise<void> =>
     seasonRepository.softDelete(id, userId),
 };

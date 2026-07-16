@@ -1,6 +1,7 @@
 import { query, where, orderBy, getDocs, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { FirestoreRepository } from "./firestore-repository";
 import type { Season, SeasonFormValues } from "@/lib/types/season";
+import type { CloseSeasonSchema } from "@/components/seasons/close-season-schema";
 
 class SeasonRepository extends FirestoreRepository<Season, SeasonFormValues> {
   constructor() {
@@ -19,12 +20,12 @@ class SeasonRepository extends FirestoreRepository<Season, SeasonFormValues> {
       .filter((item) => !item.isDeleted);
   }
 
-  /** إغلاق الموسم: يسجل تاريخ النهاية فقط عند الإغلاق، كما تنص وثيقة التأسيس */
-  async close(id: string, userId?: string): Promise<void> {
+  async close(id: string, data: CloseSeasonSchema, userId?: string): Promise<void> {
     const ref = doc(this.collectionRef, id);
     await updateDoc(ref, {
       status: "مغلق",
-      endDate: new Date().toISOString(),
+      endDate: data.endDate,
+      notes: data.notes || "",
       updatedAt: serverTimestamp(),
       updatedBy: userId ?? null,
     });

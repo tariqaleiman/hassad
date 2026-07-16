@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, CalendarRange, Pencil, Trash2, Lock, Sprout, Wallet, ArrowLeft, Leaf, Map as MapIcon } from "lucide-react";
+import { Plus, CalendarRange, Pencil, Trash2, Lock, Sprout, Wallet, ArrowLeft, Leaf, Map as MapIcon, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { SeasonForm } from "@/components/seasons/season-form";
+import { CloseSeasonForm } from "@/components/seasons/close-season-form";
+import type { CloseSeasonSchema } from "@/components/seasons/close-season-schema";
 import {
   useCloseSeason,
   useCreateSeason,
@@ -21,6 +23,7 @@ import {
 import { useFarms } from "@/lib/hooks/use-farms";
 import { useCropCycles } from "@/lib/hooks/use-crop-cycles";
 import { useLands } from "@/lib/hooks/use-lands";
+import { useOperations } from "@/lib/hooks/use-operations";
 import { formatDate, cn } from "@/lib/utils";
 import type { Season } from "@/lib/types/season";
 import type { SeasonSchema } from "@/components/seasons/season-schema";
@@ -39,6 +42,7 @@ export default function SeasonsPage() {
   const { data: farms, isLoading: loadingFarms } = useFarms();
   const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
   const { data: lands, isLoading: loadingLands } = useLands();
+  const { data: operations, isLoading: loadingOps } = useOperations();
   const createSeason = useCreateSeason();
   const updateSeason = useUpdateSeason();
   const deleteSeason = useDeleteSeason();
@@ -49,7 +53,7 @@ export default function SeasonsPage() {
   const [deletingSeason, setDeletingSeason] = useState<Season | null>(null);
   const [closingSeason, setClosingSeason] = useState<Season | null>(null);
 
-  const isLoading = loadingSeasons || loadingFarms || loadingCycles || loadingLands;
+  const isLoading = loadingSeasons || loadingFarms || loadingCycles || loadingLands || loadingOps;
   const activeFarm = farms?.[0];
 
   const filteredSeasons = seasons?.filter((s) => s.farmId === activeFarm?.id) || [];
@@ -82,9 +86,9 @@ export default function SeasonsPage() {
     deleteSeason.mutate(deletingSeason.id, { onSuccess: () => setDeletingSeason(null) });
   };
 
-  const handleClose = () => {
+  const handleClose = (closeData: CloseSeasonSchema) => {
     if (!closingSeason) return;
-    closeSeason.mutate(closingSeason.id, { onSuccess: () => setClosingSeason(null) });
+    closeSeason.mutate({ id: closingSeason.id, closeData }, { onSuccess: () => setClosingSeason(null) });
   };
 
   if (!isLoading && !activeFarm) {
@@ -138,6 +142,13 @@ export default function SeasonsPage() {
           {filteredSeasons.map((season) => {
             const seasonCycles = cropCycles?.filter(c => c.seasonId === season.id) || [];
             const plantedArea = seasonCycles.reduce((acc, curr) => acc + (curr.areaInFeddan || 0), 0);
+            const seasonOps = operations?.filter(op => op.seasonId === season.id) || [];
+            const totalSpent = seasonOps.reduce((acc, op) => acc + (op.totalCost || 0), 0);
+            const budgetPercentage = season.expectedBudget && season.expectedBudget > 0 ? Math.min((totalSpent / season.expectedBudget) * 100, 150) : 0;
+            const isOverBudget = season.expectedBudget ? totalSpent > season.expectedBudget : false;
+
+            const totalRevenue = seasonCycles.reduce((acc, cycle) => acc + (cycle.actualRevenue || 0), 0);
+            const netProfit = totalRevenue - totalSpent;
             
             return (
               <Card key={season.id} className="group relative overflow-hidden rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
@@ -187,13 +198,50 @@ export default function SeasonsPage() {
 
                     <div className="flex items-center gap-3 text-sm text-ink-muted">
                       <Wallet className="h-4 w-4 text-crop-500/70" />
-                      <div className="flex flex-col">
-                        <span className="text-xs font-medium text-ink-lighter uppercase tracking-wider">الميزانية التقديرية</span>
-                        <span className="font-medium text-ink">
-                          {season.expectedBudget ? `${season.expectedBudget.toLocaleString()} ج.م` : "لم تُحدد"}
-                        </span>
+                      <div className="flex flex-col flex-1">
+                        <span className="text-xs font-medium text-ink-lighter uppercase tracking-wider">الميزانية / المصروف</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className={cn("font-bold text-base", isOverBudget ? "text-danger" : "text-ink")}>{totalSpent.toLocaleString()}</span>
+                          {season.expectedBudget ? (
+                            <span className="text-ink-muted font-medium">/ {season.expectedBudget.toLocaleString()} ج.م</span>
+                          ) : (
+                            <span className="text-ink-muted font-medium">ج.م (لا توجد ميزانية)</span>
+                          )}
+                        </div>
+                        {season.expectedBudget != null && season.expectedBudget > 0 && (
+                          <div className="mt-2 w-full bg-paper-sunken rounded-full h-1.5 overflow-hidden">
+                            <div 
+                              className={cn("h-full rounded-full transition-all duration-500", isOverBudget ? "bg-danger" : budgetPercentage > 80 ? "bg-amber-500" : "bg-crop-500")}
+                              style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    <div className="flex items-center gap-3 text-sm text-ink-muted">
+                      <TrendingUp className="h-4 w-4 text-emerald-500/70" />
+                      <div className="flex flex-col flex-1">
+                        <span className="text-xs font-medium text-ink-lighter uppercase tracking-wider">الإيراد المتوقع / الفعلي</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className={cn("font-bold text-base", totalRevenue > 0 ? "text-emerald-600" : "text-ink")}>{totalRevenue.toLocaleString()}</span>
+                          {season.expectedRevenue ? (
+                            <span className="text-ink-muted font-medium">/ {season.expectedRevenue.toLocaleString()} ج.م</span>
+                          ) : (
+                            <span className="text-ink-muted font-medium">ج.م (لا يوجد تقدير)</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {netProfit !== 0 && (
+                      <div className="flex justify-between items-center bg-paper-sunken/50 p-2 rounded-xl mt-2 border border-border/30">
+                        <span className="text-xs font-bold text-ink-muted">صافي الربح/الخسارة</span>
+                        <span className={cn("font-bold", netProfit > 0 ? "text-emerald-600" : "text-danger")}>
+                          {netProfit > 0 ? "+" : ""}{netProfit.toLocaleString()} ج.م
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-5 grid grid-cols-2 gap-3 text-sm border-t border-border/40 pt-5">
@@ -264,15 +312,22 @@ export default function SeasonsPage() {
         loading={deleteSeason.isPending}
       />
 
-      <ConfirmDialog
+      <Dialog
         open={!!closingSeason}
         onClose={() => setClosingSeason(null)}
-        onConfirm={handleClose}
-        title={`إغلاق موسم "${closingSeason?.name}"؟`}
-        description="سيُسجَّل تاريخ اليوم كتاريخ نهاية الموسم. يمكنك إعادة فتحه لاحقاً من التفاصيل إذا لزم الأمر."
-        confirmLabel="تأكيد الإغلاق"
-        loading={closeSeason.isPending}
-      />
+        title={`إغلاق موسم "${closingSeason?.name}"`}
+        className="max-w-xl"
+      >
+        {closingSeason && (
+          <CloseSeasonForm
+            season={closingSeason}
+            activeCyclesCount={cropCycles?.filter((c) => c.seasonId === closingSeason.id && c.status === "نشطة").length || 0}
+            onSubmit={handleClose}
+            onCancel={() => setClosingSeason(null)}
+            loading={closeSeason.isPending}
+          />
+        )}
+      </Dialog>
     </div>
   );
 }

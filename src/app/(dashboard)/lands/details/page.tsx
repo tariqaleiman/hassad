@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   ArrowRight, MapPin, Droplets, Pencil, Trash2, Sprout, Briefcase, 
-  Handshake, Landmark, Plus, Scale, Info, Wheat, CheckCircle2 
+  Handshake, Landmark, Plus, Scale, Info, Wheat, CheckCircle2,
+  TrendingUp, Wallet, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import { useSeasons } from "@/lib/hooks/use-seasons";
 import { useCropCycles } from "@/lib/hooks/use-crop-cycles";
 import { useLandLeases, useCreateLandLease, useUpdateLandLease, useDeleteLandLease } from "@/lib/hooks/use-land-leases";
 import { useCrops } from "@/lib/hooks/use-crops";
+import { useOperations } from "@/lib/hooks/use-operations";
 
 import { LandForm } from "@/components/lands/land-form";
 import { LandLeaseForm } from "@/components/lands/land-lease-form";
@@ -46,6 +48,7 @@ function LandDetailsContent() {
   const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
   const { data: leases, isLoading: loadingLeases } = useLandLeases();
   const { data: crops, isLoading: loadingCrops } = useCrops();
+  const { data: operations, isLoading: loadingOps } = useOperations();
 
   // Mutations
   const updateLand = useUpdateLand();
@@ -66,7 +69,7 @@ function LandDetailsContent() {
   const [viewingCycle, setViewingCycle] = useState<CropCycle | null>(null);
 
   // Derived Data
-  const isLoading = loadingLands || loadingFarms || loadingSeasons || loadingCycles || loadingLeases || loadingCrops;
+  const isLoading = loadingLands || loadingFarms || loadingSeasons || loadingCycles || loadingLeases || loadingCrops || loadingOps;
   const land = lands?.find((l) => l.id === id);
   const farm = farms?.find((f) => f.id === land?.farmId);
   const activeSeasons = seasons?.filter(s => s.status === "مفتوح") || [];
@@ -100,6 +103,21 @@ function LandDetailsContent() {
 
   const totalAreaInFeddan = land?.areaInFeddan || 0;
   const availableAreaInFeddan = Math.max(0, totalAreaInFeddan - usedByCrops - usedByLeases);
+
+  // Financial Summary (all time, or based on season? Let's do all time for simplicity, or based on selected season)
+  // Let's do it based on selected season to match the area summary
+  const seasonCrops = cropCycles?.filter(c => c.landId === id && c.seasonId === selectedSeasonId) || [];
+  const seasonOps = operations?.filter(op => seasonCrops.some(c => c.id === op.cropCycleId)) || [];
+  const seasonOperationsCost = seasonOps.reduce((acc, op) => acc + (op.totalCost || 0), 0);
+  const seasonRentCost = land?.tenure?.category === "rented_cash" ? (land.tenure.rentCash?.amount || 0) : 0; // Notice: this might be yearly rent, but we show it as total
+  const seasonTotalCost = seasonOperationsCost; // Rent is usually per year, not season, so we might exclude it from seasonal view or just add it. Let's exclude for seasonal.
+
+  const seasonCropsRevenue = seasonCrops.reduce((acc, cycle) => acc + (cycle.actualRevenue || 0), 0);
+  const seasonLeasesOut = leases?.filter(l => l.landId === id && (l.seasonId === selectedSeasonId || (l.duration === "year" && l.status === "نشط"))) || [];
+  const seasonLeaseRevenue = seasonLeasesOut.reduce((acc, l) => acc + l.rentAmount, 0);
+  const seasonTotalRevenue = seasonCropsRevenue + seasonLeaseRevenue;
+
+  const seasonNetProfit = seasonTotalRevenue - seasonTotalCost;
 
   if (isLoading) {
     return (
@@ -247,6 +265,52 @@ function LandDetailsContent() {
           <div className="bg-sky-500 transition-all duration-500" style={{ width: `${totalAreaInFeddan > 0 ? (availableAreaInFeddan / totalAreaInFeddan) * 100 : 0}%` }} title="متبقية"></div>
         </div>
       </div>
+
+      {/* Financial Summary */}
+      {(seasonTotalCost > 0 || seasonTotalRevenue > 0) && (
+        <div className="bg-paper border border-border/50 rounded-3xl p-6 shadow-sm mt-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl">
+              <Wallet className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-ink">الملخص المالي للموسم</h2>
+              <p className="text-sm text-ink-muted mt-1">الإيرادات والمصروفات المتعلقة بهذه الأرض في الموسم المحدد</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-paper-sunken rounded-2xl p-4 border border-border/40">
+              <p className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
+                إجمالي الإيرادات
+              </p>
+              <p className="text-2xl font-bold font-display text-emerald-600">{seasonTotalRevenue.toLocaleString()}</p>
+              <p className="text-xs text-ink-muted mt-1">ج.م</p>
+            </div>
+            
+            <div className="bg-paper-sunken rounded-2xl p-4 border border-border/40">
+              <p className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-amber-500" />
+                إجمالي المصروفات
+              </p>
+              <p className="text-2xl font-bold font-display text-ink">{seasonTotalCost.toLocaleString()}</p>
+              <p className="text-xs text-ink-muted mt-1">ج.م</p>
+            </div>
+
+            <div className="bg-paper-sunken rounded-2xl p-4 border border-border/40 sm:border-r-2 sm:border-r-border/50">
+              <p className="text-sm font-medium text-ink-muted mb-1 flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-sky-500" />
+                صافي الربح / الخسارة
+              </p>
+              <p className={`text-2xl font-bold font-display ${seasonNetProfit > 0 ? 'text-emerald-600' : seasonNetProfit < 0 ? 'text-danger' : 'text-ink'}`}>
+                {seasonNetProfit > 0 ? "+" : ""}{seasonNetProfit.toLocaleString()}
+              </p>
+              <p className="text-xs text-ink-muted mt-1">ج.م</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="mt-8 border-b border-border">

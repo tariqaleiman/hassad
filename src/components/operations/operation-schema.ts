@@ -4,6 +4,8 @@ export const operationInventoryItemSchema = z.object({
   id: z.string(), // local id for useFieldArray
   itemId: z.string().min(1, "اختر الصنف"),
   quantity: z.number().min(0.01, "الكمية يجب أن تكون أكبر من 0"),
+  mainQuantity: z.number().optional(),
+  subQuantity: z.number().optional(),
   unitPrice: z.number().min(0, "السعر غير صالح"),
 });
 
@@ -20,6 +22,7 @@ export const operationSchema = z.object({
     "رش مبيدات", 
     "عزيق", 
     "حصاد", 
+    "تكاليف سابقة",
     "أخرى"
   ]),
   date: z.string().min(1, "تاريخ العملية مطلوب"),
@@ -28,7 +31,13 @@ export const operationSchema = z.object({
   inventoryItems: z.array(operationInventoryItemSchema).optional(),
   
   laborCost: z.number().min(0).optional().default(0),
+  laborContractorId: z.string().optional(),
+  laborPaymentMethod: z.enum(["cash", "credit"]).optional().default("cash"),
+
   equipmentCost: z.number().min(0).optional().default(0),
+  equipmentContractorId: z.string().optional(),
+  equipmentPaymentMethod: z.enum(["cash", "credit"]).optional().default("cash"),
+
   otherCost: z.number().min(0).optional().default(0),
 });
 

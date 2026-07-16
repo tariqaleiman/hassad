@@ -310,9 +310,25 @@ export function InventoryList({
                         </span>
                       </td>
                       <td className="px-4 py-3 text-ink">
-                        <div className="flex items-baseline gap-1">
-                          <span className="font-bold text-lg">{item.quantity}</span>
-                          <span className="text-ink-muted text-xs">{item.unit}</span>
+                        <div className="flex items-baseline gap-1 flex-wrap">
+                          {item.subUnitRatio ? (
+                            <>
+                              <span className="font-bold text-lg">{Math.floor(item.quantity)}</span>
+                              <span className="text-ink-muted text-xs">{item.unit}</span>
+                              {item.quantity % 1 !== 0 && (
+                                <>
+                                  <span className="text-ink-muted text-xs mx-1">و</span>
+                                  <span className="font-bold text-lg">{Math.round((item.quantity % 1) * item.subUnitRatio)}</span>
+                                  <span className="text-ink-muted text-xs">{item.subUnit}</span>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-bold text-lg">{item.quantity}</span>
+                              <span className="text-ink-muted text-xs">{item.unit}</span>
+                            </>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-ink">
@@ -384,6 +400,7 @@ export function InventoryList({
         open={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         title="إضافة صنف جديد للمخزن"
+        className="max-w-3xl"
       >
         <InventoryForm
           farms={farms}
@@ -399,6 +416,7 @@ export function InventoryList({
         open={!!editingItem}
         onClose={() => setEditingItem(null)}
         title="تعديل بيانات الصنف"
+        className="max-w-3xl"
       >
         {editingItem && (
           <InventoryForm
@@ -450,6 +468,7 @@ export function InventoryList({
         open={isPurchaseOpen}
         onClose={() => setIsPurchaseOpen(false)}
         title="تسجيل فاتورة مشتريات 🛒"
+        className="max-w-4xl"
       >
         <PurchaseInvoiceForm
           farms={farms}

@@ -16,6 +16,7 @@ import type { Season } from "@/lib/types/season";
 import type { CropCycle } from "@/lib/types/crop-cycle";
 import type { Crop } from "@/lib/types/crop";
 import type { InventoryItem } from "@/lib/types/inventory";
+import type { Contractor } from "@/lib/types/contractor";
 
 interface OperationFormProps {
   open: boolean;
@@ -26,6 +27,7 @@ interface OperationFormProps {
   cropCycles: CropCycle[];
   crops: Crop[];
   inventoryItems: InventoryItem[];
+  contractors: Contractor[];
   defaultValues?: Partial<OperationSchema>;
   isSubmitting?: boolean;
 }
@@ -36,8 +38,8 @@ const OPERATION_TYPES = [
   "ري", 
   "تسميد", 
   "رش مبيدات", 
-  "عزيق", 
   "حصاد", 
+  "تكاليف سابقة",
   "أخرى"
 ];
 
@@ -50,6 +52,7 @@ export function OperationForm({
   cropCycles,
   crops,
   inventoryItems,
+  contractors,
   defaultValues,
   isSubmitting
 }: OperationFormProps) {
@@ -64,7 +67,11 @@ export function OperationForm({
       notes: defaultValues?.notes || "",
       inventoryItems: defaultValues?.inventoryItems || [],
       laborCost: defaultValues?.laborCost || 0,
+      laborContractorId: defaultValues?.laborContractorId || "",
+      laborPaymentMethod: defaultValues?.laborPaymentMethod || "cash",
       equipmentCost: defaultValues?.equipmentCost || 0,
+      equipmentContractorId: defaultValues?.equipmentContractorId || "",
+      equipmentPaymentMethod: defaultValues?.equipmentPaymentMethod || "cash",
       otherCost: defaultValues?.otherCost || 0,
     }
   });
@@ -91,7 +98,11 @@ export function OperationForm({
         notes: "",
         inventoryItems: [],
         laborCost: 0,
+        laborContractorId: "",
+        laborPaymentMethod: "cash",
         equipmentCost: 0,
+        equipmentContractorId: "",
+        equipmentPaymentMethod: "cash",
         otherCost: 0,
       });
     }
@@ -217,7 +228,8 @@ export function OperationForm({
         </div>
 
         {/* Inventory Items */}
-        <div className="bg-paper p-6 rounded-2xl border border-border space-y-4">
+        {form.watch("operationType") !== "تكاليف سابقة" && (
+          <div className="bg-paper p-6 rounded-2xl border border-border space-y-4">
           <div className="flex justify-between items-center border-b border-border pb-2">
             <h3 className="font-bold text-lg text-ink">سحب من المخزون (اختياري)</h3>
             <Button
@@ -264,17 +276,52 @@ export function OperationForm({
                     )}
                   </div>
 
-                  <div className="w-full md:w-32 space-y-2">
-                    <Label>الكمية المستهلكة</Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...form.register(`inventoryItems.${index}.quantity`, { valueAsNumber: true })}
-                      />
-                      <span className="absolute left-3 top-3 text-sm text-ink-muted">{selectedItem?.unit || ""}</span>
+                  {selectedItem?.subUnitRatio ? (
+                    <div className="flex gap-2 items-start">
+                      <div className="w-full md:w-24 space-y-2">
+                        <Label>الكمية ({selectedItem.unit})</Label>
+                        <Input
+                          type="number"
+                          step="1"
+                          {...form.register(`inventoryItems.${index}.mainQuantity`, { valueAsNumber: true })}
+                          onChange={(e) => {
+                            form.setValue(`inventoryItems.${index}.mainQuantity`, parseFloat(e.target.value) || 0);
+                            const main = parseFloat(e.target.value) || 0;
+                            const sub = form.watch(`inventoryItems.${index}.subQuantity`) || 0;
+                            const totalQuantity = main + (sub / selectedItem.subUnitRatio!);
+                            form.setValue(`inventoryItems.${index}.quantity`, totalQuantity);
+                          }}
+                        />
+                      </div>
+                      <div className="w-full md:w-24 space-y-2">
+                        <Label>الكمية ({selectedItem.subUnit})</Label>
+                        <Input
+                          type="number"
+                          step="1"
+                          {...form.register(`inventoryItems.${index}.subQuantity`, { valueAsNumber: true })}
+                          onChange={(e) => {
+                            form.setValue(`inventoryItems.${index}.subQuantity`, parseFloat(e.target.value) || 0);
+                            const sub = parseFloat(e.target.value) || 0;
+                            const main = form.watch(`inventoryItems.${index}.mainQuantity`) || 0;
+                            const totalQuantity = main + (sub / selectedItem.subUnitRatio!);
+                            form.setValue(`inventoryItems.${index}.quantity`, totalQuantity);
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="w-full md:w-32 space-y-2">
+                      <Label>الكمية المستهلكة</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...form.register(`inventoryItems.${index}.quantity`, { valueAsNumber: true })}
+                        />
+                        <span className="absolute left-3 top-3 text-sm text-ink-muted">{selectedItem?.unit || ""}</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="w-full md:w-32 space-y-2">
                     <Label>متوسط التكلفة</Label>
@@ -314,40 +361,88 @@ export function OperationForm({
             )}
           </div>
         </div>
+        )}
 
         {/* Other Costs */}
         <div className="bg-paper p-6 rounded-2xl border border-border space-y-4">
-          <h3 className="font-bold text-lg text-ink border-b border-border pb-2">تكاليف إضافية للعملية</h3>
+          <h3 className="font-bold text-lg text-ink border-b border-border pb-2">
+            {form.watch("operationType") === "تكاليف سابقة" ? "تفاصيل التكاليف السابقة المجمعة" : "تكاليف إضافية للعملية"}
+          </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>تكلفة العمالة (ج.م)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...form.register("laborCost", { valueAsNumber: true })}
-                error={form.formState.errors.laborCost?.message}
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* العمالة */}
+            <div className="space-y-4 bg-paper-sunken/30 p-4 rounded-xl border border-border">
+              <div className="space-y-2">
+                <Label>{form.watch("operationType") === "تكاليف سابقة" ? "إجمالي العمالة (ج.م)" : "تكلفة العمالة (ج.م)"}</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...form.register("laborCost", { valueAsNumber: true })}
+                  error={form.formState.errors.laborCost?.message}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>مقاول العمالة (اختياري)</Label>
+                <Select {...form.register("laborContractorId")}>
+                  <option value="">بدون مقاول</option>
+                  {contractors.filter(c => c.type === "عمالة" || c.type === "أخرى").map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </Select>
+              </div>
+              {form.watch("laborContractorId") && (
+                <div className="space-y-2">
+                  <Label>طريقة الدفع</Label>
+                  <Select {...form.register("laborPaymentMethod")}>
+                    <option value="cash">نقداً</option>
+                    <option value="credit">آجل (يضاف لرصيد المقاول)</option>
+                  </Select>
+                </div>
+              )}
             </div>
             
-            <div className="space-y-2">
-              <Label>تكلفة تأجير المعدات (ج.م)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...form.register("equipmentCost", { valueAsNumber: true })}
-                error={form.formState.errors.equipmentCost?.message}
-              />
+            {/* المعدات */}
+            <div className="space-y-4 bg-paper-sunken/30 p-4 rounded-xl border border-border">
+              <div className="space-y-2">
+                <Label>{form.watch("operationType") === "تكاليف سابقة" ? "إجمالي الآلات والمعدات (ج.م)" : "تكلفة تأجير المعدات (ج.م)"}</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...form.register("equipmentCost", { valueAsNumber: true })}
+                  error={form.formState.errors.equipmentCost?.message}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>مقاول المعدات (اختياري)</Label>
+                <Select {...form.register("equipmentContractorId")}>
+                  <option value="">بدون مقاول</option>
+                  {contractors.filter(c => c.type === "جرار زراعي" || c.type === "آلات حصاد" || c.type === "أخرى").map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </Select>
+              </div>
+              {form.watch("equipmentContractorId") && (
+                <div className="space-y-2">
+                  <Label>طريقة الدفع</Label>
+                  <Select {...form.register("equipmentPaymentMethod")}>
+                    <option value="cash">نقداً</option>
+                    <option value="credit">آجل (يضاف لرصيد المقاول)</option>
+                  </Select>
+                </div>
+              )}
             </div>
             
-            <div className="space-y-2">
-              <Label>مصروفات أخرى (ج.م)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...form.register("otherCost", { valueAsNumber: true })}
-                error={form.formState.errors.otherCost?.message}
-              />
+            {/* مصاريف أخرى */}
+            <div className="space-y-4 bg-paper-sunken/30 p-4 rounded-xl border border-border">
+              <div className="space-y-2">
+                <Label>{form.watch("operationType") === "تكاليف سابقة" ? "مصروفات أخرى (أسمدة، مبيدات.. الخ)" : "مصروفات أخرى (ج.م)"}</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  {...form.register("otherCost", { valueAsNumber: true })}
+                  error={form.formState.errors.otherCost?.message}
+                />
+              </div>
             </div>
           </div>
         </div>

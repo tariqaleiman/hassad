@@ -30,6 +30,16 @@ export interface CropCycle extends BaseEntity {
   harvestDate?: string | null;
   status: CropCycleStatus;
   notes?: string;
+
+  // تفاصيل الحصاد والإنتاج
+  yieldQuantity?: number | null;
+  yieldUnit?: string | null;
+  yieldGrade?: string | null;
+  harvestNotes?: string | null;
+
+  // الجانب المالي (الإيرادات)
+  expectedRevenue?: number | null;
+  actualRevenue?: number | null;
 }
 
 export interface CropCycleFormValues {
@@ -46,4 +56,5 @@ export interface CropCycleFormValues {
   areaUnit: "feddan" | "qirat" | "meter";
   plantDate?: string;
   notes?: string;
+  expectedRevenue?: number | null;
 }

@@ -1,6 +1,7 @@
 import { cropCycleRepository } from "@/lib/repositories/crop-cycle-repository";
 import { landRepository } from "@/lib/repositories/land-repository";
 import type { CropCycle, CropCycleFormValues } from "@/lib/types/crop-cycle";
+import type { HarvestSchema } from "@/components/crop-cycles/harvest-schema";
 import { convertToFeddan } from "@/lib/utils/area";
 
 async function validateAreaConstraint(data: CropCycleFormValues, idToIgnore?: string, userId?: string) {
@@ -44,8 +45,8 @@ export const cropCycleService = {
     return cropCycleRepository.update(id, updateData, userId);
   },
   
-  markHarvested: (id: string, userId?: string): Promise<void> =>
-    cropCycleRepository.markHarvested(id, userId),
+  markHarvested: (id: string, harvestData: HarvestSchema, userId?: string): Promise<void> =>
+    cropCycleRepository.markHarvested(id, harvestData, userId),
   remove: (id: string, userId?: string): Promise<void> =>
     cropCycleRepository.softDelete(id, userId),
 };

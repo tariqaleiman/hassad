@@ -3,7 +3,7 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, CalendarRange, Plus, Leaf, Map as MapIcon, Activity, CheckCircle2, Trash2, Wallet } from "lucide-react";
+import { ArrowRight, CalendarRange, Plus, Leaf, Map as MapIcon, Activity, CheckCircle2, Trash2, Wallet, TrendingUp, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,15 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
 import { CropCycleForm } from "@/components/crop-cycles/crop-cycle-form";
+import { HarvestForm } from "@/components/crop-cycles/harvest-form";
 import { useSeasons } from "@/lib/hooks/use-seasons";
 import { useCropCycles, useCreateCropCycle, useMarkCropCycleHarvested, useDeleteCropCycle } from "@/lib/hooks/use-crop-cycles";
 import { useLands } from "@/lib/hooks/use-lands";
 import { useCrops } from "@/lib/hooks/use-crops";
 import { formatDate } from "@/lib/utils";
+import { useOperations } from "@/lib/hooks/use-operations";
 import type { CropCycleSchema } from "@/components/crop-cycles/crop-cycle-schema";
+import type { HarvestSchema } from "@/components/crop-cycles/harvest-schema";
 import type { CropCycle } from "@/lib/types/crop-cycle";
 
 function SeasonDetailsContent() {
@@ -28,6 +31,7 @@ function SeasonDetailsContent() {
   const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
   const { data: lands, isLoading: loadingLands } = useLands();
   const { data: crops, isLoading: loadingCrops } = useCrops();
+  const { data: operations, isLoading: loadingOps } = useOperations();
 
   const createCropCycle = useCreateCropCycle();
   const markHarvested = useMarkCropCycleHarvested();
@@ -43,7 +47,7 @@ function SeasonDetailsContent() {
   const landsById = useMemo(() => new Map(lands?.map(l => [l.id, l])), [lands]);
   const cropsById = useMemo(() => new Map(crops?.map(c => [c.id, c])), [crops]);
 
-  const isLoading = loadingSeasons || loadingCycles || loadingLands || loadingCrops;
+  const isLoading = loadingSeasons || loadingCycles || loadingLands || loadingCrops || loadingOps;
 
   if (isLoading) {
     return (
@@ -66,9 +70,9 @@ function SeasonDetailsContent() {
     createCropCycle.mutate(values as any, { onSuccess: () => setFormOpen(false) });
   };
 
-  const handleHarvest = () => {
+  const handleHarvest = (harvestData: HarvestSchema) => {
     if (!harvestingCycle) return;
-    markHarvested.mutate(harvestingCycle.id, { onSuccess: () => setHarvestingCycle(null) });
+    markHarvested.mutate({ id: harvestingCycle.id, harvestData }, { onSuccess: () => setHarvestingCycle(null) });
   };
 
   const handleDelete = () => {
@@ -83,6 +87,21 @@ function SeasonDetailsContent() {
   const farmTotalArea = lands?.reduce((acc, l) => acc + (l.areaInFeddan || 0), 0) || 0;
   const plantedArea = cycles.reduce((acc, c) => acc + (c.areaInFeddan || 0), 0);
   const plantedPercentage = farmTotalArea > 0 ? Math.min((plantedArea / farmTotalArea) * 100, 100) : 0;
+
+  // Financial stats
+  const totalRevenue = cycles.reduce((acc, c) => acc + (c.actualRevenue || 0), 0);
+
+  const seasonOps = operations?.filter(op => op.seasonId === id) || [];
+  const totalSpent = seasonOps.reduce((acc, op) => acc + (op.totalCost || 0), 0);
+  const budgetPercentage = season.expectedBudget && season.expectedBudget > 0 ? Math.min((totalSpent / season.expectedBudget) * 100, 150) : 0;
+  const isOverBudget = season.expectedBudget ? totalSpent > season.expectedBudget : false;
+
+  // Cost breakdown per crop cycle
+  const costByCropCycle = new Map<string, number>();
+  for (const op of seasonOps) {
+    const prev = costByCropCycle.get(op.cropCycleId) || 0;
+    costByCropCycle.set(op.cropCycleId, prev + (op.totalCost || 0));
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -130,36 +149,60 @@ function SeasonDetailsContent() {
 
         <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="bg-crop-100 text-crop-600 p-3 rounded-xl shadow-sm">
-              <Activity className="h-6 w-6" />
+            <div className="bg-emerald-100 text-emerald-600 p-3 rounded-xl shadow-sm">
+              <TrendingUp className="h-6 w-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-ink-muted">المحاصيل النشطة</p>
-              <p className="text-2xl font-bold text-ink">{activeCycles}</p>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-ink-muted mb-1">إجمالي الإيرادات</p>
+              <div className="flex items-baseline gap-1">
+                <p className="text-xl font-bold text-emerald-600">{totalRevenue.toLocaleString()}</p>
+                {season.expectedRevenue ? (
+                  <span className="text-sm text-ink-muted">/ {season.expectedRevenue.toLocaleString()} ج.م</span>
+                ) : (
+                  <span className="text-sm text-ink-muted">ج.م</span>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
         
         <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="bg-emerald-100 text-emerald-600 p-3 rounded-xl shadow-sm">
-              <CheckCircle2 className="h-6 w-6" />
+            <div className={`${(totalRevenue - totalSpent) > 0 ? 'bg-emerald-100 text-emerald-600' : (totalRevenue - totalSpent) < 0 ? 'bg-danger-bg text-danger' : 'bg-slate-100 text-slate-600'} p-3 rounded-xl shadow-sm`}>
+              <Wallet className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-ink-muted">تم حصادها</p>
-              <p className="text-2xl font-bold text-ink">{harvestedCycles}</p>
+              <p className="text-sm font-medium text-ink-muted">صافي الربح / الخسارة</p>
+              <p className={`text-xl font-bold ${totalRevenue - totalSpent > 0 ? 'text-emerald-600' : totalRevenue - totalSpent < 0 ? 'text-danger' : 'text-ink'}`}>
+                {(totalRevenue - totalSpent) > 0 ? '+' : ''}{(totalRevenue - totalSpent).toLocaleString()} <span className="text-sm font-normal text-ink-muted">ج.م</span>
+              </p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="rounded-3xl border-border/50 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="bg-sky-100 text-sky-600 p-3 rounded-xl shadow-sm">
-              <Wallet className="h-6 w-6" />
+            <div className={`${isOverBudget ? 'bg-red-100 text-red-600' : 'bg-sky-100 text-sky-600'} p-3 rounded-xl shadow-sm`}>
+              <TrendingUp className="h-6 w-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-ink-muted">الميزانية التقديرية</p>
-              <p className="text-xl font-bold text-ink">{season.expectedBudget ? `${season.expectedBudget.toLocaleString()} ج.م` : "غير محددة"}</p>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-ink-muted mb-1">المصروف الفعلي</p>
+              <div className="flex items-baseline gap-1">
+                <p className={`text-xl font-bold ${isOverBudget ? 'text-danger' : 'text-ink'}`}>{totalSpent.toLocaleString()}</p>
+                {season.expectedBudget ? (
+                  <span className="text-sm text-ink-muted">/ {season.expectedBudget.toLocaleString()} ج.م</span>
+                ) : (
+                  <span className="text-sm text-ink-muted">ج.م</span>
+                )}
+              </div>
+              {season.expectedBudget != null && season.expectedBudget > 0 && (
+                <div className="mt-2 w-full bg-paper-sunken rounded-full h-1.5 overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${isOverBudget ? 'bg-danger' : budgetPercentage > 80 ? 'bg-amber-500' : 'bg-crop-500'}`}
+                    style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
+                  />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -228,6 +271,28 @@ function SeasonDetailsContent() {
                         </div>
                         <span className="font-medium text-ink/80">{cycle.plantDate ? `زُرع في ${formatDate(cycle.plantDate)}` : "لم يُسجل تاريخ الزراعة"}</span>
                       </div>
+                      
+                      {cycle.status === "محصودة" && cycle.yieldQuantity != null && (
+                        <div className="flex items-center gap-3 text-sm text-emerald-600">
+                          <div className="bg-emerald-50 p-1.5 rounded-md border border-emerald-100">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                          </div>
+                          <span className="font-medium">الإنتاج: <strong className="text-emerald-700">{cycle.yieldQuantity}</strong> {cycle.yieldUnit} ({cycle.yieldGrade || "غير محدد"})</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-3 text-sm text-ink-muted">
+                        <div className="bg-paper-sunken p-1.5 rounded-md border border-border/40">
+                          <Receipt className="h-4 w-4 text-amber-500" />
+                        </div>
+                        <span className="font-medium text-ink/80">المصروفات: <strong className="text-ink">{(costByCropCycle.get(cycle.id) || 0).toLocaleString()}</strong> ج.م</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-ink-muted">
+                        <div className="bg-paper-sunken p-1.5 rounded-md border border-border/40">
+                          <TrendingUp className="h-4 w-4 text-emerald-500" />
+                        </div>
+                        <span className="font-medium text-ink/80">الإيرادات: <strong className="text-ink">{(cycle.actualRevenue || 0).toLocaleString()}</strong> ج.م</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -258,15 +323,21 @@ function SeasonDetailsContent() {
         />
       </Dialog>
 
-      <ConfirmDialog
-        open={!!harvestingCycle}
-        onClose={() => setHarvestingCycle(null)}
-        onConfirm={handleHarvest}
-        title="تأكيد حصاد المحصول"
-        description="هل أنت متأكد أنك تريد تسجيل حصاد هذا المحصول؟ سيتم تغيير حالته إلى محصودة."
-        confirmLabel="نعم، تم الحصاد"
-        loading={markHarvested.isPending}
-      />
+      <Dialog 
+        open={!!harvestingCycle} 
+        onClose={() => setHarvestingCycle(null)} 
+        title="تسجيل حصاد المحصول"
+        className="max-w-xl"
+      >
+        {harvestingCycle && (
+          <HarvestForm
+            cycle={harvestingCycle}
+            onSubmit={handleHarvest}
+            onCancel={() => setHarvestingCycle(null)}
+            loading={markHarvested.isPending}
+          />
+        )}
+      </Dialog>
 
       <ConfirmDialog
         open={!!deletingCycle}

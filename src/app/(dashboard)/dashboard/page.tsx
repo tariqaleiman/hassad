@@ -7,6 +7,9 @@ import { useLands } from "@/lib/hooks/use-lands";
 import { useSeasons } from "@/lib/hooks/use-seasons";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { useOwnerProfile } from "@/lib/hooks/use-owner";
+import { useDashboardData } from "@/lib/hooks/use-dashboard-data";
+import { useCrops } from "@/lib/hooks/use-crops";
+import { useCropCycles } from "@/lib/hooks/use-crop-cycles";
 import type { IconType } from "@/components/ui/icons";
 
 export default function DashboardPage() {
@@ -15,10 +18,17 @@ export default function DashboardPage() {
   const { data: seasons, isLoading: loadingSeasons } = useSeasons();
   const { user } = useAuth();
   const { data: owner } = useOwnerProfile();
+  const { data: dashboardData, isLoading: isLoadingDashboard } = useDashboardData();
+  const { data: allCrops } = useCrops();
+  const { data: cropCycles } = useCropCycles();
 
   const openSeasons = seasons?.filter((s) => s.status === "مفتوح").length ?? 0;
   const userName = owner?.name || user?.displayName || user?.email?.split('@')[0] || "صديقنا";
   const currentDate = new Intl.DateTimeFormat('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date());
+
+  const totalRevenues = dashboardData?.totalRevenues || 0;
+  const totalExpenses = dashboardData?.totalExpenses || 0;
+  const cropsCount = dashboardData?.cropCyclesCount || 0;
 
   return (
     <div className="space-y-6">
@@ -43,14 +53,16 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-ink-muted mb-2">إجمالي الإيرادات</p>
           <div className="flex items-end justify-between">
             <div>
-              <p className="tabular font-display text-xl lg:text-2xl font-bold text-ink">178,450</p>
+              <p className="tabular font-display text-xl lg:text-2xl font-bold text-ink">
+                {isLoadingDashboard ? "-" : totalRevenues.toLocaleString()}
+              </p>
               <p className="text-[10px] text-ink-faint">ج.م</p>
             </div>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success-bg text-success">
               <Icons.ArrowUpRight className="h-4 w-4" />
             </div>
           </div>
-          <p className="text-[10px] text-success mt-2 font-medium flex items-center gap-0.5">
+          <p className="text-[10px] text-success mt-2 font-medium flex items-center gap-0.5 opacity-0">
             <Icons.TrendingUp className="h-3 w-3" />
             +12% عن الشهر الماضي
           </p>
@@ -60,14 +72,16 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-ink-muted mb-2">إجمالي الإنفاق</p>
           <div className="flex items-end justify-between">
             <div>
-              <p className="tabular font-display text-xl lg:text-2xl font-bold text-ink">125,750</p>
+              <p className="tabular font-display text-xl lg:text-2xl font-bold text-ink">
+                {isLoadingDashboard ? "-" : totalExpenses.toLocaleString()}
+              </p>
               <p className="text-[10px] text-ink-faint">ج.م</p>
             </div>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-danger-bg text-danger">
               <Icons.ArrowUpRight className="h-4 w-4 rotate-90" />
             </div>
           </div>
-          <p className="text-[10px] text-danger mt-2 font-medium flex items-center gap-0.5">
+          <p className="text-[10px] text-danger mt-2 font-medium flex items-center gap-0.5 opacity-0">
             <Icons.TrendingUp className="h-3 w-3 rotate-90" />
             +8% عن الشهر الماضي
           </p>
@@ -90,7 +104,9 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-ink-muted mb-2">المحاصيل الحالية</p>
           <div className="flex items-end justify-between">
             <div>
-              <p className="tabular font-display text-xl lg:text-2xl font-bold text-ink">12</p>
+              <p className="tabular font-display text-xl lg:text-2xl font-bold text-ink">
+                {isLoadingDashboard ? "-" : cropsCount}
+              </p>
               <p className="text-[10px] text-ink-faint">محصول</p>
             </div>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-crop-50/50 text-crop-600">
@@ -289,24 +305,30 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/20">
-                {[
-                  { op: "ري", farm: "مزرعة النخيل", crop: "القمح", date: "18 مايو", status: "مكتملة" },
-                  { op: "تسميد", farm: "مزرعة السلام", crop: "الذرة", date: "17 مايو", status: "مكتملة" },
-                  { op: "مبيدات", farm: "مزرعة الأمل", crop: "الطماطم", date: "16 مايو", status: "مكتملة" },
-                  { op: "حرث", farm: "مزرعة الود", crop: "البطاطس", date: "15 مايو", status: "مكتملة" },
-                ].map((row, i) => (
-                  <tr key={i} className="hover:bg-paper-sunken/30 transition-colors">
-                    <td className="py-2.5 font-medium text-ink">{row.op}</td>
-                    <td className="py-2.5 text-ink-muted">{row.farm}</td>
-                    <td className="py-2.5 text-ink-muted">{row.crop}</td>
-                    <td className="py-2.5 text-ink-muted">{row.date}</td>
-                    <td className="py-2.5 text-center">
-                      <span className="inline-flex text-[10px] font-bold bg-success-bg/50 text-success border border-success/20 px-2 py-0.5 rounded-full">
-                        {row.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {isLoadingDashboard ? (
+                  <tr><td colSpan={5} className="text-center py-4 text-ink-muted">جاري التحميل...</td></tr>
+                ) : !dashboardData?.latestOperations || dashboardData.latestOperations.length === 0 ? (
+                  <tr><td colSpan={5} className="text-center py-4 text-ink-muted">لا توجد عمليات مسجلة</td></tr>
+                ) : (
+                  dashboardData.latestOperations.map((row, i) => {
+                    const farmName = farms?.find(f => f.id === row.farmId)?.name || 'غير معروف';
+                    const cycle = cropCycles?.find(c => c.id === row.cropCycleId);
+                    const cropName = allCrops?.find(cr => cr.id === cycle?.cropId)?.name || 'غير معروف';
+                    return (
+                      <tr key={row.id || i} className="hover:bg-paper-sunken/30 transition-colors">
+                        <td className="py-2.5 font-medium text-ink">{row.operationType}</td>
+                        <td className="py-2.5 text-ink-muted">{farmName}</td>
+                        <td className="py-2.5 text-ink-muted">{cropName}</td>
+                        <td className="py-2.5 text-ink-muted">{new Date(row.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' })}</td>
+                        <td className="py-2.5 text-center">
+                          <span className="inline-flex text-[10px] font-bold bg-success-bg/50 text-success border border-success/20 px-2 py-0.5 rounded-full">
+                            مكتملة
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

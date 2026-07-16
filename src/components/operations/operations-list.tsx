@@ -14,6 +14,7 @@ import type { InventoryItem } from "@/lib/types/inventory";
 import { farmingOperationService } from "@/lib/services/farming-operation-service";
 import { Select } from "@/components/ui/select";
 import type { Crop } from "@/lib/types/crop";
+import type { Contractor } from "@/lib/types/contractor";
 
 interface OperationsListProps {
   farms: Farm[];
@@ -21,6 +22,7 @@ interface OperationsListProps {
   cropCycles: CropCycle[];
   crops: Crop[];
   inventoryItems: InventoryItem[];
+  contractors: Contractor[];
   operations: FarmingOperation[];
   userId: string;
   onUpdate: () => void;
@@ -44,6 +46,7 @@ export function OperationsList({
   cropCycles,
   crops,
   inventoryItems,
+  contractors,
   operations,
   userId,
   onUpdate,
@@ -217,6 +220,20 @@ export function OperationsList({
                           })}
                         </div>
                       )}
+                      
+                      {/* عرض المقاولين إن وجدوا */}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {op.laborContractorId && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50">
+                            عمالة: {contractors.find(c => c.id === op.laborContractorId)?.name || 'غير معروف'}
+                          </span>
+                        )}
+                        {op.equipmentContractorId && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50">
+                            معدات: {contractors.find(c => c.id === op.equipmentContractorId)?.name || 'غير معروف'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -269,6 +286,7 @@ export function OperationsList({
         cropCycles={cropCycles}
         crops={crops}
         inventoryItems={inventoryItems}
+        contractors={contractors}
         isSubmitting={loading}
         defaultValues={editingOperation ? {
           ...editingOperation,

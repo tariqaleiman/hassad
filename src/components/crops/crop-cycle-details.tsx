@@ -6,6 +6,7 @@ import type { Farm } from "@/lib/types/farm";
 import type { Land } from "@/lib/types/land";
 import type { Season } from "@/lib/types/season";
 import type { Crop } from "@/lib/types/crop";
+import type { FarmingOperation } from "@/lib/types/farming-operation";
 
 interface CropCycleDetailsProps {
   cycle: CropCycle;
@@ -13,9 +14,14 @@ interface CropCycleDetailsProps {
   land?: Land;
   season?: Season;
   crop?: Crop;
+  operations?: FarmingOperation[];
 }
 
-export function CropCycleDetails({ cycle, farm, land, season, crop }: CropCycleDetailsProps) {
+export function CropCycleDetails({ cycle, farm, land, season, crop, operations = [] }: CropCycleDetailsProps) {
+  const totalSpent = operations.reduce((acc, op) => acc + (op.totalCost || 0), 0);
+  const actualRevenue = cycle.actualRevenue || 0;
+  const expectedRevenue = cycle.expectedRevenue || 0;
+  const netProfit = actualRevenue - totalSpent;
   return (
     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
       {/* رأس التفاصيل */}
@@ -84,6 +90,35 @@ export function CropCycleDetails({ cycle, farm, land, season, crop }: CropCycleD
           <p className="text-sm font-semibold text-ink">{cycle.plantingMethod}</p>
           {cycle.isNursery && (
              <Badge variant="wheat" className="mt-2 text-xs">مشتل معزول</Badge>
+          )}
+        </div>
+      </div>
+
+      {/* الجانب المالي */}
+      <div className="bg-paper-sunken/30 rounded-xl border border-border/40 overflow-hidden">
+        <div className="bg-paper-sunken/60 px-4 py-2 border-b border-border/40 font-medium text-sm text-ink-muted flex items-center gap-2">
+          <Target className="h-4 w-4" />
+          ملخص مالي
+        </div>
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-ink-muted mb-1">إجمالي المصروفات</p>
+            <p className="font-bold text-ink text-lg">{totalSpent.toLocaleString()} <span className="text-sm font-normal text-ink-muted">ج.م</span></p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-muted mb-1">الإيراد {actualRevenue > 0 ? "الفعلي" : "المتوقع"}</p>
+            <p className="font-bold text-emerald-600 text-lg">
+              {actualRevenue > 0 ? actualRevenue.toLocaleString() : expectedRevenue > 0 ? expectedRevenue.toLocaleString() : "0"} 
+              <span className="text-sm font-normal text-emerald-600/70"> ج.م</span>
+            </p>
+          </div>
+          {(actualRevenue > 0 || totalSpent > 0) && (
+            <div className="sm:border-r border-border/50 sm:pr-4">
+              <p className="text-xs text-ink-muted mb-1">الربح / الخسارة</p>
+              <p className={`font-bold text-lg ${netProfit > 0 ? 'text-emerald-600' : netProfit < 0 ? 'text-danger' : 'text-ink'}`}>
+                {netProfit > 0 ? '+' : ''}{netProfit.toLocaleString()} <span className="text-sm font-normal opacity-70">ج.م</span>
+              </p>
+            </div>
           )}
         </div>
       </div>

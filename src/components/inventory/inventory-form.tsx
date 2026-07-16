@@ -2,6 +2,7 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ export function InventoryForm({
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<InventorySchema>({
     resolver: zodResolver(inventorySchema),
@@ -41,13 +43,33 @@ export function InventoryForm({
       dictionaryId: defaultValues?.dictionaryId ?? "",
       initialQuantity: defaultValues?.initialQuantity ?? 0,
       initialUnitPrice: defaultValues?.initialUnitPrice ?? 0,
+      subUnit: defaultValues?.subUnit ?? "",
+      subUnitRatio: defaultValues?.subUnitRatio ?? undefined,
       notes: defaultValues?.notes ?? "",
     },
   });
 
   const initialQuantity = useWatch({ control, name: "initialQuantity" }) || 0;
   const initialUnitPrice = useWatch({ control, name: "initialUnitPrice" }) || 0;
+  const dictionaryId = useWatch({ control, name: "dictionaryId" });
   const totalValue = initialQuantity * initialUnitPrice;
+
+  useEffect(() => {
+    if (dictionaryId && dictionaryItems) {
+      const selectedDictItem = dictionaryItems.find(d => d.id === dictionaryId);
+      if (selectedDictItem && selectedDictItem.unit) {
+        import("@/lib/utils/unit-parser").then(({ parseUnitString }) => {
+          const parsed = parseUnitString(selectedDictItem.unit);
+          if (parsed) {
+            setValue("subUnit", parsed.subUnit, { shouldValidate: true });
+            if (parsed.subUnitRatio) {
+              setValue("subUnitRatio", parsed.subUnitRatio, { shouldValidate: true });
+            }
+          }
+        });
+      }
+    }
+  }, [dictionaryId, dictionaryItems, setValue]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -96,12 +118,49 @@ export function InventoryForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="initialQuantity">الكمية المتاحة</Label>
-              <Input 
-                id="initialQuantity" 
-                type="number" 
-                step="0.01" 
-                {...register("initialQuantity", { valueAsNumber: true })} 
-              />
+              {useWatch({ control, name: "subUnitRatio" }) ? (
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="1"
+                        placeholder="الوحدة الأساسية"
+                        onChange={(e) => {
+                          const main = parseFloat(e.target.value) || 0;
+                          const ratio = control._formValues.subUnitRatio || 1;
+                          const currentTotal = control._formValues.initialQuantity || 0;
+                          const currentSub = (currentTotal % 1) * ratio;
+                          setValue("initialQuantity", main + (currentSub / ratio));
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="1"
+                        placeholder={control._formValues.subUnit || "الوحدة الصغرى"}
+                        onChange={(e) => {
+                          const sub = parseFloat(e.target.value) || 0;
+                          const ratio = control._formValues.subUnitRatio || 1;
+                          const currentTotal = control._formValues.initialQuantity || 0;
+                          const main = Math.floor(currentTotal);
+                          setValue("initialQuantity", main + (sub / ratio));
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Input 
+                  id="initialQuantity" 
+                  type="number" 
+                  step="0.01" 
+                  {...register("initialQuantity", { valueAsNumber: true })} 
+                />
+              )}
               {errors.initialQuantity && <p className="mt-1 text-xs text-danger">{errors.initialQuantity.message}</p>}
             </div>
             
@@ -129,6 +188,40 @@ export function InventoryForm({
       <div>
         <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
         <Textarea id="notes" {...register("notes")} rows={3} />
+      </div>
+
+      <div className="border border-border rounded-lg p-4 bg-paper-sunken space-y-4">
+        <div>
+          <Label className="text-base font-bold text-ink">الوحدة الصغرى للمخزون (اختياري)</Label>
+          <p className="text-xs text-ink-muted mt-1">
+            يستخدم إذا كنت ترغب في سحب كميات مجزأة (مثال: الوحدة الأساسية "شيكارة" والوحدة الصغرى "كيلو" ومعامل التحويل "50").
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="subUnit">اسم الوحدة الصغرى (مثال: كيلو)</Label>
+            <Input 
+              id="subUnit" 
+              type="text" 
+              {...register("subUnit")} 
+              placeholder="مثال: كيلو"
+            />
+            {errors.subUnit && <p className="mt-1 text-xs text-danger">{errors.subUnit.message}</p>}
+          </div>
+          
+          <div>
+            <Label htmlFor="subUnitRatio">معامل التحويل (الوحدة الأساسية = كم وحدة صغرى؟)</Label>
+            <Input 
+              id="subUnitRatio" 
+              type="number" 
+              step="0.01"
+              {...register("subUnitRatio", { valueAsNumber: true })} 
+              placeholder="مثال: 50"
+            />
+            {errors.subUnitRatio && <p className="mt-1 text-xs text-danger">{errors.subUnitRatio.message}</p>}
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-4">
