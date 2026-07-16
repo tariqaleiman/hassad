@@ -54,6 +54,7 @@ export const Icons = {
   Finance: Receipt,
   Reports: FileBarChart,
   Settings: Settings,
+  Receipt: Receipt,
 
   // Topbar
   Bell: Bell,
