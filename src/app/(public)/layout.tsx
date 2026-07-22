@@ -139,6 +139,18 @@ export default function PublicLayout({
         </div>
       </footer>
 
+      {/* Floating WhatsApp Support Widget */}
+      <a
+        href="https://wa.me/201000000000"
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-6 start-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-2xl shadow-emerald-600/40 hover:scale-105 transition-all duration-300 border-2 border-white/20"
+        title="تواصل مباشر مع فريق الدعم عبر الواتساب"
+      >
+        <Icons.MessageSquare className="w-5 h-5 shrink-0" />
+        <span className="hidden sm:inline">الدعم الفني عبر الواتساب</span>
+      </a>
+
     </div>
   );
 }

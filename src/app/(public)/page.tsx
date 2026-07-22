@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/ui/icons";
 import { ModeSlider } from "@/components/public/mode-slider";
+import { ScreenTabSwitcher } from "@/components/public/screen-tab-switcher";
+import { FAQAccordion } from "@/components/public/faq-accordion";
 
 export default function LandingPage() {
   return (
@@ -10,41 +12,48 @@ export default function LandingPage() {
       {/* =======================================
           HERO SECTION
           ======================================= */}
-      <section className="relative pt-12 lg:pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-crop-100 dark:bg-crop-900/40 text-crop-800 dark:text-crop-300 border border-crop-200 dark:border-crop-800 text-xs font-bold mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-          <Icons.Sprout className="w-4 h-4 text-crop-600" />
-          <span>نظام حصادي الزراعي المتكامل</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-crop-500" />
-          <span>يعمل بدون إنترنت 100%</span>
+      <section className="relative pt-12 lg:pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center space-y-12">
+        <div className="max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-crop-100 dark:bg-crop-900/40 text-crop-800 dark:text-crop-300 border border-crop-200 dark:border-crop-800 text-xs font-bold mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+            <Icons.Sprout className="w-4 h-4 text-crop-600" />
+            <span>نظام حصادي الزراعي المتكامل</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-crop-500" />
+            <span>يعمل بدون إنترنت 100%</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white leading-[1.15] mb-6">
+            "حصادي لإدارة المزارع والعمالة <span className="text-transparent bg-clip-text bg-gradient-to-r from-crop-600 via-emerald-500 to-crop-400">والحسابات أونلاين وبدون إنترنت"</span>
+          </h1>
+
+          <p className="text-lg sm:text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10 font-medium">
+            أدِر زرعتك، أرضك، مشترياتك، عمالتك، ومعداتك بسهولة متناهية. يعمل على الموبايل في الغيط وعلى الكمبيوتر مع كشف حساب نوتة آلي.
+          </p>
+
+          {/* Hero CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto mb-12">
+            <Link href="/setup" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto rounded-2xl px-8 py-7 text-lg shadow-xl shadow-crop-600/30 bg-crop-600 hover:bg-crop-700 text-white font-bold gap-3">
+                <span>ابدأ التجربة المجانية الآن</span>
+                <Icons.ArrowRight className="w-5 h-5 rtl:rotate-180" />
+              </Button>
+            </Link>
+
+            <Link href="/contact" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-2xl px-8 py-7 text-lg border-2 font-bold gap-2">
+                <Icons.Phone className="w-5 h-5" />
+                <span>طلب عرض توضيحي</span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white max-w-4xl mx-auto leading-[1.15] mb-6">
-          النظام الزراعي الأذكى المصمم <span className="text-transparent bg-clip-text bg-gradient-to-r from-crop-600 via-emerald-500 to-crop-400">لراحة الفلاح وتوسع الشركات</span>
-        </h1>
-
-        <p className="text-lg sm:text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10 font-medium">
-          أدِر زرعتك، أرضك، مشترياتك، عمالتك، ومعداتك بسهولة متناهية. يعمل على الموبايل في الغيط وعلى جهاز الكمبيوتر مع دعم الحفظ المحلي والنوتة.
-        </p>
-
-        {/* Hero CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto mb-16">
-          <Link href="/setup" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto rounded-2xl px-8 py-7 text-lg shadow-xl shadow-crop-600/30 bg-crop-600 hover:bg-crop-700 text-white font-bold gap-3">
-              <span>ابدأ تجربة النظام مجاناً</span>
-              <Icons.ArrowRight className="w-5 h-5 rtl:rotate-180" />
-            </Button>
-          </Link>
-
-          <Link href="/contact" className="w-full sm:w-auto">
-            <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-2xl px-8 py-7 text-lg border-2 font-bold gap-2">
-              <Icons.Phone className="w-5 h-5" />
-              <span>طلب عرض توضيحي</span>
-            </Button>
-          </Link>
+        {/* Dynamic Interactive Screen Tab Switcher */}
+        <div className="pt-4">
+          <ScreenTabSwitcher />
         </div>
 
         {/* Highlight Stats Badges */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto pt-6 border-t border-border/40 text-start">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-8 border-t border-border/40 text-start">
           <div className="p-4 rounded-2xl bg-paper-sunken/60 dark:bg-slate-900/60 border border-border/50">
             <p className="text-2xl font-extrabold text-crop-600 dark:text-crop-400 font-display">100%</p>
             <p className="text-xs font-bold text-slate-700 dark:text-slate-300">عمل محلي بدون إنترنت</p>
@@ -129,6 +138,22 @@ export default function LandingPage() {
           </div>
 
         </div>
+      </section>
+
+      {/* =======================================
+          FAQ SECTION
+          ======================================= */}
+      <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-bold font-display text-slate-900 dark:text-white mb-3">
+            الأسئلة الأكثر شيوعاً
+          </h2>
+          <p className="text-slate-700 dark:text-slate-300 text-base font-medium">
+            كل ما تريد معرفته عن طريقة عمل حصادي، الحفظ المحلي، والباقات.
+          </p>
+        </div>
+
+        <FAQAccordion />
       </section>
 
       {/* =======================================

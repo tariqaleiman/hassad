@@ -1,117 +1,227 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/ui/icons";
 
 export default function PricingPage() {
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
       
-      {/* Header */}
-      <div className="text-center max-w-3xl mx-auto space-y-4">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-crop-100 dark:bg-crop-900/40 text-crop-800 dark:text-crop-300 text-xs font-bold border border-crop-200">
-          <Icons.Finance className="w-4 h-4 text-crop-600" />
-          <span>باقات الأسعار والتراخيص</span>
-        </div>
-        <h1 className="text-3xl sm:text-5xl font-extrabold font-display text-ink">
-          باقات مرنة تناسب المزارع الفردي والشركات
-        </h1>
-        <p className="text-ink-muted text-base">
-          اختر الباقة المناسبة لحجم أرضك وعملك. يمكنك البدء مجاناً بالوضع البسيط محلياً 100%.
-        </p>
-      </div>
-
-      {/* Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+      {/* Container Card Header */}
+      <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 text-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-emerald-800/50 space-y-8 relative overflow-hidden">
         
-        {/* Tier 1: Free Simple Farmer */}
-        <div className="bg-paper p-8 rounded-3xl border border-border/80 shadow-sm flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-paper-sunken text-ink-muted border border-border">
-              المزارع البسيط
-            </span>
-            <h3 className="text-2xl font-bold text-ink">الباقة المجانية</h3>
-            <div className="text-3xl font-extrabold text-ink font-display">
-              مجاناً <span className="text-xs font-normal text-ink-muted">مدى الحياة</span>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-emerald-800/60">
+          <div className="space-y-3 text-start">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-900/60 text-emerald-300 text-xs font-bold border border-emerald-700/50">
+              <Icons.Finance className="w-4 h-4 text-emerald-400" />
+              <span>خطط وأسعار حصادي البسيطة</span>
             </div>
-            <p className="text-sm text-ink-muted leading-relaxed">
-              مثالية للمزارع البسيط صاحب الأرض الفردية. تعمل محلياً 100% بدون إجبار على إنترنت.
+            <h1 className="text-3xl sm:text-5xl font-extrabold font-display text-white">
+              باقات مرنة ومناسبة لطبيعة مجالك
+            </h1>
+            <p className="text-emerald-200/80 text-sm sm:text-base font-medium max-w-xl">
+              اختر خطة الأسعار التي تناسب حجم أرضك ومزرعتك، وابدأ مجاناً مع التجربة الفورية.
             </p>
-
-            <ul className="space-y-3 text-sm font-medium text-ink pt-4 border-t border-border/40">
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-600 shrink-0" /> وضع المزارع البسيط الكامل</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-600 shrink-0" /> إدخال يوميات العمالة والمقاولين</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-600 shrink-0" /> دفتر النوتة والديون والعملات</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-600 shrink-0" /> حفظ محلي على الجهاز بدون إنترنت</li>
-            </ul>
           </div>
 
-          <Link href="/setup">
-            <Button variant="outline" className="w-full rounded-2xl py-6 font-bold">
-              ابدأ الباقة المجانية
+          <Link href="/setup" className="shrink-0">
+            <Button size="lg" className="rounded-2xl px-8 py-6 text-base bg-white hover:bg-emerald-50 text-emerald-950 font-extrabold shadow-xl">
+              ابدأ التجربة المجانية الآن
             </Button>
           </Link>
         </div>
 
-        {/* Tier 2: Professional Cloud Sync (Featured) */}
-        <div className="bg-gradient-to-b from-crop-900 to-crop-950 text-white p-8 rounded-3xl border-2 border-crop-500 shadow-2xl flex flex-col justify-between space-y-6 relative overflow-hidden">
-          <div className="absolute top-4 end-4 bg-crop-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-            الأكثر شعبية
+        {/* Billing Cycle Toggle Switch */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="inline-flex items-center p-1.5 rounded-2xl bg-slate-900/80 border border-emerald-800/60 shadow-inner gap-2">
+            <button
+              type="button"
+              onClick={() => setBillingCycle("monthly")}
+              className={`px-6 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer ${
+                billingCycle === "monthly"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/40"
+                  : "text-emerald-200/80 hover:text-white"
+              }`}
+            >
+              الخطط الشهرية
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingCycle("annual")}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer ${
+                billingCycle === "annual"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/40"
+                  : "text-emerald-200/80 hover:text-white"
+              }`}
+            >
+              <span>الخطط السنوية</span>
+              <span className="bg-amber-400 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                توفير 20%
+              </span>
+            </button>
           </div>
-
-          <div className="space-y-4">
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-crop-200 border border-white/10">
-              المستثمر الزراعي
-            </span>
-            <h3 className="text-2xl font-bold text-white">الباقة الاحترافية</h3>
-            <div className="text-3xl font-extrabold text-white font-display">
-              رمزي <span className="text-xs font-normal text-crop-200">سنوياً / للمزرعة</span>
-            </div>
-            <p className="text-sm text-crop-100/80 leading-relaxed">
-              تتضمن النسخ الاحتياطي والمزامنة السحابية وتصدير التقارير بصيغ Word وExcel وPDF.
-            </p>
-
-            <ul className="space-y-3 text-sm font-medium text-white pt-4 border-t border-white/10">
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-400 shrink-0" /> كل ميزات الباقة المجانية</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-400 shrink-0" /> المزامنة بين الموبايل والكمبيوتر</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-400 shrink-0" /> تصدير التقارير (PDF, XLSX, DOCX)</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-crop-400 shrink-0" /> النسخ الاحتياطي السحابي التلقائي</li>
-            </ul>
-          </div>
-
-          <Link href="/contact">
-            <Button className="w-full rounded-2xl py-6 font-bold bg-crop-500 hover:bg-crop-400 text-white shadow-lg">
-              اشترك في الباقة الاحترافية
-            </Button>
-          </Link>
         </div>
 
-        {/* Tier 3: Enterprise */}
-        <div className="bg-paper p-8 rounded-3xl border border-border/80 shadow-sm flex flex-col justify-between space-y-6">
-          <div className="space-y-4">
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200">
-              الشركات والمزارع الكبرى
-            </span>
-            <h3 className="text-2xl font-bold text-ink">باقة الشركات</h3>
-            <div className="text-3xl font-extrabold text-ink font-display">
-              مخصص <span className="text-xs font-normal text-ink-muted">حسب عدد الفروع</span>
+        {/* Dynamic Pricing Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+          
+          {/* Card 1: Free Starter */}
+          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden group">
+            
+            <div className="absolute top-0 start-0 bg-emerald-600 text-white text-[10px] font-extrabold px-4 py-1 rounded-br-2xl shadow-sm">
+              تجربة 14 يوماً مجاناً
             </div>
-            <p className="text-sm text-ink-muted leading-relaxed">
-              مصممة للشركات الزراعية الكبرى التي تحتاج تعدد الفروع، الأدوار والتفويض، ودعم فني مخصص.
-            </p>
 
-            <ul className="space-y-3 text-sm font-medium text-ink pt-4 border-t border-border/40">
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-sky-600 shrink-0" /> تعدد المزارع والفروع غير المحدود</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-sky-600 shrink-0" /> نظام الصلاحيات والتفويض الكامل (RBAC)</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-sky-600 shrink-0" /> لوحة تحكم إدارية خاصة وتراخيص</li>
-              <li className="flex items-center gap-2"><Icons.CheckCircle className="w-4 h-4 text-sky-600 shrink-0" /> مدير حساب ودعم فني مخصص 24/7</li>
-            </ul>
+            <div className="space-y-5 pt-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center">
+                <Icons.Sprout className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">المزارع البسيط</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">الأرض الفردية والغيط</p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-4xl font-extrabold font-display text-slate-900 dark:text-white">
+                  0 <span className="text-base font-bold text-slate-500">ج.م</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">مجاناً بالكامل للتجربة المحلية</p>
+              </div>
+
+              <ul className="space-y-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>وضع المزارع البسيط الكامل</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>تسجيل يومية العمالة والمقاولين</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>دفتر النوتة والديون المباشر</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>عمل محلي بدون إنترنت 100%</span>
+                </li>
+              </ul>
+            </div>
+
+            <Link href="/setup">
+              <Button variant="outline" className="w-full rounded-2xl py-6 font-bold text-sm border-slate-300">
+                ابدأ الباقة المجانية
+              </Button>
+            </Link>
           </div>
 
-          <Link href="/contact">
-            <Button variant="outline" className="w-full rounded-2xl py-6 font-bold border-sky-300 text-sky-700 hover:bg-sky-50">
-              طلب عرض للشركات
-            </Button>
-          </Link>
+          {/* Card 2: Professional (Featured) */}
+          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-8 rounded-3xl border-2 border-emerald-500 shadow-2xl flex flex-col justify-between space-y-6 relative overflow-hidden group scale-105">
+            
+            <div className="absolute top-0 end-0 bg-amber-400 text-slate-950 text-[10px] font-extrabold px-4 py-1.5 rounded-bl-2xl shadow-sm">
+              الأكثر طلباً للمزارع
+            </div>
+
+            <div className="space-y-5 pt-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30">
+                <Icons.Finance className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">المستثمر والمزارع</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">المزارع المتوسطة والتجارية</p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-4xl font-extrabold font-display text-emerald-600 dark:text-emerald-400">
+                  {billingCycle === "annual" ? "99" : "125"} <span className="text-base font-bold text-slate-500">ج.م</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {billingCycle === "annual" ? "تُدفع سنوياً (توفير 20%)" : "شهرياً لكل مزرعة"}
+                </p>
+              </div>
+
+              <ul className="space-y-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>جميع مميزات الباقة البسيطة</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>المزامنة السحابية بين الموبايل والكمبيوتر</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>تصدير التقارير (PDF, XLSX, Word)</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>تنبيهات الأسمدة ومواعيد النوتة</span>
+                </li>
+              </ul>
+            </div>
+
+            <Link href="/setup">
+              <Button className="w-full rounded-2xl py-6 font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30">
+                ابدأ تجربتك المجانية الآن
+              </Button>
+            </Link>
+          </div>
+
+          {/* Card 3: Enterprise */}
+          <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden group">
+            
+            <div className="space-y-5 pt-2">
+              <div className="w-12 h-12 rounded-2xl bg-sky-100 dark:bg-sky-950 text-sky-600 flex items-center justify-center">
+                <Icons.Building className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">باقة الشركات (ERP)</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">الشركات الزراعية وتعدد الفروع</p>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-4xl font-extrabold font-display text-sky-600 dark:text-sky-400">
+                  {billingCycle === "annual" ? "249" : "299"} <span className="text-base font-bold text-slate-500">ج.م</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {billingCycle === "annual" ? "تُدفع سنوياً لكل فرع" : "شهرياً لكل فرع"}
+                </p>
+              </div>
+
+              <ul className="space-y-3 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-sky-500 shrink-0" />
+                  <span>تعدد المزارع والفروع والأقسام</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-sky-500 shrink-0" />
+                  <span>دليل حسابات وشجرة أصول للمعدات</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-sky-500 shrink-0" />
+                  <span>مصفوفة الصلاحيات والتفويض (RBAC)</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Icons.CheckCircle className="w-4 h-4 text-sky-500 shrink-0" />
+                  <span>دعم فني خاص ومدير حساب 24/7</span>
+                </li>
+              </ul>
+            </div>
+
+            <Link href="/contact">
+              <Button variant="outline" className="w-full rounded-2xl py-6 font-bold text-sm border-sky-300 text-sky-700 dark:text-sky-400 hover:bg-sky-50">
+                طلب عرض أسعار للشركات
+              </Button>
+            </Link>
+          </div>
+
         </div>
 
       </div>
