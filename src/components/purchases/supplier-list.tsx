@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useCurrency } from "@/lib/hooks/use-currency";
+import { useAuth } from "@/lib/providers/auth-provider";
 import { SupplierForm } from "./supplier-form";
 import { supplierService } from "@/lib/services/supplier-service";
 import { purchaseService } from "@/lib/services/purchase-service";
@@ -28,6 +30,8 @@ export function SupplierList({
   userId: string;
   onUpdate: () => void;
 }) {
+  const { formatMoney, currency } = useCurrency();
+  const { user } = useAuth();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [viewingSupplier, setViewingSupplier] = useState<Supplier | null>(null);
@@ -50,7 +54,7 @@ export function SupplierList({
       setLoadingInvoices(true);
       try {
         const [farmInvoices, items] = await Promise.all([
-          purchaseService.listInvoices(viewingSupplier.farmId),
+          purchaseService.getInvoicesByFarm(viewingSupplier.farmId),
           inventoryService.listItems(viewingSupplier.farmId)
         ]);
         const filteredInvoices = farmInvoices.filter(inv => inv.supplierId === viewingSupplier.id);
@@ -149,8 +153,13 @@ export function SupplierList({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-ink">الموردين</h1>
-          <p className="text-ink-muted">إدارة الموردين وأرصدتهم</p>
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600">
+              <Building2 className="h-5 w-5" />
+            </div>
+            الموردين
+          </h1>
+          <p className="text-ink-muted mt-1">إدارة الموردين وأرصدتهم</p>
         </div>
         <Button onClick={() => setIsAddOpen(true)} className="gap-2 shrink-0">
           <Plus className="h-5 w-5" />
@@ -179,7 +188,7 @@ export function SupplierList({
               </div>
               <div>
                 <p className="text-sm font-medium text-danger/80">إجمالي الديون المستحقة</p>
-                <p className="text-2xl font-bold text-danger">{totalBalance.toLocaleString()} ج.م</p>
+                <p className="text-2xl font-bold text-danger">{formatMoney(totalBalance)}</p>
               </div>
             </CardContent>
           </Card>
@@ -201,21 +210,17 @@ export function SupplierList({
       )}
 
       {suppliers.length === 0 ? (
-        <Card className="bg-paper-sunken border-border border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="rounded-full bg-black/5 dark:bg-white/5 p-4 mb-4">
-              <Building2 className="h-12 w-12 text-ink-muted" />
-            </div>
-            <h3 className="text-lg font-bold text-ink mb-2">لا يوجد موردين</h3>
-            <p className="text-ink-muted max-w-sm">
-              قم بإضافة الموردين والشركات التي تتعامل معها لتتمكن من تتبع الفواتير والديون.
-            </p>
-            <Button onClick={() => setIsAddOpen(true)} className="mt-6 gap-2">
-              <Plus className="h-5 w-5" />
-              <span>إضافة أول مورد</span>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="text-center py-20 bg-paper-raised rounded-2xl border border-border">
+          <Building2 className="w-16 h-16 text-sky-300 dark:text-sky-500/50 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-ink">لا يوجد موردين</h2>
+          <p className="text-ink-muted mt-2 mb-6 max-w-sm mx-auto">
+            قم بإضافة الموردين والشركات التي تتعامل معها لتتمكن من تتبع الفواتير والديون.
+          </p>
+          <Button onClick={() => setIsAddOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            إضافة أول مورد
+          </Button>
+        </div>
       ) : filteredSuppliers.length === 0 ? (
         <div className="text-center py-12 text-ink-muted">
           لا توجد نتائج مطابقة لبحثك.
@@ -237,6 +242,19 @@ export function SupplierList({
                         {supplier.companyName && (
                           <p className="text-sm font-medium text-ink-muted mt-0.5">{supplier.companyName}</p>
                         )}
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {supplier.supplierCategories && supplier.supplierCategories.length > 0 ? (
+                            supplier.supplierCategories.map(cat => (
+                              <span key={cat} className="inline-flex text-xs font-medium px-2 py-0.5 rounded-md border bg-paper-sunken text-ink-muted border-border">
+                                {cat === "أخرى" && supplier.customCategory ? supplier.customCategory : cat}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="inline-flex text-xs font-medium px-2 py-0.5 rounded-md border bg-paper-sunken text-ink-muted border-border">
+                              عام
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
@@ -255,7 +273,7 @@ export function SupplierList({
                   {/* Balance Display */}
                   <div className={`mt-4 p-3 rounded-xl border flex justify-between items-center ${supplier.balance > 0 ? 'bg-danger/5 border-danger/20 text-danger' : 'bg-crop-50 border-crop-200 text-crop-600'}`}>
                     <span className="text-xs font-bold opacity-80">إجمالي الدين المستحق</span>
-                    <span className="font-bold text-lg">{supplier.balance?.toLocaleString()} ج.م</span>
+                    <span className="font-bold text-lg">{formatMoney(supplier.balance || 0)}</span>
                   </div>
                 </div>
 
@@ -367,7 +385,7 @@ export function SupplierList({
           <div className="space-y-6">
             <div className="bg-paper-sunken p-4 rounded-xl border border-border text-center">
               <p className="text-ink-muted mb-2">إجمالي الدين المستحق الحالي</p>
-              <p className="text-3xl font-bold text-danger">{viewingSupplier.balance?.toLocaleString()} ج.م</p>
+              <p className="text-3xl font-bold text-danger">{formatMoney(viewingSupplier.balance || 0)}</p>
             </div>
             
             <div className="font-bold text-ink mb-2 px-1">سجل الفواتير والمشتريات</div>
@@ -399,13 +417,13 @@ export function SupplierList({
                     </div>
                     <div className="flex items-center gap-4 text-left">
                       <div>
-                        <p className="font-bold text-ink text-sm">{(invoice.totalAmount || 0).toLocaleString()} ج.م</p>
+                        <p className="font-bold text-ink text-sm">{formatMoney((invoice.totalAmount || 0))}</p>
                         <p className="text-xs text-ink-muted mt-1">
-                          المدفوع: {(invoice.paidAmount || 0).toLocaleString()} ج.م
+                          المدفوع: {formatMoney((invoice.paidAmount || 0))}
                         </p>
                         {(invoice.totalAmount || 0) > (invoice.paidAmount || 0) && (
                           <p className="text-xs font-bold text-danger mt-1">
-                            المتبقي (دين): {((invoice.totalAmount || 0) - (invoice.paidAmount || 0)).toLocaleString()} ج.م
+                                  الباقي آجل: {formatMoney((invoice.totalAmount || 0) - (invoice.paidAmount || 0))}
                           </p>
                         )}
                       </div>
@@ -494,8 +512,8 @@ export function SupplierList({
                         <tr key={idx} className="bg-paper">
                           <td className="px-4 py-3 font-medium text-ink">{itemName}</td>
                           <td className="px-4 py-3 text-ink-muted">{item.quantity}</td>
-                          <td className="px-4 py-3 text-ink-muted">{item.unitPrice} ج.م</td>
-                          <td className="px-4 py-3 font-bold text-ink">{item.totalPrice} ج.م</td>
+                          <td className="px-4 py-3 text-ink-muted">{item.unitPrice} ${currency}</td>
+                          <td className="px-4 py-3 font-bold text-ink">{item.totalPrice} ${currency}</td>
                         </tr>
                       );
                     })
@@ -511,16 +529,16 @@ export function SupplierList({
             <div className="bg-paper p-4 rounded-xl border border-border space-y-2">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-ink-muted">إجمالي الفاتورة:</span>
-                <span className="font-bold text-lg">{selectedInvoice.totalAmount} ج.م</span>
+                <span className="font-bold text-lg">{selectedInvoice.totalAmount} ${currency}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-ink-muted">المدفوع:</span>
-                <span className="font-bold text-crop-600">{selectedInvoice.paidAmount} ج.م</span>
+                <span className="font-bold text-crop-600">{selectedInvoice.paidAmount} ${currency}</span>
               </div>
               {selectedInvoice.totalAmount > selectedInvoice.paidAmount && (
                 <div className="flex justify-between items-center text-sm pt-2 border-t border-border mt-2">
                   <span className="text-danger font-bold">المتبقي (دين):</span>
-                  <span className="font-bold text-danger text-lg">{selectedInvoice.totalAmount - selectedInvoice.paidAmount} ج.م</span>
+                  <span className="font-bold text-danger text-lg">{selectedInvoice.totalAmount - selectedInvoice.paidAmount} ${currency}</span>
                 </div>
               )}
             </div>

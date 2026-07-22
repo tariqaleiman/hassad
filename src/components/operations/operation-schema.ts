@@ -14,19 +14,12 @@ export const operationSchema = z.object({
   seasonId: z.string().min(1, "اختر الموسم"),
   cropCycleId: z.string().min(1, "اختر المحصول"),
   
-  operationType: z.enum([
-    "إعداد أرض", 
-    "زراعة", 
-    "ري", 
-    "تسميد", 
-    "رش مبيدات", 
-    "عزيق", 
-    "حصاد", 
-    "تكاليف سابقة",
-    "أخرى"
-  ]),
+  operationType: z.string().min(1, "نوع العملية مطلوب"),
   date: z.string().min(1, "تاريخ العملية مطلوب"),
   notes: z.string().optional(),
+  
+  linkedPhaseId: z.string().optional(),
+  programId: z.string().optional(),
   
   inventoryItems: z.array(operationInventoryItemSchema).optional(),
   
@@ -35,8 +28,12 @@ export const operationSchema = z.object({
   laborPaymentMethod: z.enum(["cash", "credit"]).optional().default("cash"),
 
   equipmentCost: z.number().min(0).optional().default(0),
+  equipmentId: z.string().optional(),
   equipmentContractorId: z.string().optional(),
   equipmentPaymentMethod: z.enum(["cash", "credit"]).optional().default("cash"),
+
+  fuelCost: z.number().min(0).optional().default(0),
+  depreciationCost: z.number().min(0).optional().default(0),
 
   otherCost: z.number().min(0).optional().default(0),
 });

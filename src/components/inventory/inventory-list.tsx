@@ -1,52 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { PackageOpen, Plus, Book, ShoppingCart, Edit2, Trash2 } from "lucide-react";
+import { exportToExcel } from "@/lib/utils/export-to-excel";
+import { PackageOpen, Plus, Search, Edit2, History, AlertTriangle, Book, ShoppingCart, Trash2, Download, Printer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { useCurrency } from "@/lib/hooks/use-currency";
+import { useAuth } from "@/lib/providers/auth-provider";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { InventoryForm } from "./inventory-form";
 import { InventoryTransactions } from "./inventory-transactions";
-import { InventoryAddStockForm } from "./inventory-add-stock-form";
-import { PurchaseInvoiceForm } from "../purchases/purchase-invoice-form";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DictionaryForm } from "./dictionary-form";
-import { SupplierForm } from "../purchases/supplier-form";
+import { ReportViewer } from "@/components/ui/report-viewer";
 import { inventoryService } from "@/lib/services/inventory-service";
-import { purchaseService } from "@/lib/services/purchase-service";
-import { supplierService } from "@/lib/services/supplier-service";
 import type { InventorySchema } from "./inventory-schema";
 import type { InventoryItem as InventoryItemType } from "@/lib/types/inventory";
-import type { SupplierSchema } from "../purchases/supplier-schema";
 import type { Farm } from "@/lib/types/farm";
-import type { Supplier } from "@/lib/types/supplier";
 
 export function InventoryList({
   farms,
   items,
   dictionaryItems = [],
-  suppliers = [],
   userId,
   onUpdate,
 }: {
   farms: Farm[];
   items: InventoryItemType[];
   dictionaryItems?: any[];
-  suppliers?: Supplier[];
   userId: string;
   onUpdate: () => void;
 }) {
+  const { formatMoney, currency } = useCurrency();
+  const { user } = useAuth();
   const router = useRouter();
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isPurchaseOpen, setIsPurchaseOpen] = useState(false);
   const [isDictionaryAddOpen, setIsDictionaryAddOpen] = useState(false);
-  const [isSupplierAddOpen, setIsSupplierAddOpen] = useState(false);
+  const [isReportViewerOpen, setIsReportViewerOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItemType | null>(null);
   const [viewTransactionsItem, setViewTransactionsItem] = useState<InventoryItemType | null>(null);
-  const [addStockItem, setAddStockItem] = useState<InventoryItemType | null>(null);
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [selectedFarmId, setSelectedFarmId] = useState<string>(farms[0]?.id || "");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleAdd = async (values: InventorySchema) => {
@@ -125,58 +126,9 @@ export function InventoryList({
     }
   };
 
-  const handleAddStock = async (values: any) => {
-    if (!addStockItem) return;
-    try {
-      setLoading(true);
-      await inventoryService.addTransaction({
-        farmId: addStockItem.farmId,
-        itemId: addStockItem.id,
-        type: "in",
-        quantity: values.quantity,
-        unitPrice: values.unitPrice,
-        totalPrice: values.quantity * values.unitPrice,
-        date: new Date().toISOString(),
-        referenceType: "مشتريات",
-        notes: values.notes,
-      }, userId);
-      setAddStockItem(null);
-      onUpdate();
-    } catch (error) {
-      console.error("Error adding stock:", error);
-      alert("حدث خطأ أثناء إضافة الرصيد");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handlePurchaseSubmit = async (values: any) => {
-    try {
-      setLoading(true);
-      
-      const itemsWithTotals = values.items.map((item: any) => ({
-        ...item,
-        totalPrice: (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
-      }));
-      
-      const totalAmount = itemsWithTotals.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
-      
-      const invoiceData = {
-        ...values,
-        items: itemsWithTotals,
-        totalAmount
-      };
 
-      await purchaseService.createInvoice(invoiceData, userId);
-      setIsPurchaseOpen(false);
-      onUpdate();
-    } catch (error: any) {
-      console.error("Error creating purchase invoice:", error);
-      alert(error.message || "حدث خطأ أثناء حفظ فاتورة المشتريات");
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleDictionaryAdd = async (values: any) => {
     try {
@@ -193,24 +145,19 @@ export function InventoryList({
     }
   };
 
-  const handleSupplierAdd = async (values: SupplierSchema) => {
-    try {
-      setLoading(true);
-      await supplierService.createSupplier(values, userId);
-      setIsSupplierAddOpen(false);
-      onUpdate();
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const [activeCategory, setActiveCategory] = useState("الكل");
   const categories = ["الكل", ...Array.from(new Set(items.map(i => i.category)))];
 
-  const filteredItems = items.filter(i => activeCategory === "الكل" || i.category === activeCategory);
+  const filteredItems = items.filter(i => {
+    const matchesFarm = i.farmId === selectedFarmId;
+    const matchesCategory = activeCategory === "الكل" || i.category === activeCategory;
+    const matchesSearch = i.name.includes(searchQuery);
+    return matchesFarm && matchesCategory && matchesSearch;
+  });
+
+  const totalInventoryValue = filteredItems.reduce((sum, item) => sum + (item.quantity * item.averageCost), 0);
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -232,122 +179,238 @@ export function InventoryList({
     return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  const handleExport = () => {
+    setIsReportViewerOpen(true);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-ink">مواد وأصناف المخزن</h2>
-          <p className="text-sm text-ink-muted mt-1">تتبع التقاوي، الأسمدة، المبيدات، المحروقات، والمزيد.</p>
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <PackageOpen className="h-5 w-5" />
+            </div>
+            مواد وأصناف المخزن
+          </h1>
+          <p className="text-ink-muted mt-1">تتبع التقاوي، الأسمدة، المبيدات، المحروقات، والمزيد.</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => router.push("/inventory/dictionary")} variant="outline" className="hidden md:flex items-center gap-2">
             <Book className="w-4 h-4" />
             <span>دليل الأصناف</span>
           </Button>
-          <Button onClick={() => setIsPurchaseOpen(true)} variant="primary" className="flex items-center gap-2">
-            <ShoppingCart className="w-4 h-4" />
-            <span className="hidden sm:inline">تسجيل فاتورة مشتريات</span>
-            <span className="sm:hidden">مشتريات</span>
-          </Button>
+
           <Button onClick={() => setIsAddOpen(true)} variant="secondary" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">إضافة صنف</span>
             <span className="sm:hidden">صنف</span>
           </Button>
+          <Button onClick={handleExport} variant="outline" className="flex items-center gap-2">
+            <Printer className="w-4 h-4 hidden sm:inline" />
+            <Download className="w-4 h-4 sm:hidden" />
+            <span className="hidden sm:inline">تقارير المخزن</span>
+          </Button>
         </div>
       </div>
 
       {items.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <PackageOpen className="w-12 h-12 text-ink-faint mb-4 opacity-50" />
-            <h3 className="text-lg font-bold text-ink mb-2">المخزن فارغ</h3>
-            <p className="text-sm text-ink-muted max-w-sm mb-6">
-              لم تقم بإضافة أي مواد إلى المخزن بعد. ابدأ بإضافة التقاوي والأسمدة والمحروقات الخاصة بالمزرعة.
-            </p>
-            <Button onClick={() => setIsAddOpen(true)}>إضافة الصنف الأول</Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={PackageOpen}
+          title="المخزن فارغ"
+          description="لم تقم بإضافة أي مواد إلى المخزن بعد. ابدأ بإضافة التقاوي والأسمدة والمحروقات."
+          action={
+            <Button onClick={() => setIsAddOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              إضافة الصنف الأول
+            </Button>
+          }
+        />
       ) : (
-        <div className="space-y-4">
-          <div className="flex overflow-x-auto pb-2 gap-2 hide-scrollbar">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeCategory === cat
-                    ? "bg-sky-600 text-white shadow-md shadow-sky-600/20"
-                    : "bg-paper border border-border text-ink-muted hover:text-ink hover:bg-paper-sunken"
-                  }`}
-              >
-                {cat}
-              </button>
-            ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="bg-emerald-100 dark:bg-emerald-500/20 p-3 rounded-full text-emerald-600">
+                  <PackageOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-emerald-600/80">إجمالي الأصناف بالمخزن</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{filteredItems.length}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-sky-50 dark:bg-sky-500/10 border-sky-100 dark:border-sky-500/20">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="bg-sky-100 dark:bg-sky-500/20 p-3 rounded-full text-sky-600">
+                  <Book className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-sky-600/80">القيمة التقديرية للمخزون</p>
+                  <p className="text-2xl font-bold text-sky-700 dark:text-sky-400">{formatMoney(totalInventoryValue)}</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
+          <div className="flex flex-col md:flex-row justify-between gap-4 bg-paper p-4 rounded-xl border border-border/80 shadow-sm">
+            <div className="w-full md:w-[250px] shrink-0">
+              <Select 
+                value={selectedFarmId} 
+                onChange={(e) => setSelectedFarmId(e.target.value)}
+              >
+                {farms.map(f => <option key={f.id} value={f.id}>مخزن: {f.name}</option>)}
+              </Select>
+            </div>
+            
+            <div className="flex overflow-x-auto pb-2 md:pb-0 gap-2 hide-scrollbar flex-1 items-center">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${activeCategory === cat
+                      ? "bg-sky-600 text-white shadow-md shadow-sky-600/20"
+                      : "bg-paper border border-border text-ink-muted hover:text-ink hover:bg-paper-sunken"
+                    }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="flex bg-paper-sunken rounded-lg p-1 border border-border">
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === "table" ? "bg-paper text-sky-600 shadow-sm" : "text-ink-muted hover:text-ink"}`}
+                  title="عرض كجدول"
+                >
+                  <Search className="w-4 h-4" /> {/* Or a table icon */}
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-paper text-sky-600 shadow-sm" : "text-ink-muted hover:text-ink"}`}
+                  title="عرض كبطاقات"
+                >
+                  <PackageOpen className="w-4 h-4" /> {/* Or a grid icon */}
+                </button>
+              </div>
+              <div className="relative w-full md:w-64 shrink-0">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint" />
+                <Input 
+                  type="text" 
+                  placeholder="ابحث عن صنف..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-4 pr-9 bg-paper shadow-sm rounded-lg"
+                />
+              </div>
+            </div>
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="لا يوجد نتائج"
+              description="لم نجد أي أصناف تطابق بحثك أو الفئة المحددة."
+            />
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredItems.map(item => (
+                <Card key={item.id} className="bg-paper border-border/60 shadow-sm overflow-hidden group">
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sky-600 truncate group-hover:text-sky-700 cursor-pointer" onClick={() => setViewTransactionsItem(item)}>{item.name}</h3>
+                        <span className={`inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-medium border border-border/50 ${getCategoryColor(item.category)}`}>
+                          {item.category}
+                        </span>
+                      </div>
+                      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-sky-600" onClick={() => setViewTransactionsItem(item)}>
+                          <PackageOpen className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500" onClick={() => setEditingItem(item)}>
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleDeleteClick(item.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-paper-sunken/50 rounded-lg p-3 border border-border/50 mb-3">
+                      <p className="text-xs text-ink-muted mb-1">الرصيد المتاح</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-bold text-xl text-ink">{item.quantity}</span>
+                        <span className="text-ink-muted text-sm">{item.unit}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-sm border-t border-border/40 pt-3">
+                      <span className="text-ink-muted">متوسط التكلفة:</span>
+                      <span className="font-bold">{formatMoney(item.averageCost)}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
           <div className="bg-paper rounded-2xl border border-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-right">
                 <thead className="bg-paper-sunken border-b border-border text-ink-muted">
                   <tr>
-                    <th className="px-4 py-3 font-medium">اسم الصنف</th>
-                    <th className="px-4 py-3 font-medium">الفئة</th>
-                    <th className="px-4 py-3 font-medium">الرصيد المتاح</th>
-                    <th className="px-4 py-3 font-medium">متوسط التكلفة</th>
-                    <th className="px-4 py-3 font-medium">تاريخ الإضافة</th>
-                    <th className="px-4 py-3 font-medium text-left">إجراءات</th>
+                    <th className="px-3 py-2 font-medium">اسم الصنف</th>
+                    <th className="px-3 py-2 font-medium">الفئة</th>
+                    <th className="px-3 py-2 font-medium">الرصيد المتاح</th>
+                    <th className="px-3 py-2 font-medium">متوسط التكلفة</th>
+                    <th className="px-3 py-2 font-medium">تاريخ الإضافة</th>
+                    <th className="px-3 py-2 font-medium text-left">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
                   {filteredItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                      <td className="px-4 py-3 font-medium text-sky-600 cursor-pointer hover:underline" onClick={() => setViewTransactionsItem(item)}>
+                    <tr key={item.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
+                      <td className="px-3 py-2 font-medium text-sky-600 cursor-pointer hover:underline" onClick={() => setViewTransactionsItem(item)}>
                         {item.name}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(item.category)}`}>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium border border-border/50 ${getCategoryColor(item.category)}`}>
                           {item.category}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-ink">
+                      <td className="px-3 py-2 text-ink">
                         <div className="flex items-baseline gap-1 flex-wrap">
                           {item.subUnitRatio ? (
                             <>
-                              <span className="font-bold text-lg">{Math.floor(item.quantity)}</span>
+                              <span className="font-bold text-base">{Math.floor(item.quantity)}</span>
                               <span className="text-ink-muted text-xs">{item.unit}</span>
                               {item.quantity % 1 !== 0 && (
                                 <>
                                   <span className="text-ink-muted text-xs mx-1">و</span>
-                                  <span className="font-bold text-lg">{Math.round((item.quantity % 1) * item.subUnitRatio)}</span>
+                                  <span className="font-bold text-base">{Math.round((item.quantity % 1) * item.subUnitRatio)}</span>
                                   <span className="text-ink-muted text-xs">{item.subUnit}</span>
                                 </>
                               )}
                             </>
                           ) : (
                             <>
-                              <span className="font-bold text-lg">{item.quantity}</span>
+                              <span className="font-bold text-base">{item.quantity}</span>
                               <span className="text-ink-muted text-xs">{item.unit}</span>
                             </>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-ink">
-                        {item.averageCost.toLocaleString()} ج.م
+                      <td className="px-3 py-2 text-ink">
+                        {formatMoney(item.averageCost)}
                       </td>
-                      <td className="px-4 py-3 text-ink-muted text-xs">
+                      <td className="px-3 py-2 text-ink-muted text-xs">
                         {formatDate(item.createdAt)}
                       </td>
-                      <td className="px-4 py-3 text-left">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="إضافة رصيد (شراء)"
-                            onClick={() => setAddStockItem(item)}
-                            className="text-green-600 hover:text-green-800 hover:bg-green-50"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
+                      <td className="px-3 py-2 text-left">
+                        <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+
                           <Button
                             variant="ghost"
                             size="sm"
@@ -383,10 +446,10 @@ export function InventoryList({
               </table>
             </div>
           </div>
+          )}
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={!!deleteConfirmId}
         onClose={() => setDeleteConfirmId(null)}
@@ -423,7 +486,7 @@ export function InventoryList({
             farms={farms}
             defaultValues={editingItem ? {
               farmId: editingItem.farmId,
-              dictionaryId: "", // Since it's old data, it might not have dictionaryId
+              dictionaryId: "", 
               notes: editingItem.notes,
             } : undefined}
             dictionaryItems={dictionaryItems}
@@ -449,52 +512,9 @@ export function InventoryList({
         )}
       </Dialog>
 
-      <Dialog
-        open={!!addStockItem}
-        onClose={() => setAddStockItem(null)}
-        title="إضافة رصيد (شراء)"
-      >
-        {addStockItem && (
-          <InventoryAddStockForm
-            item={addStockItem}
-            onSubmit={handleAddStock}
-            onCancel={() => setAddStockItem(null)}
-            loading={loading}
-          />
-        )}
-      </Dialog>
 
-      <Dialog
-        open={isPurchaseOpen}
-        onClose={() => setIsPurchaseOpen(false)}
-        title="تسجيل فاتورة مشتريات 🛒"
-        className="max-w-4xl"
-      >
-        <PurchaseInvoiceForm
-          farms={farms}
-          inventoryItems={items}
-          dictionaryItems={dictionaryItems}
-          suppliers={suppliers}
-          onSubmit={handlePurchaseSubmit}
-          onCancel={() => setIsPurchaseOpen(false)}
-          onAddDictionaryItem={() => setIsDictionaryAddOpen(true)}
-          onAddSupplier={() => setIsSupplierAddOpen(true)}
-          loading={loading}
-        />
-      </Dialog>
 
-      <Dialog
-        open={isSupplierAddOpen}
-        onClose={() => setIsSupplierAddOpen(false)}
-        title="إضافة مورد جديد"
-      >
-        <SupplierForm
-          farms={farms}
-          onSubmit={handleSupplierAdd}
-          onCancel={() => setIsSupplierAddOpen(false)}
-          loading={loading}
-        />
-      </Dialog>
+
 
       <Dialog
         open={isDictionaryAddOpen}
@@ -507,6 +527,31 @@ export function InventoryList({
           loading={loading}
         />
       </Dialog>
+
+      <ReportViewer
+        open={isReportViewerOpen}
+        onClose={() => setIsReportViewerOpen(false)}
+        title="تقرير جرد المخزن"
+        exportFileName={`جرد_المخزن_${new Date().toLocaleDateString('ar-EG').replace(/\//g, '-')}`}
+        data={filteredItems}
+        columns={[
+          { header: "الاسم", accessorKey: "name" },
+          { header: "القسم", accessorKey: "category" },
+          { header: "الكمية المتاحة", cell: (row) => <div className="font-bold">{row.quantity} {row.unit}</div> },
+          { header: "متوسط التكلفة", cell: (row) => formatMoney(row.averageCost || 0) },
+          { header: "الإجمالي", cell: (row) => <div className="text-emerald-700 font-bold">{formatMoney((row.quantity || 0) * (row.averageCost || 0))}</div> },
+          { header: "ملاحظات", cell: (row) => row.notes || "-" },
+        ]}
+        excelData={filteredItems.map(item => ({
+          "الاسم": item.name,
+          "القسم": item.category,
+          "الكمية المتاحة": item.quantity,
+          "الوحدة الأساسية": item.unit,
+          "الوحدة الفرعية": item.subUnit || "-",
+          "متوسط التكلفة": item.averageCost,
+          "ملاحظات": item.notes || "-"
+        }))}
+      />
     </div>
   );
 }

@@ -34,6 +34,7 @@ export function FarmForm({
       mainLocation: defaultValues?.mainLocation || "",
       phone: defaultValues?.phone || "",
       notes: defaultValues?.notes || "",
+      currency: defaultValues?.currency || "ر.س",
       partners: defaultValues?.partners || [],
     },
   });
@@ -73,6 +74,12 @@ export function FarmForm({
           <div className="space-y-2">
             <Label htmlFor="phone">رقم التواصل</Label>
             <Input id="phone" placeholder="مثال: 01xxxxxxxxx" {...register("phone")} />
+          </div>
+
+          {/* العملة الافتراضية */}
+          <div className="space-y-2">
+            <Label htmlFor="currency">العملة الافتراضية</Label>
+            <Input id="currency" placeholder="مثال: ج.م أو ر.س أو $" {...register("currency")} />
           </div>
         </div>
 

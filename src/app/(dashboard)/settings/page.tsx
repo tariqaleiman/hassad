@@ -1,66 +1,98 @@
 "use client";
 
-import { useState } from "react";
-import { User, Moon, Sun, Globe, LogOut, MapPin, Settings as SettingsIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { OwnerProfileForm } from "@/components/settings/owner-profile-form";
-import { useOwnerProfile, useSaveOwnerProfile } from "@/lib/hooks/use-owner";
-import { useAuth } from "@/lib/providers/auth-provider";
-import { useTheme } from "@/lib/providers/theme-provider";
-import { useLocale } from "@/lib/providers/locale-provider";
+import { Suspense } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { 
+  Calculator, 
+  Settings as SettingsIcon, 
+  Users, 
+  Crown,
+  MapPin,
+  User as UserIcon,
+  ChevronRight
+} from "lucide-react";
+
 import { Spinner } from "@/components/ui/spinner";
-import type { OwnerProfileSchema } from "@/components/settings/owner-profile-schema";
 import { cn } from "@/lib/utils";
 
-type SettingsTab = "profile" | "appearance";
+// Tabs Components
+import { CompanyTab } from "@/components/settings/tabs/company-tab";
+import { FarmsTab } from "@/components/settings/tabs/farms-tab";
+import { AccountingTab } from "@/components/settings/tabs/accounting-tab";
+import { SystemTab } from "@/components/settings/tabs/system-tab";
+import { UsersTab } from "@/components/settings/tabs/users-tab";
+import { SubscriptionTab } from "@/components/settings/tabs/subscription-tab";
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
-  
-  const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const { locale, setLocale } = useLocale();
-  const { data: profile, isLoading } = useOwnerProfile();
-  const saveProfile = useSaveOwnerProfile();
+type SettingsTab = "company" | "farms" | "accounting" | "system" | "users" | "subscription";
 
-  const handleProfileSave = (values: OwnerProfileSchema) => {
-    saveProfile.mutate({
-      ...profile,
-      ...values,
-      email: user?.email ?? "",
-    });
+const tabs = [
+  { id: "company", label: "الملف الشخصي والمنشأة", icon: UserIcon },
+  { id: "farms", label: "إدارة الفروع والمزارع", icon: MapPin },
+  { id: "accounting", label: "المحاسبة والضرائب", icon: Calculator },
+  { id: "system", label: "تفضيلات النظام", icon: SettingsIcon },
+  { id: "users", label: "المستخدمين والصلاحيات", icon: Users },
+  { id: "subscription", label: "الباقة والاشتراك", icon: Crown },
+];
+
+function SettingsHubContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = (searchParams.get("tab") as SettingsTab) || "company";
+
+  const handleTabChange = (tabId: string) => {
+    router.push(`${pathname}?tab=${tabId}`);
   };
 
-
-  const tabs = [
-    { id: "profile", label: "الحساب الشخصي", icon: User },
-    { id: "appearance", label: "المظهر واللغة", icon: SettingsIcon },
-  ];
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "company": return <CompanyTab />;
+      case "farms": return <FarmsTab />;
+      case "accounting": return <AccountingTab />;
+      case "system": return <SystemTab />;
+      case "users": return <UsersTab />;
+      case "subscription": return <SubscriptionTab />;
+      default: return <CompanyTab />;
+    }
+  };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-col md:flex-row gap-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      
+      {/* Simple Professional Header */}
+      <div className="flex flex-col gap-2 pb-6 border-b border-border/50">
+        <h1 className="text-3xl font-bold font-display text-ink flex items-center gap-3">
+          <SettingsIcon className="h-8 w-8 text-ink-muted" />
+          الإعدادات
+        </h1>
+        <p className="text-ink-muted">
+          إدارة إعدادات حسابك، المنشأة، الفروع، التفضيلات المالية، والمستخدمين.
+        </p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-8">
         
         {/* Navigation Sidebar */}
         <div className="w-full md:w-64 shrink-0">
-          <nav className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+          <nav className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0 hide-scrollbar sticky top-24">
             {tabs.map((tab) => {
               const active = activeTab === tab.id;
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as SettingsTab)}
+                  onClick={() => handleTabChange(tab.id)}
+                  style={active ? { borderColor: "var(--crop-600)" } : {}}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors text-start whitespace-nowrap",
+                    "flex items-center gap-3.5 rounded-xl px-4 py-3.5 text-sm font-medium transition-all text-start whitespace-nowrap",
                     active
-                      ? "bg-black/5 dark:bg-white/10 text-ink font-bold"
-                      : "text-ink-muted hover:bg-black/5 dark:hover:bg-white/10 hover:text-ink"
+                      ? "bg-[var(--crop-600)]/15 text-[var(--crop-600)] font-bold border-r-4"
+                      : "text-ink-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-ink border-r-4 border-transparent"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
-                  {tab.label}
+                  <Icon className={cn("h-5 w-5", active ? "text-[var(--crop-600)] fill-[var(--crop-600)]/20" : "opacity-60")} />
+                  <span className="flex-1">{tab.label}</span>
                 </button>
               );
             })}
@@ -68,136 +100,18 @@ export default function SettingsPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 space-y-6 min-w-0">
-          {activeTab === "profile" && (
-            <Card>
-              <CardHeader className="border-b border-border mb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <User className="h-5 w-5 text-ink-muted" />
-                  الملف الشخصي
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex justify-center py-8">
-                    <Spinner className="h-6 w-6" />
-                  </div>
-                ) : (
-                  <OwnerProfileForm
-                    defaultValues={profile}
-                    email={user?.email ?? undefined}
-                    onSubmit={handleProfileSave}
-                    loading={saveProfile.isPending}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-
-
-          {activeTab === "appearance" && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader className="border-b border-border mb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Sun className="h-5 w-5 text-ink-muted" />
-                    المظهر
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-ink">سمة النظام</p>
-                      <p className="text-sm text-ink-muted">
-                        {theme === "light" ? "الوضع الفاتح مفعل" : "الوضع الداكن مفعل"}
-                      </p>
-                    </div>
-                    <button
-                      onClick={toggleTheme}
-                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ink/20 ${
-                        theme === "dark" ? "bg-sky-500" : "bg-black/20 dark:bg-white/20"
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${
-                          theme === "dark" ? "-translate-x-7" : "-translate-x-1"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="border-b border-border mb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Globe className="h-5 w-5 text-ink-muted" />
-                    اللغة
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-ink">لغة الواجهة</p>
-                      <p className="text-sm text-ink-muted">
-                        {locale === "ar" ? "العربية" : "English"}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setLocale("ar")}
-                        className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                          locale === "ar"
-                            ? "bg-black/5 dark:bg-white/10 text-ink"
-                            : "text-ink-muted hover:bg-black/5 dark:hover:bg-white/10"
-                        }`}
-                      >
-                        العربية
-                      </button>
-                      <button
-                        onClick={() => setLocale("en")}
-                        className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                          locale === "en"
-                            ? "bg-black/5 dark:bg-white/10 text-ink"
-                            : "text-ink-muted hover:bg-black/5 dark:hover:bg-white/10"
-                        }`}
-                      >
-                        English
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="border-b border-border mb-4">
-                  <CardTitle className="flex items-center gap-2 text-lg text-danger">
-                    <LogOut className="h-5 w-5" />
-                    تسجيل الخروج
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-ink">الخروج من النظام</p>
-                      <p className="text-sm text-ink-muted">
-                        {user?.email ?? ""}
-                      </p>
-                    </div>
-                    <Button
-                      variant="danger"
-                      onClick={() => signOut()}
-                    >
-                      تسجيل الخروج
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+        <div className="flex-1 min-w-0">
+          {renderTabContent()}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsHubPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center p-10"><Spinner className="h-6 w-6 text-[var(--crop-600)]" /></div>}>
+      <SettingsHubContent />
+    </Suspense>
   );
 }

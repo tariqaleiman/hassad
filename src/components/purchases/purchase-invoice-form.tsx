@@ -17,6 +17,7 @@ import type { Farm } from "@/lib/types/farm";
 import type { InventoryItem } from "@/lib/types/inventory";
 import type { Supplier } from "@/lib/types/supplier";
 import { useEffect } from "react";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 export function PurchaseInvoiceForm({
   farms,
@@ -68,6 +69,7 @@ export function PurchaseInvoiceForm({
     name: "items",
   });
 
+  const { currency, formatMoney } = useCurrency();
   const invoiceDate = useWatch({ control, name: "invoiceDate" });
   const paymentMethod = useWatch({ control, name: "paymentMethod" });
   const paidAmount = useWatch({ control, name: "paidAmount" });
@@ -177,7 +179,7 @@ export function PurchaseInvoiceForm({
           </div>
 
           <div className={cn("space-y-1.5 transition-opacity", paymentMethod === "cash" && "opacity-50 pointer-events-none")}>
-            <Label htmlFor="paidAmount">المبلغ المدفوع (ج.م) *</Label>
+            <Label htmlFor="paidAmount">المبلغ المدفوع ({currency}) *</Label>
             <Input 
               id="paidAmount" 
               type="number" 
@@ -189,7 +191,7 @@ export function PurchaseInvoiceForm({
             {errors.paidAmount && <p className="mt-1 text-xs text-danger">{errors.paidAmount.message}</p>}
             {paymentMethod === "credit" && totalAmount - (paidAmount || 0) > 0 && (
               <p className="text-xs text-ink-muted mt-1">
-                المتبقي (الآجل): {(totalAmount - (paidAmount || 0)).toLocaleString()} ج.م
+                  الباقي (آجل): {formatMoney(totalAmount - (paidAmount || 0))}
               </p>
             )}
           </div>
@@ -351,7 +353,7 @@ export function PurchaseInvoiceForm({
 
                   {/* السعر */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold">سعر الوحدة (ج.م)</Label>
+                    <Label className="text-sm font-semibold">سعر الوحدة ({currency})</Label>
                     <Input 
                       type="number" 
                       step="0.01" 
@@ -365,7 +367,7 @@ export function PurchaseInvoiceForm({
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold">إجمالي السطر</Label>
                     <div className="h-10 flex items-center justify-center bg-paper border border-border rounded-xl font-bold text-ink text-lg">
-                      {itemTotal.toLocaleString()} ج.م
+                      {formatMoney(itemTotal)}
                     </div>
                   </div>
                 </div>
@@ -389,7 +391,7 @@ export function PurchaseInvoiceForm({
         <div className="w-full md:w-1/3 flex flex-col justify-end">
           <div className="bg-crop-500/10 p-4 rounded-xl flex flex-col items-center justify-center gap-1 text-crop-700 dark:text-crop-400 border border-crop-500/20 h-full min-h-[100px]">
             <span className="text-sm font-bold opacity-80">إجمالي الفاتورة</span>
-            <span className="font-bold text-3xl">{totalAmount.toLocaleString()} ج.م</span>
+            <span className="font-bold text-3xl">{formatMoney(totalAmount)}</span>
           </div>
         </div>
       </div>

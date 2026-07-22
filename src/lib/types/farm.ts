@@ -20,6 +20,8 @@ export interface Farm extends BaseEntity {
   ownerId?: string; // معرف مالك الحساب
   ownerName?: string; // اسم المالك (مجلوب من بياناته)
   notes?: string;
+  currency?: string; // العملة الافتراضية للمزرعة
+  lastClosingDate?: string; // تاريخ آخر إغلاق للفترة المالية
   
   /** قائمة الشركاء في المزرعة */
   partners?: FarmPartner[];
@@ -33,5 +35,7 @@ export interface FarmFormValues {
   mainLocation?: string;
   phone?: string;
   notes?: string;
+  currency?: string;
+  lastClosingDate?: string;
   partners?: FarmPartner[];
 }

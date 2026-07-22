@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { harvestSchema, type HarvestSchema } from "./harvest-schema";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import type { CropCycle } from "@/lib/types/crop-cycle";
 
 export function HarvestForm({
@@ -21,6 +22,7 @@ export function HarvestForm({
   onCancel: () => void;
   loading?: boolean;
 }) {
+  const { currency } = useCurrency();
   const {
     register,
     handleSubmit,
@@ -84,7 +86,7 @@ export function HarvestForm({
       </div>
 
       <div>
-        <Label htmlFor="actualRevenue">الإيراد الفعلي من بيع المحصول (ج.م) - اختياري</Label>
+        <Label htmlFor="actualRevenue">الإيراد الفعلي من بيع المحصول ({currency}) - اختياري</Label>
         <Input id="actualRevenue" type="number" step="0.01" {...register("actualRevenue", { valueAsNumber: true })} placeholder="مثال: 45000" className="mt-1.5" />
         {errors.actualRevenue && (
           <p className="mt-1 text-xs text-danger">{errors.actualRevenue.message}</p>

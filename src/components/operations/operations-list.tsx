@@ -8,24 +8,22 @@ import { OperationForm } from "./operation-form";
 import { Plus, Search, Trash2, Tractor, Leaf, Droplets, FlaskConical, Scissors, ScrollText, Edit2 } from "lucide-react";
 import type { FarmingOperation } from "@/lib/types/farming-operation";
 import type { Farm } from "@/lib/types/farm";
-import type { Season } from "@/lib/types/season";
-import type { CropCycle } from "@/lib/types/crop-cycle";
-import type { InventoryItem } from "@/lib/types/inventory";
-import { farmingOperationService } from "@/lib/services/farming-operation-service";
 import { Select } from "@/components/ui/select";
-import type { Crop } from "@/lib/types/crop";
-import type { Contractor } from "@/lib/types/contractor";
+import { useSeasons } from "@/lib/hooks/use-seasons";
+import { useCropCycles } from "@/lib/hooks/use-crop-cycles";
+import { useCrops } from "@/lib/hooks/use-crops";
+import { useInventory } from "@/lib/hooks/use-inventory";
+import { useContractors } from "@/lib/hooks/use-contractors";
+import { useEquipment } from "@/lib/hooks/use-equipment";
+import { useOperations, useCreateOperation, useUpdateOperation, useDeleteOperation } from "@/lib/hooks/use-operations";
+import { useCurrency } from "@/lib/hooks/use-currency";
+import { useCropProgramsActions } from "@/lib/hooks/use-crop-programs";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface OperationsListProps {
   farms: Farm[];
-  seasons: Season[];
-  cropCycles: CropCycle[];
-  crops: Crop[];
-  inventoryItems: InventoryItem[];
-  contractors: Contractor[];
-  operations: FarmingOperation[];
-  userId: string;
-  onUpdate: () => void;
 }
 
 const getOperationIcon = (type: string) => {
@@ -40,17 +38,7 @@ const getOperationIcon = (type: string) => {
   }
 };
 
-export function OperationsList({
-  farms,
-  seasons,
-  cropCycles,
-  crops,
-  inventoryItems,
-  contractors,
-  operations,
-  userId,
-  onUpdate,
-}: OperationsListProps) {
+export function OperationsList({ farms }: OperationsListProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFarmId, setSelectedFarmId] = useState<string>(farms[0]?.id || "");
@@ -58,42 +46,71 @@ export function OperationsList({
   const [selectedCropId, setSelectedCropId] = useState<string>("");
   
   const [editingOperation, setEditingOperation] = useState<FarmingOperation | null>(null);
-  
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const { data: operations = [], isLoading: isLoadingOps } = useOperations();
+  const { data: seasons = [] } = useSeasons();
+  const { data: cropCycles = [] } = useCropCycles();
+  const { data: crops = [] } = useCrops();
+  const { data: inventoryItems = [] } = useInventory(selectedFarmId);
+  const { data: contractors = [] } = useContractors();
+  const { data: equipment = [] } = useEquipment();
+
+  const createOp = useCreateOperation();
+  const updateOp = useUpdateOperation();
+  const deleteOp = useDeleteOperation();
+  const { formatMoney } = useCurrency();
+  
+  const { updatePhaseExecution } = useCropProgramsActions();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const actionParam = searchParams?.get("action");
+  const phaseIdParam = searchParams?.get("phaseId");
+  const cropCycleIdParam = searchParams?.get("cropCycleId");
+  const programIdParam = searchParams?.get("programId");
+  const typeParam = searchParams?.get("type");
+
+  const [urlDefaultValues, setUrlDefaultValues] = useState<any>(null);
+
+  useEffect(() => {
+    if (actionParam === "new" && phaseIdParam && cropCycleIdParam && cropCycles.length > 0) {
+      const cycle = cropCycles.find(c => c.id === cropCycleIdParam);
+      if (cycle) {
+        setSelectedFarmId(cycle.farmId);
+        setSelectedSeasonId(cycle.seasonId);
+        setUrlDefaultValues({
+          farmId: cycle.farmId,
+          seasonId: cycle.seasonId,
+          cropCycleId: cropCycleIdParam,
+          operationType: typeParam && ['زراعة', 'ري', 'تسميد', 'رش مبيدات', 'عزيق', 'حصاد'].includes(typeParam) ? typeParam : "أخرى",
+        });
+        setIsFormOpen(true);
+      }
+    }
+  }, [actionParam, phaseIdParam, cropCycleIdParam, typeParam, cropCycles]);
 
   const handleDelete = async () => {
     if (!deleteConfirmId) return;
-    try {
-      setLoading(true);
-      await farmingOperationService.deleteOperation(deleteConfirmId, userId);
-      setDeleteConfirmId(null);
-      onUpdate();
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "حدث خطأ أثناء الحذف");
-    } finally {
-      setLoading(false);
-    }
+    await deleteOp.mutateAsync(deleteConfirmId);
+    setDeleteConfirmId(null);
   };
 
   const handleSubmit = async (data: any) => {
-    try {
-      setLoading(true);
-      if (editingOperation) {
-        await farmingOperationService.updateOperation(editingOperation.id, data, userId);
-      } else {
-        await farmingOperationService.createOperation(data, userId);
+    if (editingOperation) {
+      await updateOp.mutateAsync({ id: editingOperation.id, values: data });
+    } else {
+      const newOp = await createOp.mutateAsync(data);
+      // Clear params from URL so it doesn't reopen on refresh
+      if (phaseIdParam || actionParam) {
+        router.replace('/operations');
       }
-      onUpdate();
-      setIsFormOpen(false);
-      setEditingOperation(null);
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "حدث خطأ أثناء الحفظ");
-    } finally {
-      setLoading(false);
     }
+    
+    // Ensure form closes
+    setIsFormOpen(false);
+    setEditingOperation(null);
+    setUrlDefaultValues(null);
   };
 
   const filteredSeasons = seasons.filter(s => !selectedFarmId || s.farmId === selectedFarmId);
@@ -102,20 +119,30 @@ export function OperationsList({
     (!selectedSeasonId || c.seasonId === selectedSeasonId)
   );
 
-  const filteredOperations = operations.filter(op => {
-    const matchesFarm = !selectedFarmId || op.farmId === selectedFarmId;
-    const matchesSeason = !selectedSeasonId || op.seasonId === selectedSeasonId;
-    const matchesCrop = !selectedCropId || op.cropCycleId === selectedCropId;
-    const matchesSearch = op.operationType.includes(searchQuery) || (op.notes && op.notes.includes(searchQuery));
-    
-    return matchesFarm && matchesSeason && matchesCrop && matchesSearch;
-  });
+  const filteredOperations = operations
+    .filter(op => {
+      const matchesFarm = !selectedFarmId || op.farmId === selectedFarmId;
+      const matchesSeason = !selectedSeasonId || op.seasonId === selectedSeasonId;
+      const matchesCrop = !selectedCropId || op.cropCycleId === selectedCropId;
+      const matchesSearch = op.operationType.includes(searchQuery) || (op.notes && op.notes.includes(searchQuery));
+      return matchesFarm && matchesSeason && matchesCrop && matchesSearch;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  if (isLoadingOps) {
+    return <PageSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-paper p-4 md:p-6 rounded-2xl border border-border shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-ink">سجل العمليات الزراعية</h1>
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-crop-500/10 text-crop-600">
+              <Tractor className="h-5 w-5" />
+            </div>
+            العمليات الزراعية
+          </h1>
           <p className="text-ink-muted mt-1">تتبع الأنشطة اليومية وحساب التكاليف لكل محصول</p>
         </div>
         <Button onClick={() => { setEditingOperation(null); setIsFormOpen(true); }} className="gap-2 w-full md:w-auto">
@@ -124,7 +151,7 @@ export function OperationsList({
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 bg-paper p-4 rounded-xl border border-border">
+      <div className="flex flex-col md:flex-row gap-4 bg-paper p-4 rounded-xl border border-border/80 shadow-sm">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-muted" />
           <Input
@@ -173,16 +200,22 @@ export function OperationsList({
 
       <div className="space-y-4">
         {filteredOperations.length === 0 ? (
-          <div className="text-center py-12 bg-paper rounded-2xl border border-border border-dashed">
-            <Tractor className="w-12 h-12 text-ink-muted mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium text-ink">لا توجد عمليات زراعية</p>
-            <p className="text-ink-muted mt-1">قم بتسجيل العمليات لتتبع التكاليف بدقة.</p>
+          <div className="text-center py-20 bg-paper-raised rounded-2xl border border-border">
+            <Tractor className="w-16 h-16 text-crop-300 dark:text-crop-500/50 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-ink">لا توجد عمليات زراعية</h2>
+            <p className="text-ink-muted mt-2 mb-6 max-w-sm mx-auto">
+              قم بتسجيل العمليات لتتبع التكاليف بدقة وتحديث أرصدة المخازن.
+            </p>
+            <Button onClick={() => { setEditingOperation(null); setIsFormOpen(true); }} className="gap-2">
+              <Plus className="w-4 h-4" />
+              تسجيل أول عملية
+            </Button>
           </div>
         ) : (
           filteredOperations.map(op => {
             const crop = cropCycles.find(c => c.id === op.cropCycleId);
             return (
-              <div key={op.id} className="bg-paper p-5 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow">
+              <div key={op.id} className="bg-paper p-5 rounded-2xl border border-border/80 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex flex-col md:flex-row justify-between gap-4">
                   
                   <div className="flex gap-4 items-start w-full">
@@ -240,7 +273,7 @@ export function OperationsList({
                   <div className="flex flex-col md:items-end justify-between border-t md:border-t-0 md:border-r border-border pt-4 md:pt-0 md:pr-6 mt-4 md:mt-0">
                     <div className="text-right">
                       <p className="text-xs text-ink-muted mb-1">إجمالي التكلفة</p>
-                      <p className="text-2xl font-bold text-danger">{(op.totalCost || 0).toLocaleString()} <span className="text-sm font-normal">ج.م</span></p>
+                      <p className="text-2xl font-bold text-danger">{formatMoney(op.totalCost || 0)}</p>
                     </div>
                     <div className="mt-4 flex gap-2 w-full md:w-auto justify-end">
                       <Button
@@ -287,14 +320,15 @@ export function OperationsList({
         crops={crops}
         inventoryItems={inventoryItems}
         contractors={contractors}
-        isSubmitting={loading}
+        equipment={equipment}
+        isSubmitting={createOp.isPending || updateOp.isPending}
         defaultValues={editingOperation ? {
           ...editingOperation,
           inventoryItems: editingOperation.inventoryItems?.map(item => ({
             ...item,
             id: crypto.randomUUID()
           }))
-        } : undefined}
+        } : urlDefaultValues ? urlDefaultValues : undefined}
       />
 
       <ConfirmDialog
@@ -303,7 +337,7 @@ export function OperationsList({
         onConfirm={handleDelete}
         title="تأكيد حذف العملية"
         description="هل أنت متأكد من مسح هذه العملية الزراعية؟ (ملاحظة: لن يتم إرجاع الأصناف المسحوبة من المخزن تلقائياً في هذه النسخة)"
-        loading={loading}
+        loading={deleteOp.isPending}
       />
     </div>
   );

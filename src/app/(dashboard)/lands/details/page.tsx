@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   ArrowRight, MapPin, Droplets, Pencil, Trash2, Sprout, Briefcase, 
@@ -9,7 +9,8 @@ import {
   TrendingUp, Wallet, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Spinner } from "@/components/ui/spinner";
@@ -37,6 +38,7 @@ type Tab = "crops" | "leases" | "info";
 
 function LandDetailsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = searchParams.get("id");
 
   const [tab, setTab] = useState<Tab>("crops");
@@ -51,6 +53,7 @@ function LandDetailsContent() {
   const { data: operations, isLoading: loadingOps } = useOperations();
 
   // Mutations
+  const { formatMoney } = useCurrency();
   const updateLand = useUpdateLand();
   const deleteLand = useDeleteLand();
   const createLease = useCreateLandLease();
@@ -156,7 +159,7 @@ function LandDetailsContent() {
   const TenureIcon = tenureInfo.icon;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto pb-10">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
@@ -464,7 +467,7 @@ function LandDetailsContent() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-ink-muted">قيمة الإيجار:</span>
-                            <span className="font-bold text-amber-600">{lease.rentAmount.toLocaleString()} ج.م</span>
+                            <span className="font-bold text-amber-600">{formatMoney(lease.rentAmount)}</span>
                           </div>
                           <div className="flex justify-between border-t border-border/40 pt-2 mt-2">
                             <span className="text-ink-muted">التاريخ:</span>
@@ -521,7 +524,7 @@ function LandDetailsContent() {
                             </div>
                             <div className="flex justify-between">
                               <span className="text-ink-muted">قيمة الإيجار:</span>
-                              <span className="font-bold text-slate-500">{lease.rentAmount.toLocaleString()} ج.م</span>
+                              <span className="font-bold text-slate-500">{formatMoney(lease.rentAmount)}</span>
                             </div>
                             <div className="flex justify-between border-t border-border/20 pt-2 mt-2">
                               <span className="text-ink-muted text-xs">الفترة:</span>
@@ -579,7 +582,7 @@ function LandDetailsContent() {
                   {land.tenure?.rentCash && (
                     <div className="flex justify-between items-center py-2 border-b border-border/40">
                       <span className="text-ink-muted">الإيجار المدفوع</span>
-                      <span className="font-bold text-amber-600">{land.tenure.rentCash.amount.toLocaleString()} ج.م</span>
+                      <span className="font-bold text-amber-600">{formatMoney(land.tenure.rentCash.amount)}</span>
                     </div>
                   )}
                   
@@ -652,7 +655,7 @@ function LandDetailsContent() {
           deleteLand.mutate(land.id, {
             onSuccess: () => {
               setDeletingLand(false);
-              window.location.href = "/lands"; // Redirect after delete
+              router.push("/lands");
             }
           });
         }}
@@ -727,6 +730,7 @@ function LandDetailsContent() {
 }
 
 export default function LandDetailsPage() {
+  const { formatMoney, currency } = useCurrency();
   return (
     <Suspense fallback={<div className="flex justify-center py-20"><Spinner className="h-8 w-8 text-crop-500" /></div>}>
       <LandDetailsContent />

@@ -3,6 +3,8 @@
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
+
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +28,7 @@ export function LandForm({
   loading?: boolean;
   onCancel: () => void;
 }) {
+  const { currency } = useCurrency();
   const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   const {
@@ -176,7 +179,7 @@ export function LandForm({
                 </Select>
               </div>
               <div>
-                <Label>القيمة (ج.م) *</Label>
+                <Label>القيمة ({currency}) *</Label>
                 <Input type="number" {...register("tenure.rentCash.amount", { valueAsNumber: true })} className="mt-1.5" />
                 {errors.tenure?.rentCash?.amount && <p className="mt-1 text-xs text-danger">{errors.tenure.rentCash.amount.message}</p>}
               </div>

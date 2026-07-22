@@ -22,9 +22,13 @@ export interface FarmingOperation extends BaseEntity {
   seasonId: string;
   cropCycleId: string;
   
-  operationType: OperationType;
+  operationType: OperationType | string;
   date: string; // ISO String
   notes?: string;
+  
+  // ربط بمهمة في برنامج المتابعة
+  linkedPhaseId?: string;
+  programId?: string;
   
   inventoryItems: OperationInventoryItem[];
   inventoryCost: number; // Total cost from inventory
@@ -35,13 +39,18 @@ export interface FarmingOperation extends BaseEntity {
   laborContractorName?: string; // اسم المقاول للعرض السريع
   laborPaymentMethod?: "cash" | "credit"; // نقدي أو آجل
 
-  // تكاليف المعدات
+  // تكاليف المعدات والآلات
   equipmentCost: number;
+  equipmentId?: string; // ربط بمعدة مسجلة (مثل ماكينة ري)
   equipmentContractorId?: string;
   equipmentContractorName?: string;
   equipmentPaymentMethod?: "cash" | "credit";
   
+  // تكاليف خاصة بالري
+  fuelCost?: number; // تكلفة الوقود
+  depreciationCost?: number; // إهلاك الماكينة
+  
   otherCost: number;
   
-  totalCost: number; // inventoryCost + laborCost + equipmentCost + otherCost
+  totalCost: number; // inventoryCost + laborCost + equipmentCost + fuelCost + depreciationCost + otherCost
 }

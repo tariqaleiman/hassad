@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, MapPin, Droplets, Pencil, Trash2, Sprout, Briefcase, Handshake, Landmark, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Icons } from "@/components/ui/icons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -17,8 +18,10 @@ import { useLandLeases } from "@/lib/hooks/use-land-leases";
 import { useFarms } from "@/lib/hooks/use-farms";
 import type { Land, OwnershipCategory } from "@/lib/types/land";
 import type { LandSchema } from "@/components/lands/land-schema";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 export default function LandsPage() {
+  const { formatMoney, currency } = useCurrency();
   const { data: lands, isLoading: loadingLands } = useLands();
   const { data: farms, isLoading: loadingFarms } = useFarms();
   const { data: operations, isLoading: loadingOps } = useOperations();
@@ -89,11 +92,16 @@ export default function LandsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1 md:px-0">
-        <div>
-          <h2 className="font-display text-2xl font-bold text-ink">الأراضي</h2>
-          <p className="text-ink-muted mt-1 text-sm">إدارة الحيازات والمساحات التابعة للمزرعة</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-crop-500/10 text-crop-600 dark:text-crop-400">
+            <Icons.Lands className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-bold text-ink">الأراضي</h2>
+            <p className="text-ink-muted mt-1 text-sm">إدارة الحيازات والمساحات التابعة للمزرعة</p>
+          </div>
         </div>
         <Button onClick={openCreate} className="gap-2 rounded-full px-6 shadow-sm">
           <Plus className="h-4 w-4" />
@@ -198,16 +206,16 @@ export default function LandsPage() {
                       <div className="mt-4 bg-paper-sunken/40 rounded-xl p-3 border border-border/50">
                         <div className="flex justify-between items-center text-sm mb-2">
                           <span className="text-ink-muted">الإيرادات:</span>
-                          <span className="font-bold text-emerald-600">{totalRevenue.toLocaleString()} ج.م</span>
+                          <span className="font-bold text-emerald-600">{formatMoney(totalRevenue)}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm mb-2">
                           <span className="text-ink-muted">المصروفات:</span>
-                          <span className="font-bold text-ink">{totalCost.toLocaleString()} ج.م</span>
+                          <span className="font-bold text-ink">{formatMoney(totalCost)}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm pt-2 border-t border-border/50">
                           <span className="text-ink-muted font-bold">الربح:</span>
                           <span className={netProfit > 0 ? "font-bold text-emerald-600" : netProfit < 0 ? "font-bold text-danger" : "font-bold text-ink"}>
-                            {netProfit > 0 ? "+" : ""}{netProfit.toLocaleString()} ج.م
+                            {netProfit > 0 ? "+" : ""}{formatMoney(netProfit)}
                           </span>
                         </div>
                       </div>

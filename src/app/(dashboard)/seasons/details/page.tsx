@@ -19,9 +19,11 @@ import { useLands } from "@/lib/hooks/use-lands";
 import { useCrops } from "@/lib/hooks/use-crops";
 import { formatDate } from "@/lib/utils";
 import { useOperations } from "@/lib/hooks/use-operations";
+import { differenceInDays } from "date-fns";
 import type { CropCycleSchema } from "@/components/crop-cycles/crop-cycle-schema";
 import type { HarvestSchema } from "@/components/crop-cycles/harvest-schema";
 import type { CropCycle } from "@/lib/types/crop-cycle";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 function SeasonDetailsContent() {
   const searchParams = useSearchParams();
@@ -93,6 +95,7 @@ function SeasonDetailsContent() {
 
   const seasonOps = operations?.filter(op => op.seasonId === id) || [];
   const totalSpent = seasonOps.reduce((acc, op) => acc + (op.totalCost || 0), 0);
+  const { formatMoney } = useCurrency();
   const budgetPercentage = season.expectedBudget && season.expectedBudget > 0 ? Math.min((totalSpent / season.expectedBudget) * 100, 150) : 0;
   const isOverBudget = season.expectedBudget ? totalSpent > season.expectedBudget : false;
 
@@ -104,7 +107,7 @@ function SeasonDetailsContent() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link href="/seasons">
@@ -155,9 +158,9 @@ function SeasonDetailsContent() {
             <div className="flex-1">
               <p className="text-sm font-medium text-ink-muted mb-1">إجمالي الإيرادات</p>
               <div className="flex items-baseline gap-1">
-                <p className="text-xl font-bold text-emerald-600">{totalRevenue.toLocaleString()}</p>
+                <p className="text-xl font-bold text-emerald-600">{formatMoney(totalRevenue)}</p>
                 {season.expectedRevenue ? (
-                  <span className="text-sm text-ink-muted">/ {season.expectedRevenue.toLocaleString()} ج.م</span>
+                  <span className="text-sm font-medium text-ink-muted">/ {formatMoney(season.expectedRevenue)}</span>
                 ) : (
                   <span className="text-sm text-ink-muted">ج.م</span>
                 )}
@@ -174,7 +177,7 @@ function SeasonDetailsContent() {
             <div>
               <p className="text-sm font-medium text-ink-muted">صافي الربح / الخسارة</p>
               <p className={`text-xl font-bold ${totalRevenue - totalSpent > 0 ? 'text-emerald-600' : totalRevenue - totalSpent < 0 ? 'text-danger' : 'text-ink'}`}>
-                {(totalRevenue - totalSpent) > 0 ? '+' : ''}{(totalRevenue - totalSpent).toLocaleString()} <span className="text-sm font-normal text-ink-muted">ج.م</span>
+                {(totalRevenue - totalSpent) > 0 ? '+' : ''}{formatMoney((totalRevenue - totalSpent))}
               </p>
             </div>
           </CardContent>
@@ -190,7 +193,7 @@ function SeasonDetailsContent() {
               <div className="flex items-baseline gap-1">
                 <p className={`text-xl font-bold ${isOverBudget ? 'text-danger' : 'text-ink'}`}>{totalSpent.toLocaleString()}</p>
                 {season.expectedBudget ? (
-                  <span className="text-sm text-ink-muted">/ {season.expectedBudget.toLocaleString()} ج.م</span>
+                  <span className="text-sm text-ink-muted">/ {formatMoney(season.expectedBudget)}</span>
                 ) : (
                   <span className="text-sm text-ink-muted">ج.م</span>
                 )}
@@ -269,7 +272,14 @@ function SeasonDetailsContent() {
                         <div className="bg-paper-sunken p-1.5 rounded-md border border-border/40">
                           <CalendarRange className="h-4 w-4 text-crop-500" />
                         </div>
-                        <span className="font-medium text-ink/80">{cycle.plantDate ? `زُرع في ${formatDate(cycle.plantDate)}` : "لم يُسجل تاريخ الزراعة"}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-ink/80">{cycle.plantDate ? `زُرع في ${formatDate(cycle.plantDate)}` : "لم يُسجل تاريخ الزراعة"}</span>
+                          {cycle.plantDate && cycle.status === "نشطة" && (
+                            <span className="text-xs font-bold text-crop-600 mt-0.5">
+                              العمر: {differenceInDays(new Date(), new Date(cycle.plantDate))} يوم
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
                       {cycle.status === "محصودة" && cycle.yieldQuantity != null && (
@@ -352,6 +362,7 @@ function SeasonDetailsContent() {
 }
 
 export default function SeasonDetailsPage() {
+  const { formatMoney, currency } = useCurrency();
   return (
     <Suspense fallback={
       <div className="flex justify-center py-20">

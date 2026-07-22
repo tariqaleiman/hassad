@@ -1,104 +1,98 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
+
 /* ============================================================
-   نظام تصميم "حصاد" — Design Tokens
-   لوحة الألوان مستوحاة من المخطط الجديد
+   نظام تصميم "حصاد" المتقدم — Premium Design Tokens
+   تم اعتماد تقنية Glassmorphism وتدرجات أكثر فخامة
    ============================================================ */
 
 :root {
   /* ورقة — الخلفيات */
-  --paper: #f9f9f9;
-  /* Slightly darker than pure white to make cards pop */
+  --paper: #f8fafc; /* Richer light background (slate-50) */
   --paper-raised: #ffffff;
-  --paper-sunken: #f2f2f2;
-  /* YouTube input background */
+  --paper-sunken: #f1f5f9;
 
   /* حبر — النصوص */
-  --ink: #0f0f0f;
-  /* YouTube pure dark text */
-  --ink-muted: #606060;
-  --ink-faint: #909090;
+  --ink: #0f172a; /* Slate 900 for premium feel instead of pure black */
+  --ink-muted: #64748b;
+  --ink-faint: #94a3b8;
 
-  /* محصول — اللون الأساسي (Flat Green) */
-  --crop-50: #e6f4ea;
-  --crop-100: #ceead6;
-  --crop-400: #34a853;
-  --crop-500: #0f9d58;
-  --crop-600: #0b8043;
-  --crop-700: #0b8043;
+  /* محصول — اللون الأساسي (Vivid Emerald) */
+  --crop-50: #ecfdf5;
+  --crop-100: #d1fae5;
+  --crop-400: #34d399;
+  --crop-500: #10b981;
+  --crop-600: #059669;
+  --crop-700: #047857;
 
   /* قمح — لون التمييز */
-  --wheat-100: #FEF3C7;
-  --wheat-400: #FBBF24;
-  --wheat-500: #F59E0B;
-  --wheat-600: #D97706;
+  --wheat-100: #fef3c7;
+  --wheat-400: #fbbf24;
+  --wheat-500: #f59e0b;
+  --wheat-600: #d97706;
 
   /* سماء — معلومات وروابط */
-  --sky-500: #065fd4;
-  /* YouTube blue */
+  --sky-500: #0ea5e9;
 
   /* حالات */
-  --danger: #cc0000;
-  /* YouTube red */
-  --danger-bg: #f9e5e5;
-  --success: #0f9d58;
-  --success-bg: #e6f4ea;
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+  --success: #10b981;
+  --success-bg: #ecfdf5;
 
-  --border: #e5e5e5;
-  --ring: #0f0f0f;
-  --radius: 0.5rem;
+  --border: #e2e8f0;
+  --ring: #10b981;
+  --radius: 0.75rem;
 
-  /* Glassmorphism Disabled (Flat) */
-  --glass-bg: #ffffff;
-  --glass-border: var(--border);
-  --glass-blur: 0px;
-  --glass-shadow: none;
+  /* Glassmorphism - مفعل */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  --glass-blur: 16px;
 }
 
 .dark {
-  /* ورقة — الخلفيات */
-  --paper: #0f0f0f;
-  /* YouTube deep dark */
-  --paper-raised: #211e1e;
-  /* YouTube cards/modals */
-  --paper-sunken: #222222;
+  /* ورقة */
+  --paper: #020617; /* Deep Slate 950 - أكثر فخامة من الأسود الصريح */
+  --paper-raised: #0f172a; /* Slate 900 */
+  --paper-sunken: #1e293b; /* Slate 800 */
 
-  /* حبر — النصوص */
-  --ink: #f1f1f1;
-  --ink-muted: #aaaaaa;
-  --ink-faint: #717171;
+  /* حبر */
+  --ink: #f8fafc;
+  --ink-muted: #94a3b8;
+  --ink-faint: #64748b;
 
-  /* محصول — اللون الأساسي */
-  --crop-50: #133320;
-  --crop-100: #1b4b30;
-  --crop-400: #5bb974;
-  --crop-500: #81c995;
-  --crop-600: #81c995;
-  --crop-700: #5bb974;
+  /* محصول */
+  --crop-50: #064e3b;
+  --crop-100: #065f46;
+  --crop-400: #34d399;
+  --crop-500: #10b981;
+  --crop-600: #059669;
+  --crop-700: #047857;
 
-  /* قمح — لون التمييز */
-  --wheat-100: #451A03;
-  --wheat-400: #FBBF24;
-  --wheat-500: #F59E0B;
-  --wheat-600: #FCD34D;
+  /* قمح */
+  --wheat-100: #451a03;
+  --wheat-400: #fbbf24;
+  --wheat-500: #f59e0b;
+  --wheat-600: #d97706;
 
-  /* سماء — معلومات وروابط */
-  --sky-500: #3ea6ff;
-  /* YouTube dark mode blue */
+  /* سماء */
+  --sky-500: #38bdf8;
 
   /* حالات */
-  --danger: #ff4e45;
-  --danger-bg: #4d1414;
-  --success: #2ebd59;
-  --success-bg: #133320;
+  --danger: #f87171;
+  --danger-bg: #450a0a;
+  --success: #34d399;
+  --success-bg: #064e3b;
 
-  --border: #272727;
-  --ring: #f1f1f1;
+  --border: #1e293b;
+  --ring: #34d399;
 
-  /* Glassmorphism Disabled */
-  --glass-bg: var(--paper-raised);
-  --glass-border: var(--border);
-  --glass-shadow: none;
+  /* Glassmorphism - مفعل للوضع الداكن */
+  --glass-bg: rgba(15, 23, 42, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-blur: 24px;
 }
 
 @theme inline {
@@ -174,11 +168,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1,
-h2,
-h3,
-h4,
-.font-display {
+h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
 }
 
@@ -186,15 +176,19 @@ h4,
   font-variant-numeric: tabular-nums;
 }
 
-/* Flat Utilities */
+/* Glassmorphism Utilities */
 .glass-panel {
-  background-color: var(--glass-bg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
+/* Scrollbar Styling - Premium */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -202,21 +196,57 @@ h4,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--ink-faint);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-faint);
+  background: var(--ink-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
-
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print Styles for Reports */
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  .dark body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Hide UI elements not meant for printing */
+  nav, header, footer, button, .no-print {
+    display: none !important;
+  }
+
+  /* Force table colors for printing */
+  table {
+    border-collapse: collapse !important;
+  }
+  
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+  }
+
+  /* Reset layout for printing */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Avoid page breaks inside tables */
+  tr {
+    page-break-inside: avoid;
   }
 }

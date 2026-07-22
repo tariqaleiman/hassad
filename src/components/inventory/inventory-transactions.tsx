@@ -6,8 +6,10 @@ import { ar } from "date-fns/locale";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { inventoryService } from "@/lib/services/inventory-service";
 import type { InventoryTransaction, InventoryItem } from "@/lib/types/inventory";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 export function InventoryTransactions({ item }: { item: InventoryItem }) {
+  const { formatMoney, currency } = useCurrency();
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,11 +61,11 @@ export function InventoryTransactions({ item }: { item: InventoryItem }) {
         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/50">
           <div>
             <p className="text-[11px] text-ink-faint uppercase tracking-wider">متوسط التكلفة</p>
-            <p className="font-semibold text-ink">{item.averageCost.toLocaleString()} ج.م</p>
+            <p className="font-semibold text-ink">{formatMoney(item.averageCost)}</p>
           </div>
           <div>
             <p className="text-[11px] text-ink-faint uppercase tracking-wider">إجمالي القيمة</p>
-            <p className="font-semibold text-ink">{(item.quantity * item.averageCost).toLocaleString()} ج.م</p>
+            <p className="font-semibold text-ink">{formatMoney((item.quantity * item.averageCost))}</p>
           </div>
         </div>
       </div>
@@ -93,7 +95,7 @@ export function InventoryTransactions({ item }: { item: InventoryItem }) {
                   {isIn ? "+" : "-"}{tx.quantity} {item.unit}
                 </p>
                 <p className="text-xs text-ink-muted">
-                  {tx.unitPrice.toLocaleString()} ج.م / {item.unit}
+                  {formatMoney(tx.unitPrice)} / {item.unit}
                 </p>
               </div>
             </div>

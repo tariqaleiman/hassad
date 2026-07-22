@@ -2,7 +2,7 @@ import type { BaseEntity } from "./common";
 
 export type CropCycleStatus = "نشطة" | "محصودة" | "ملغاة";
 
-export type PlantingMethod = "بدار" | "زراعة بالجورة" | "شتلات خارجية" | "إعداد مشتل داخلي" | "شتلات من مشتل داخلي" | "عقلة";
+export type PlantingMethod = "بدار" | "زراعة بالجورة" | "شتلات خارجية" | "إعداد مشتل داخلي" | "شتلات من مشتل داخلي" | "عقلة" | "عفير" | "تخضير";
 
 /**
  * دورة المحصول: تبدأ بمجرد إنشاء المحصول داخل الموسم،
@@ -21,6 +21,7 @@ export interface CropCycle extends BaseEntity {
   plantingMethod: PlantingMethod;
   isNursery?: boolean;
   sourceNurseryId?: string;
+  programId?: string; // Linked program template id
   
   areaValue: number; // مساحة المحصول أو المشتل
   areaUnit: "feddan" | "qirat" | "meter";
@@ -52,9 +53,11 @@ export interface CropCycleFormValues {
   plantingMethod: PlantingMethod;
   isNursery?: boolean;
   sourceNurseryId?: string;
+  programId?: string;
   areaValue: number;
   areaUnit: "feddan" | "qirat" | "meter";
   plantDate?: string;
   notes?: string;
   expectedRevenue?: number | null;
+  actualRevenue?: number | null;
 }

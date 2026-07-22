@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cropCycleSchema, type CropCycleSchema } from "./crop-cycle-schema";
 import type { Land } from "@/lib/types/land";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import type { Crop } from "@/lib/types/crop";
 
 export function CropCycleForm({
@@ -29,6 +30,7 @@ export function CropCycleForm({
   loading?: boolean;
   onCancel: () => void;
 }) {
+  const { currency } = useCurrency();
   const {
     register,
     handleSubmit,
@@ -191,7 +193,7 @@ export function CropCycleForm({
         </div>
 
         <div>
-          <Label htmlFor="expectedRevenue">الإيراد المتوقع (ج.م) - اختياري</Label>
+          <Label htmlFor="expectedRevenue">الإيراد المتوقع ({currency}) - اختياري</Label>
           <Input id="expectedRevenue" type="number" step="0.01" {...register("expectedRevenue", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 50000" />
           {errors.expectedRevenue && <p className="mt-1 text-xs text-danger">{errors.expectedRevenue.message}</p>}
         </div>

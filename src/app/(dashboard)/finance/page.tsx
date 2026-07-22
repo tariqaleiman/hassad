@@ -1,112 +1,94 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/providers/auth-provider";
 import { useFarms } from "@/lib/hooks/use-farms";
-import { Spinner } from "@/components/ui/spinner";
-import { FinanceHub } from "@/components/finance/finance-hub";
-import { farmingOperationService } from "@/lib/services/farming-operation-service";
-import { purchaseService } from "@/lib/services/purchase-service";
-import { salesService } from "@/lib/services/sales-service";
-import { customerService } from "@/lib/services/customer-service";
-import { supplierService } from "@/lib/services/supplier-service";
-import { contractorService } from "@/lib/services/contractor-service";
-import { cropCycleService } from "@/lib/services/crop-cycle-service";
-import { cropService } from "@/lib/services/crop-service";
-import { seasonService } from "@/lib/services/season-service";
-import { landService } from "@/lib/services/land-service";
+import { AccountsTab } from "@/components/finance/accounts-tab";
+import { VouchersTab } from "@/components/finance/vouchers-tab";
+import { JournalTab } from "@/components/finance/journal-tab";
+import { ReportsTab } from "@/components/finance/reports-tab";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Wallet, FileText, BarChart3, BookOpen } from "lucide-react";
+import { Select } from "@/components/ui/select";
+import { useState } from "react";
 
 export default function FinancePage() {
-  const { user } = useAuth();
-  const { data: activeFarms = [], isLoading: isLoadingFarms } = useFarms();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: farms } = useFarms();
+  const [activeTab, setActiveTab] = useState("vouchers");
 
-  const loadData = async () => {
-    if (activeFarms.length === 0 || !user) return;
+  const [selectedFarmId, setSelectedFarmId] = useState<string>(farms?.[0]?.id || "");
+  const farmId = selectedFarmId || farms?.[0]?.id;
 
-    setLoading(true);
-    try {
-      const farmId = activeFarms[0].id; // We'll just use the first farm for now
-
-      const [
-        operations,
-        purchases,
-        sales,
-        customers,
-        suppliers,
-        contractors,
-        cropCycles,
-        crops,
-        seasons,
-        lands
-      ] = await Promise.all([
-        farmingOperationService.listOperationsByFarm(farmId),
-        purchaseService.getInvoicesByFarm(farmId),
-        salesService.getInvoicesByFarm(farmId),
-        customerService.getCustomersByFarm(farmId),
-        supplierService.getSuppliersByFarm(farmId),
-        contractorService.getContractorsByFarm(farmId),
-        cropCycleService.listByFarm(farmId),
-        cropService.list(user.uid),
-        seasonService.listByFarm(farmId),
-        landService.listByFarm(farmId)
-      ]);
-
-      setData({
-        farmId,
-        operations,
-        purchases,
-        sales,
-        customers,
-        suppliers,
-        contractors,
-        cropCycles,
-        crops,
-        seasons,
-        lands
-      });
-
-    } catch (error) {
-      console.error("Error loading finance data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [activeFarms, user]);
-
-  if (isLoadingFarms) {
+  if (!farmId) {
     return (
-      <div className="flex justify-center py-12">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
-  }
-
-  if (activeFarms.length === 0) {
-    return (
-      <div className="p-6 text-center text-ink-muted">
-        يرجى إضافة مزرعة أولاً للوصول إلى المركز المالي.
+      <div className="p-8 text-center text-ink-muted">
+        يرجى إعداد بيانات المزرعة في الإعدادات أولاً.
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {loading || !data ? (
-        <div className="flex justify-center py-12">
-          <Spinner className="h-8 w-8" />
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1 md:px-0">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-bold text-ink">المالية والحسابات</h2>
+            <p className="text-ink-muted mt-1 text-sm">إدارة شجرة الحسابات، سندات القبض والصرف، والتقارير المحاسبية</p>
+          </div>
         </div>
-      ) : (
-        <FinanceHub 
-          data={data} 
-          userId={user?.uid || ""} 
-          onUpdate={loadData} 
-        />
-      )}
+        
+        {farms && farms.length > 1 && (
+          <div className="w-full sm:w-64">
+            <Select 
+              value={farmId} 
+              onChange={(e) => setSelectedFarmId(e.target.value)}
+            >
+              {farms.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </Select>
+          </div>
+        )}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="bg-surface/50 border border-black/5 dark:border-white/5 p-1 flex-wrap h-auto">
+          <TabsTrigger value="vouchers" className="gap-2 flex-1 min-w-[150px] data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+            <FileText className="w-4 h-4" />
+            سندات القبض والصرف
+          </TabsTrigger>
+          <TabsTrigger value="journal" className="gap-2 flex-1 min-w-[150px] data-[state=active]:bg-sky-500 data-[state=active]:text-white">
+            <BookOpen className="w-4 h-4" />
+            دفتر اليومية
+          </TabsTrigger>
+          <TabsTrigger value="accounts" className="gap-2 flex-1 min-w-[150px] data-[state=active]:bg-blue-500 data-[state=active]:text-white">
+            <Wallet className="w-4 h-4" />
+            دليل الحسابات
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="gap-2 flex-1 min-w-[150px] data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+            <BarChart3 className="w-4 h-4" />
+            التقارير المالية (كشف الحساب)
+          </TabsTrigger>
+        </TabsList>
+
+        <Card className="p-6 min-h-[500px]">
+          <TabsContent value="vouchers" className="focus-visible:outline-none">
+            <VouchersTab farmId={farmId} />
+          </TabsContent>
+
+          <TabsContent value="journal" className="focus-visible:outline-none">
+            <JournalTab farmId={farmId} />
+          </TabsContent>
+
+          <TabsContent value="accounts" className="m-0 focus-visible:outline-none">
+            <AccountsTab farmId={farmId} />
+          </TabsContent>
+
+          <TabsContent value="reports" className="m-0 focus-visible:outline-none">
+            <ReportsTab farmId={farmId} lastClosingDate={farms?.[0]?.lastClosingDate} />
+          </TabsContent>
+        </Card>
+      </Tabs>
     </div>
   );
 }

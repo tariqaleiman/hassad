@@ -123,9 +123,26 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-sm font-medium text-ink">كلمة المرور</Label>
                 {mode === "signin" && (
-                  <a href="#" className="text-xs font-medium text-crop-600 hover:text-crop-700 transition-colors">
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      if (!email.trim()) {
+                        toast.error("يرجى إدخال البريد الإلكتروني أولاً لإرسال رابط التعيين");
+                        return;
+                      }
+                      try {
+                        const { auth } = await import("@/lib/firebase/client");
+                        const { sendPasswordResetEmail } = await import("firebase/auth");
+                        await sendPasswordResetEmail(auth, email);
+                        toast.success("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني");
+                      } catch (error) {
+                        toast.error("حدث خطأ، تأكد من صحة البريد الإلكتروني");
+                      }
+                    }}
+                    className="text-xs font-medium text-crop-600 hover:text-crop-700 transition-colors"
+                  >
                     نسيت كلمة المرور؟
-                  </a>
+                  </button>
                 )}
               </div>
               <Input

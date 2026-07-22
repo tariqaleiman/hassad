@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { useFarms } from "@/lib/hooks/use-farms";
-import { Spinner } from "@/components/ui/spinner";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
 import { contractorService } from "@/lib/services/contractor-service";
 import { ContractorList } from "@/components/contractors/contractor-list";
 import type { Contractor } from "@/lib/types/contractor";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MapPin } from "lucide-react";
 
 export default function ContractorsPage() {
   const { user } = useAuth();
@@ -37,27 +39,19 @@ export default function ContractorsPage() {
   }, [activeFarms, user]);
 
   if (isLoadingFarms) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (activeFarms.length === 0) {
     return (
-      <div className="p-6 text-center text-ink-muted">
-        يرجى إضافة مزرعة أولاً للوصول إلى المقاولين.
-      </div>
+      <EmptyState icon={MapPin} title="لا توجد مزارع" description="يرجى إضافة مزرعة أولاً للوصول إلى هذا القسم." />
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner className="h-8 w-8" />
-        </div>
+        <PageSkeleton />
       ) : (
         <ContractorList
           contractors={contractors}

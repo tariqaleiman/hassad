@@ -3,6 +3,8 @@ import { z } from "zod";
 export const supplierSchema = z.object({
   farmId: z.string().min(1, "اختر المزرعة"),
   supplierType: z.enum(["company", "individual"]).default("individual"),
+  supplierCategories: z.array(z.string()).default([]),
+  customCategory: z.string().optional(),
   name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
   companyName: z.string().optional(),
   taxId: z.string().optional(),

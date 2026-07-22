@@ -5,19 +5,17 @@ import { useAuth } from "@/lib/providers/auth-provider";
 import { useFarms } from "@/lib/hooks/use-farms";
 import { inventoryService } from "@/lib/services/inventory-service";
 import { dictionaryService } from "@/lib/services/dictionary-service";
-import { supplierService } from "@/lib/services/supplier-service";
 import { InventoryList } from "@/components/inventory/inventory-list";
-import { Spinner } from "@/components/ui/spinner";
-import { PurchaseInvoiceForm } from "@/components/purchases/purchase-invoice-form";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
 import type { InventoryItem } from "@/lib/types/inventory";
-import type { Supplier } from "@/lib/types/supplier";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MapPin } from "lucide-react";
 
 export default function InventoryPage() {
   const { user } = useAuth();
   const { data: activeFarms = [], isLoading: isLoadingFarms } = useFarms();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [dictionaryItems, setDictionaryItems] = useState<any[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -31,13 +29,6 @@ export default function InventoryPage() {
         allItems.push(...farmItems);
       }
       setItems(allItems);
-      
-      const allSuppliers: Supplier[] = [];
-      for (const farm of activeFarms) {
-        const farmSuppliers = await supplierService.getSuppliersByFarm(farm.id);
-        allSuppliers.push(...farmSuppliers);
-      }
-      setSuppliers(allSuppliers);
       
       const dictItems = await dictionaryService.listEntries(user.uid);
       setDictionaryItems(dictItems);
@@ -53,33 +44,24 @@ export default function InventoryPage() {
   }, [activeFarms, user]);
 
   if (isLoadingFarms) {
-    return (
-      <div className="flex justify-center py-12">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (activeFarms.length === 0) {
     return (
-      <div className="p-6 text-center text-ink-muted">
-        يرجى إضافة مزرعة أولاً للوصول إلى المخازن.
-      </div>
+      <EmptyState icon={MapPin} title="لا توجد مزارع" description="يرجى إضافة مزرعة أولاً للوصول إلى هذا القسم." />
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner className="h-8 w-8" />
-        </div>
+        <PageSkeleton />
       ) : (
         <InventoryList
           farms={activeFarms}
           items={items}
           dictionaryItems={dictionaryItems}
-          suppliers={suppliers}
           userId={user?.uid || ""}
           onUpdate={loadData}
         />

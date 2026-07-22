@@ -13,6 +13,8 @@ import type { Farm } from "@/lib/types/farm";
 import type { Land } from "@/lib/types/land";
 import type { Season } from "@/lib/types/season";
 import type { Crop } from "@/lib/types/crop";
+import { useCropPrograms } from "@/lib/hooks/use-crop-programs";
+import { BookOpen } from "lucide-react";
 
 import type { CropCycle } from "@/lib/types/crop-cycle";
 
@@ -58,9 +60,12 @@ export function CropCycleForm({
       plantingMethod: defaultValues.plantingMethod,
       isNursery: defaultValues.isNursery,
       sourceNurseryId: defaultValues.sourceNurseryId,
+      programId: "", // will be hydrated later if exists, though not in CropCycle entity yet
       notes: defaultValues.notes || "",
-    } : { farmId: "", landId: "", seasonId: "", cropId: "", cropVariety: "", cropSubVariety: "", plantDate: "", areaValue: 0, areaUnit: "feddan" },
+    } : { farmId: "", landId: "", seasonId: "", cropId: "", cropVariety: "", cropSubVariety: "", plantDate: "", programId: "", areaValue: 0, areaUnit: "feddan" },
   });
+
+  const { data: programs } = useCropPrograms();
 
   // تحديث القيم عند فتح النافذة ببيانات جديدة
   useEffect(() => {
@@ -112,6 +117,28 @@ export function CropCycleForm({
       setValue("cropSubVariety", "");
     }
   }, [selectedVarietyName, defaultValues?.cropVariety, setValue]);
+
+  // Auto-select program based on cropId and plantingMethod
+  const selectedPlantingMethod = useWatch({ control, name: "plantingMethod" });
+  
+  const matchingPrograms = useMemo(() => {
+    if (!programs || !selectedCropId) return [];
+    return programs.filter(p => {
+      const matchesCrop = p.cropId === selectedCropId || p.cropName === selectedCrop?.name;
+      // If plantingMethods array is defined and not empty, check if selected method is in it
+      const matchesMethod = !p.plantingMethods || p.plantingMethods.length === 0 || (selectedPlantingMethod && p.plantingMethods.includes(selectedPlantingMethod));
+      return matchesCrop && matchesMethod;
+    });
+  }, [programs, selectedCropId, selectedCrop, selectedPlantingMethod]);
+
+  useEffect(() => {
+    if (selectedCropId && matchingPrograms.length > 0 && !formValues.programId) {
+      // Auto select the first matching program
+      setValue("programId", matchingPrograms[0].id);
+    } else if (!selectedCropId) {
+      setValue("programId", "");
+    }
+  }, [selectedCropId, matchingPrograms, formValues.programId, setValue]);
 
   const farmLands = useMemo(
     () => lands.filter((l) => l.farmId === selectedFarmId),
@@ -249,6 +276,24 @@ export function CropCycleForm({
             </Select>
           </div>
         )}
+
+        <div className="md:col-span-2 mt-2">
+          <Label htmlFor="programId" className="flex items-center gap-1.5 text-crop-600">
+            <BookOpen className="w-4 h-4" /> البرنامج الزراعي (اختياري)
+          </Label>
+          <Select id="programId" {...register("programId")} value={formValues.programId} className="mt-1.5 border-crop-200 focus:ring-crop-500" disabled={!!defaultValues}>
+            <option value="">بدون برنامج زراعي متصل</option>
+            {matchingPrograms.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} ({p.totalDurationDays || Math.max(...p.phases.map(ph => ph.dayNumber), 0)} يوم)
+              </option>
+            ))}
+          </Select>
+          {errors.programId && <p className="mt-1 text-xs text-danger">{errors.programId.message}</p>}
+          {selectedCropId && matchingPrograms.length > 0 && (
+            <p className="mt-1 text-xs text-crop-600 font-medium">تم اقتراح هذا البرنامج تلقائياً بناءً على المحصول.</p>
+          )}
+        </div>
       </div>
 
       <div>
@@ -261,6 +306,8 @@ export function CropCycleForm({
           <option value="إعداد مشتل داخلي">إعداد مشتل داخلي (مساحة صغيرة)</option>
           <option value="شتلات من مشتل داخلي">شتلات من مشتل داخلي (تم إعداده سابقاً)</option>
           <option value="عقلة">زراعة بالعقلة</option>
+          <option value="عفير">زراعة عفير (للقمح والمحاصيل المشابهة)</option>
+          <option value="تخضير">زراعة تخضير (للقمح والمحاصيل المشابهة)</option>
         </Select>
         {errors.plantingMethod && <p className="mt-1 text-xs text-danger">{errors.plantingMethod.message}</p>}
         {watch("plantingMethod") === "إعداد مشتل داخلي" && (

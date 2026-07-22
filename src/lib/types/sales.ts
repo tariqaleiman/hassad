@@ -2,13 +2,13 @@ import type { BaseEntity } from "./common";
 
 export interface SalesInvoiceItem {
   id: string; // Unique ID for the row
-  cropCycleId: string; // المحصول الذي يتم بيعه
-  cropName?: string; // اسم المحصول (للعرض)
+  inventoryItemId: string; // المنتج المباع من المخزن
+  itemName?: string; // اسم المنتج (للعرض)
   
   quantity: number;
   unit: string;
   unitPrice: number;
-  totalPrice: number;
+  totalPrice?: number;
 }
 
 export interface SalesInvoice extends BaseEntity {
@@ -19,7 +19,7 @@ export interface SalesInvoice extends BaseEntity {
   customerId?: string; // العميل المشترى
   customerName?: string; // إذا كان المشتري عابر وليس مسجلاً
   
-  paymentMethod: "cash" | "credit";
+  paymentMethod: "cash" | "bank_transfer" | "instapay" | "vodafone_cash" | "orange_cash" | "credit" | "other";
   paidAmount: number; // المبلغ المدفوع وقت البيع
   
   items: SalesInvoiceItem[];
@@ -34,8 +34,8 @@ export interface SalesInvoiceFormValues {
   invoiceDate: string;
   customerId?: string;
   customerName?: string;
-  paymentMethod: "cash" | "credit";
-  paidAmount: number;
+  paymentMethod: "cash" | "bank_transfer" | "instapay" | "vodafone_cash" | "orange_cash" | "credit" | "other";
+  paidAmount?: number;
   items: SalesInvoiceItem[];
   notes?: string;
 }

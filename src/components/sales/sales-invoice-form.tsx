@@ -15,6 +15,7 @@ import type { Season } from "@/lib/types/season";
 import type { Customer } from "@/lib/types/customer";
 import type { CropCycle } from "@/lib/types/crop-cycle";
 import type { Crop } from "@/lib/types/crop";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 interface SalesInvoiceFormProps {
   open: boolean;
@@ -23,8 +24,7 @@ interface SalesInvoiceFormProps {
   farms: Farm[];
   seasons: Season[];
   customers: Customer[];
-  cropCycles: CropCycle[];
-  crops: Crop[];
+  inventoryItems: any[]; // Or import type InventoryItem
   defaultValues?: Partial<SalesInvoiceSchema>;
   isSubmitting?: boolean;
 }
@@ -36,8 +36,7 @@ export function SalesInvoiceForm({
   farms,
   seasons,
   customers,
-  cropCycles,
-  crops,
+  inventoryItems,
   defaultValues,
   isSubmitting
 }: SalesInvoiceFormProps) {
@@ -55,6 +54,7 @@ export function SalesInvoiceForm({
       notes: "",
     }
   });
+  const { formatMoney, currency } = useCurrency();
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -76,7 +76,7 @@ export function SalesInvoiceForm({
         paidAmount: 0,
         customerId: "",
         customerName: "",
-        items: [{ id: crypto.randomUUID(), cropCycleId: "", quantity: 0, unit: "طن", unitPrice: 0 }],
+        items: [{ id: crypto.randomUUID(), inventoryItemId: "", quantity: 0, unit: "طن", unitPrice: 0 }],
         notes: "",
       });
     }
@@ -88,7 +88,7 @@ export function SalesInvoiceForm({
   const selectedFarmId = form.watch("farmId");
   const filteredSeasons = seasons.filter(s => s.farmId === selectedFarmId);
   const filteredCustomers = customers.filter(c => c.farmId === selectedFarmId);
-  const filteredCropCycles = cropCycles.filter(c => c.farmId === selectedFarmId);
+  const filteredInventory = inventoryItems.filter(i => i.farmId === selectedFarmId && i.quantity > 0);
 
   const paymentMethod = form.watch("paymentMethod");
 
@@ -108,7 +108,7 @@ export function SalesInvoiceForm({
               <h2 className="text-xl font-bold font-display text-ink">
                 {defaultValues ? "تعديل فاتورة بيع" : "فاتورة بيع جديدة"}
               </h2>
-              <p className="text-sm text-ink-muted">تسجيل بيع محصول</p>
+              <p className="text-sm text-ink-muted">تسجيل فاتورة بيع</p>
             </div>
           </div>
           <Button variant="ghost" onClick={onClose} className="rounded-full w-10 h-10 p-0">✕</Button>
@@ -164,14 +164,19 @@ export function SalesInvoiceForm({
                 <div className="space-y-2">
                   <Label>طريقة الدفع</Label>
                   <Select {...form.register("paymentMethod")}>
-                    <option value="cash">نقداً</option>
+                    <option value="cash">نقداً (كاش)</option>
+                    <option value="instapay">إنستاباي (InstaPay)</option>
+                    <option value="vodafone_cash">فودافون كاش</option>
+                    <option value="orange_cash">أورانج كاش</option>
+                    <option value="bank_transfer">تحويل بنكي</option>
+                    <option value="other">طريقة أخرى</option>
                     <option value="credit">آجل (يضاف لرصيد العميل)</option>
                   </Select>
                 </div>
 
                 {paymentMethod === "credit" && (
                   <div className="space-y-2">
-                    <Label>المبلغ المدفوع مقدماً (ج.م)</Label>
+                    <Label>المبلغ المدفوع مقدماً ({currency})</Label>
                     <Input 
                       type="number" 
                       step="0.01" 
@@ -185,36 +190,37 @@ export function SalesInvoiceForm({
             {/* Items */}
             <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
               <div className="flex justify-between items-center mb-4 pb-2 border-b border-emerald-200/50 dark:border-emerald-800/50">
-                <h3 className="font-bold text-lg text-emerald-800 dark:text-emerald-400">المحاصيل المباعة</h3>
+                <h3 className="font-bold text-lg text-emerald-800 dark:text-emerald-400">الأصناف المباعة</h3>
                 <Button 
                   type="button" 
                   variant="outline" 
                   size="sm"
                   className="gap-1 border-emerald-200 hover:bg-emerald-100 dark:border-emerald-800 dark:hover:bg-emerald-800/50 text-emerald-700 dark:text-emerald-300"
-                  onClick={() => append({ id: crypto.randomUUID(), cropCycleId: "", quantity: 0, unit: "طن", unitPrice: 0 })}
+                  onClick={() => append({ id: crypto.randomUUID(), inventoryItemId: "", quantity: 0, unit: "طن", unitPrice: 0 })}
                 >
                   <Plus className="w-4 h-4" />
-                  إضافة محصول
+                  إضافة صنف
                 </Button>
               </div>
 
               {fields.length === 0 ? (
-                <p className="text-center text-ink-muted py-4">لا توجد محاصيل. أضف محصولاً للبدء.</p>
+                <p className="text-center text-ink-muted py-4">لا توجد أصناف. أضف صنفاً للبدء.</p>
               ) : (
                 <div className="space-y-4">
                   {fields.map((field, index) => (
                     <div key={field.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-paper p-3 rounded-xl border border-border shadow-sm">
                       <div className="md:col-span-4 space-y-1">
-                        <Label className="text-xs">المحصول</Label>
-                        <Select {...form.register(`items.${index}.cropCycleId`)}>
-                          <option value="">اختر المحصول...</option>
-                          {filteredCropCycles.map(c => {
-                            const cropName = crops.find(cr => cr.id === c.cropId)?.name;
-                            return <option key={c.id} value={c.id}>{cropName} {c.cropVariety ? `(${c.cropVariety})` : ''}</option>;
-                          })}
+                        <Label className="text-xs">الصنف</Label>
+                        <Select {...form.register(`items.${index}.inventoryItemId`)}>
+                          <option value="">اختر المنتج...</option>
+                          {filteredInventory.map(item => (
+                            <option key={item.id} value={item.id}>
+                              {item.name} (المتاح: {item.quantity} {item.unit})
+                            </option>
+                          ))}
                         </Select>
-                        {form.formState.errors.items?.[index]?.cropCycleId && (
-                          <p className="text-xs text-danger">{form.formState.errors.items[index]?.cropCycleId?.message}</p>
+                        {form.formState.errors.items?.[index]?.inventoryItemId && (
+                          <p className="text-xs text-danger">{form.formState.errors.items[index]?.inventoryItemId?.message}</p>
                         )}
                       </div>
 
@@ -255,7 +261,7 @@ export function SalesInvoiceForm({
                       <div className="md:col-span-12 flex justify-end px-2 pt-2 border-t border-border mt-2">
                         <p className="text-sm font-medium text-ink">
                           الإجمالي: <span className="font-bold text-success text-base">
-                            {((watchItems[index]?.quantity || 0) * (watchItems[index]?.unitPrice || 0)).toLocaleString()} ج.م
+                            {formatMoney((watchItems[index]?.quantity || 0) * (watchItems[index]?.unitPrice || 0))}
                           </span>
                         </p>
                       </div>
@@ -278,10 +284,10 @@ export function SalesInvoiceForm({
           <div className="text-right w-full md:w-auto">
             <p className="text-sm text-ink-muted">إجمالي الفاتورة</p>
             <p className="text-3xl font-bold font-display text-success">
-              {totalAmount.toLocaleString()} <span className="text-base font-normal">ج.م</span>
+              {formatMoney(totalAmount)}
             </p>
-            {paymentMethod === "credit" && form.watch("paidAmount") > 0 && (
-              <p className="text-xs text-amber-600 mt-1">الباقي آجل: {(totalAmount - form.watch("paidAmount")).toLocaleString()} ج.م</p>
+            {paymentMethod === "credit" && (form.watch("paidAmount") || 0) > 0 && (
+              <p className="text-xs text-amber-600 mt-1">الباقي آجل: {formatMoney(totalAmount - (form.watch("paidAmount") || 0))}</p>
             )}
           </div>
           

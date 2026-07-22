@@ -1,12 +1,15 @@
-import { formatDate } from "@/lib/utils";
+import { useState } from "react";
+import { formatDate, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Wheat, MapPin, CalendarRange, Scale, Target, Sprout, Info } from "lucide-react";
+import { Wheat, MapPin, CalendarRange, Scale, Target, Sprout, Info, Calendar } from "lucide-react";
+import { CropMonitoring } from "./crop-monitoring";
 import type { CropCycle } from "@/lib/types/crop-cycle";
 import type { Farm } from "@/lib/types/farm";
 import type { Land } from "@/lib/types/land";
 import type { Season } from "@/lib/types/season";
 import type { Crop } from "@/lib/types/crop";
 import type { FarmingOperation } from "@/lib/types/farming-operation";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 interface CropCycleDetailsProps {
   cycle: CropCycle;
@@ -18,37 +21,67 @@ interface CropCycleDetailsProps {
 }
 
 export function CropCycleDetails({ cycle, farm, land, season, crop, operations = [] }: CropCycleDetailsProps) {
+  const { formatMoney, currency } = useCurrency();
   const totalSpent = operations.reduce((acc, op) => acc + (op.totalCost || 0), 0);
   const actualRevenue = cycle.actualRevenue || 0;
   const expectedRevenue = cycle.expectedRevenue || 0;
   const netProfit = actualRevenue - totalSpent;
+  const [tab, setTab] = useState<"info" | "program">("info");
+
   return (
     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
       {/* رأس التفاصيل */}
-      <div className="flex items-start justify-between border-b border-border/40 pb-4">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-crop-50 text-crop-600 shadow-sm border border-crop-100">
-            <Wheat className="h-6 w-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold font-display text-ink">{crop?.name ?? "غير معروف"}</h2>
-            <div className="text-sm text-ink-muted flex items-center gap-2 mt-1">
-              <span>{cycle.cropVariety || "بدون صنف محدد"}</span>
-              {cycle.cropSubVariety && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-ink-faint"></span>
-                  <span>{cycle.cropSubVariety}</span>
-                </>
-              )}
+      <div className="flex flex-col gap-4 border-b border-border/40 pb-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-crop-50 text-crop-600 shadow-sm border border-crop-100">
+              <Wheat className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold font-display text-ink">{crop?.name ?? "غير معروف"}</h2>
+              <div className="text-sm text-ink-muted flex items-center gap-2 mt-1">
+                <span>{cycle.cropVariety || "بدون صنف محدد"}</span>
+                {cycle.cropSubVariety && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-ink-faint"></span>
+                    <span>{cycle.cropSubVariety}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
+          <Badge variant={cycle.status === "نشطة" ? "default" : "neutral"} className="text-sm px-3 py-1 shadow-sm">
+            {cycle.status}
+          </Badge>
         </div>
-        <Badge variant={cycle.status === "نشطة" ? "default" : "neutral"} className="text-sm px-3 py-1 shadow-sm">
-          {cycle.status}
-        </Badge>
+        
+        {/* Tabs inside Modal */}
+        <div className="flex w-full print:hidden -mb-4">
+          <button
+            onClick={() => setTab("info")}
+            className={cn(
+              "flex-1 text-center py-3 text-sm font-bold border-b-2 transition-colors",
+              tab === "info" ? "border-crop-600 text-crop-600" : "border-transparent text-ink-muted hover:border-border hover:text-ink"
+            )}
+          >
+            البيانات والمالية
+          </button>
+          <button
+            onClick={() => setTab("program")}
+            className={cn(
+              "flex-1 flex justify-center items-center gap-2 py-3 text-sm font-bold border-b-2 transition-colors",
+              tab === "program" ? "border-crop-600 text-crop-600" : "border-transparent text-ink-muted hover:border-border hover:text-ink"
+            )}
+          >
+            <Calendar className="w-4 h-4" />
+            برنامج المتابعة الزراعية
+          </button>
+        </div>
       </div>
 
-      {/* التفاصيل الأساسية */}
+      {tab === "info" ? (
+        <>
+          {/* التفاصيل الأساسية */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-paper-sunken/50 p-4 rounded-xl border border-border/40 space-y-1">
           <p className="text-xs font-medium text-ink-muted flex items-center gap-1.5 mb-2">
@@ -103,7 +136,7 @@ export function CropCycleDetails({ cycle, farm, land, season, crop, operations =
         <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-ink-muted mb-1">إجمالي المصروفات</p>
-            <p className="font-bold text-ink text-lg">{totalSpent.toLocaleString()} <span className="text-sm font-normal text-ink-muted">ج.م</span></p>
+            <p className="font-bold text-ink text-lg">{formatMoney(totalSpent)}</p>
           </div>
           <div>
             <p className="text-xs text-ink-muted mb-1">الإيراد {actualRevenue > 0 ? "الفعلي" : "المتوقع"}</p>
@@ -116,7 +149,7 @@ export function CropCycleDetails({ cycle, farm, land, season, crop, operations =
             <div className="sm:border-r border-border/50 sm:pr-4">
               <p className="text-xs text-ink-muted mb-1">الربح / الخسارة</p>
               <p className={`font-bold text-lg ${netProfit > 0 ? 'text-emerald-600' : netProfit < 0 ? 'text-danger' : 'text-ink'}`}>
-                {netProfit > 0 ? '+' : ''}{netProfit.toLocaleString()} <span className="text-sm font-normal opacity-70">ج.م</span>
+                {netProfit > 0 ? '+' : ''}{formatMoney(netProfit)}
               </p>
             </div>
           )}
@@ -131,6 +164,14 @@ export function CropCycleDetails({ cycle, farm, land, season, crop, operations =
           </p>
           <p className="text-sm text-ink leading-relaxed">{cycle.notes}</p>
         </div>
+      )}
+        </>
+      ) : (
+        <CropMonitoring 
+          farmId={cycle.farmId} 
+          cropCycleId={cycle.id} 
+          plantDate={cycle.plantDate || null} 
+        />
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { useFarms } from "@/lib/hooks/use-farms";
 import { Spinner } from "@/components/ui/spinner";
+import { PageSkeleton } from "@/components/ui/page-skeleton";
 import { salesService } from "@/lib/services/sales-service";
 import { customerService } from "@/lib/services/customer-service";
 import { seasonService } from "@/lib/services/season-service";
@@ -13,8 +14,10 @@ import { SalesList } from "@/components/sales/sales-list";
 import type { SalesInvoice } from "@/lib/types/sales";
 import type { Customer } from "@/lib/types/customer";
 import type { Season } from "@/lib/types/season";
-import type { CropCycle } from "@/lib/types/crop-cycle";
-import type { Crop } from "@/lib/types/crop";
+import type { InventoryItem } from "@/lib/types/inventory";
+import { inventoryService } from "@/lib/services/inventory-service";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MapPin } from "lucide-react";
 
 export default function SalesPage() {
   const { user } = useAuth();
@@ -22,8 +25,7 @@ export default function SalesPage() {
   const [salesInvoices, setSalesInvoices] = useState<SalesInvoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
-  const [cropCycles, setCropCycles] = useState<CropCycle[]>([]);
-  const [crops, setCrops] = useState<Crop[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -34,31 +36,28 @@ export default function SalesPage() {
       const allSales: SalesInvoice[] = [];
       const allCustomers: Customer[] = [];
       const allSeasons: Season[] = [];
-      const allCropCycles: CropCycle[] = [];
+      const allInventoryItems: InventoryItem[] = [];
 
       for (const farm of activeFarms) {
-        const [farmSales, farmCustomers, farmSeasons, farmCropCycles] = await Promise.all([
+        const [farmSales, farmCustomers, farmSeasons, farmInventory] = await Promise.all([
           salesService.getInvoicesByFarm(farm.id),
           customerService.getCustomersByFarm(farm.id),
           seasonService.listByFarm(farm.id),
-          cropCycleService.listByFarm(farm.id)
+          inventoryService.listItems(farm.id)
         ]);
 
         allSales.push(...farmSales);
         allCustomers.push(...farmCustomers);
         allSeasons.push(...farmSeasons);
-        allCropCycles.push(...farmCropCycles);
+        allInventoryItems.push(...farmInventory);
       }
 
       allSales.sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime());
 
-      const allCrops = await cropService.list(user.uid);
-
       setSalesInvoices(allSales);
       setCustomers(allCustomers);
       setSeasons(allSeasons);
-      setCropCycles(allCropCycles);
-      setCrops(allCrops);
+      setInventoryItems(allInventoryItems);
     } catch (error) {
       console.error("Error loading sales data:", error);
     } finally {
@@ -80,26 +79,21 @@ export default function SalesPage() {
 
   if (activeFarms.length === 0) {
     return (
-      <div className="p-6 text-center text-ink-muted">
-        يرجى إضافة مزرعة أولاً للوصول إلى المبيعات.
-      </div>
+      <EmptyState icon={MapPin} title="لا توجد مزارع" description="يرجى إضافة مزرعة أولاً للوصول إلى هذا القسم." />
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner className="h-8 w-8" />
-        </div>
+        <PageSkeleton />
       ) : (
         <SalesList
           salesInvoices={salesInvoices}
           farms={activeFarms}
           seasons={seasons}
           customers={customers}
-          cropCycles={cropCycles}
-          crops={crops}
+          inventoryItems={inventoryItems}
           onUpdate={loadData}
         />
       )}

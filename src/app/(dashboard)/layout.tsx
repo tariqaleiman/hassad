@@ -10,6 +10,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { navItems } from "@/components/layout/nav-items";
 import { isFirebaseConfigured } from "@/lib/firebase/client";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { useOwnerProfile } from "@/lib/hooks/use-owner";
+import { useFarms } from "@/lib/hooks/use-farms";
 
 export default function DashboardLayout({
   children,
@@ -17,25 +20,38 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading } = useAuth();
+  const { data: ownerProfile, isLoading: loadingOwner } = useOwnerProfile();
+  const { data: farms, isLoading: loadingFarms } = useFarms();
+  
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
-    setMobileOpen(true); // Always ensure mobile drawer can open if on mobile
-    setDesktopSidebarOpen(!desktopSidebarOpen); // Toggle desktop version
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileOpen(true);
+    } else {
+      setDesktopSidebarOpen(!desktopSidebarOpen);
+    }
   };
 
   useEffect(() => {
     if (!loading && !user && isFirebaseConfigured) {
       router.replace("/login");
     }
-  }, [loading, user, router]);
+    
+    // Check if onboarding is needed
+    if (!loading && !loadingOwner && !loadingFarms && user && isFirebaseConfigured) {
+      if (!ownerProfile || !farms || farms.length === 0) {
+        router.replace("/setup");
+      }
+    }
+  }, [loading, loadingOwner, loadingFarms, user, ownerProfile, farms, router]);
 
   const title = navItems.find((n) => n.href === pathname)?.label ?? "حصاد";
 
-  if (loading) {
+  if (loading || loadingOwner || loadingFarms) {
     return (
       <div className="flex h-dvh items-center justify-center bg-paper">
         <Spinner className="h-8 w-8" />
@@ -81,8 +97,10 @@ export default function DashboardLayout({
         <main className="flex-1 h-full overflow-y-auto scroll-smooth bg-paper pb-16 md:pb-0">
           {/* مسافة فارغة لتفادي اختفاء المحتوى تحت شريط العنوان في البداية */}
           <div className="h-14 w-full shrink-0"></div>
-          <div className="p-3 sm:p-4 md:p-6 lg:p-8">
-            {children}
+          <div className="p-3 sm:p-4 md:p-5 lg:p-6">
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </div>
         </main>
       </div>

@@ -27,6 +27,7 @@ import { useOperations } from "@/lib/hooks/use-operations";
 import { formatDate, cn } from "@/lib/utils";
 import type { Season } from "@/lib/types/season";
 import type { SeasonSchema } from "@/components/seasons/season-schema";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 const seasonColors: Record<string, string> = {
   "صيفي": "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/30",
@@ -38,6 +39,7 @@ const seasonColors: Record<string, string> = {
 };
 
 export default function SeasonsPage() {
+  const { formatMoney, currency } = useCurrency();
   const { data: seasons, isLoading: loadingSeasons } = useSeasons();
   const { data: farms, isLoading: loadingFarms } = useFarms();
   const { data: cropCycles, isLoading: loadingCycles } = useCropCycles();
@@ -107,10 +109,15 @@ export default function SeasonsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display text-ink">المواسم الزراعية</h1>
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <CalendarRange className="h-5 w-5" />
+            </div>
+            المواسم الزراعية
+          </h1>
           <p className="text-ink-muted text-sm mt-1">أدر مواسمك الزراعية بدقة وراقب ميزانيتك ومحاصيلك.</p>
         </div>
         <Button onClick={openCreate} disabled={!activeFarm} className="shadow-md hover:shadow-lg transition-all gap-2">
@@ -201,11 +208,11 @@ export default function SeasonsPage() {
                       <div className="flex flex-col flex-1">
                         <span className="text-xs font-medium text-ink-lighter uppercase tracking-wider">الميزانية / المصروف</span>
                         <div className="flex items-baseline gap-1">
-                          <span className={cn("font-bold text-base", isOverBudget ? "text-danger" : "text-ink")}>{totalSpent.toLocaleString()}</span>
+                          <span className={cn("font-bold text-base", isOverBudget ? "text-danger" : "text-ink")}>{formatMoney(totalSpent)}</span>
                           {season.expectedBudget ? (
-                            <span className="text-ink-muted font-medium">/ {season.expectedBudget.toLocaleString()} ج.م</span>
+                            <span className="text-xs text-ink-muted font-medium">/ {formatMoney(season.expectedBudget)}</span>
                           ) : (
-                            <span className="text-ink-muted font-medium">ج.م (لا توجد ميزانية)</span>
+                            <span className="text-ink-muted font-medium"> (لا توجد ميزانية)</span>
                           )}
                         </div>
                         {season.expectedBudget != null && season.expectedBudget > 0 && (
@@ -224,11 +231,11 @@ export default function SeasonsPage() {
                       <div className="flex flex-col flex-1">
                         <span className="text-xs font-medium text-ink-lighter uppercase tracking-wider">الإيراد المتوقع / الفعلي</span>
                         <div className="flex items-baseline gap-1">
-                          <span className={cn("font-bold text-base", totalRevenue > 0 ? "text-emerald-600" : "text-ink")}>{totalRevenue.toLocaleString()}</span>
+                          <span className={cn("font-bold text-base", totalRevenue > 0 ? "text-emerald-600" : "text-ink")}>{formatMoney(totalRevenue)}</span>
                           {season.expectedRevenue ? (
-                            <span className="text-ink-muted font-medium">/ {season.expectedRevenue.toLocaleString()} ج.م</span>
+                            <span className="text-xs text-ink-muted font-medium">/ {formatMoney(season.expectedRevenue)}</span>
                           ) : (
-                            <span className="text-ink-muted font-medium">ج.م (لا يوجد تقدير)</span>
+                            <span className="text-ink-muted font-medium"> (لا يوجد تقدير)</span>
                           )}
                         </div>
                       </div>
@@ -238,7 +245,7 @@ export default function SeasonsPage() {
                       <div className="flex justify-between items-center bg-paper-sunken/50 p-2 rounded-xl mt-2 border border-border/30">
                         <span className="text-xs font-bold text-ink-muted">صافي الربح/الخسارة</span>
                         <span className={cn("font-bold", netProfit > 0 ? "text-emerald-600" : "text-danger")}>
-                          {netProfit > 0 ? "+" : ""}{netProfit.toLocaleString()} ج.م
+                          {netProfit > 0 ? "+" : ""}{formatMoney(netProfit)}
                         </span>
                       </div>
                     )}

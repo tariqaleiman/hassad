@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { InventoryItem } from "@/lib/types/inventory";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 const addStockSchema = z.object({
   quantity: z.number().min(0.01, "الكمية يجب أن تكون أكبر من صفر"),
@@ -28,6 +29,7 @@ export function InventoryAddStockForm({
   loading?: boolean;
   onCancel: () => void;
 }) {
+  const { formatMoney } = useCurrency();
   const {
     register,
     handleSubmit,
@@ -86,7 +88,7 @@ export function InventoryAddStockForm({
       {quantity > 0 && unitPrice > 0 && (
         <div className="bg-crop-500/10 p-3 rounded-md flex justify-between items-center text-crop-700 dark:text-crop-400 border border-crop-500/20">
           <span className="text-sm font-medium">إجمالي التكلفة:</span>
-          <span className="font-bold text-lg">{totalValue.toLocaleString()} ج.م</span>
+          <span className="font-bold text-lg">{formatMoney(totalValue)}</span>
         </div>
       )}
 

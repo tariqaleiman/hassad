@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PaymentForm } from "./payment-form";
 import { paymentService } from "@/lib/services/payment-service";
 import { useAuth } from "@/lib/providers/auth-provider";
-import { HandCoins, Plus, Edit2, Trash2, ArrowUpRight, ArrowDownRight, Store, Tractor, Users, FileText } from "lucide-react";
-import type { Payment, PaymentSchema } from "@/lib/types/payment";
+import { HandCoins, Plus, Edit2, Trash2, ArrowUpRight, ArrowDownRight, Store, Tractor, Users, FileText, Search } from "lucide-react";
+import type { Payment, PaymentFormValues } from "@/lib/types/payment";
 import type { Farm } from "@/lib/types/farm";
 import type { Season } from "@/lib/types/season";
 import type { Supplier } from "@/lib/types/supplier";
@@ -31,13 +34,15 @@ export function DebtsList({
   customers: Customer[];
   onUpdate: () => void;
 }) {
+  const { formatMoney, currency } = useCurrency();
   const { user } = useAuth();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Payment | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (values: PaymentSchema) => {
+  const handleSubmit = async (values: PaymentFormValues) => {
     setLoading(true);
     try {
       if (editingItem) {
@@ -78,9 +83,9 @@ export function DebtsList({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-paper p-6 rounded-2xl border border-border shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-display text-ink flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
               <HandCoins className="h-5 w-5" />
             </div>
@@ -95,50 +100,83 @@ export function DebtsList({
       </div>
 
       {/* Summary */}
+      {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-paper border border-danger/20 rounded-2xl p-5 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-1.5 h-full bg-danger"></div>
-          <div className="flex justify-between items-start">
-            <div>
+        <Card className="bg-danger/5 border-danger/10">
+          <CardContent className="p-5 flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-4">
               <p className="text-sm text-danger font-bold flex items-center gap-2">
-                <ArrowUpRight className="w-4 h-4" />
-                إجمالي ديون مستحقة للدفع (عليك)
+                <ArrowUpRight className="w-5 h-5 bg-danger/10 rounded-full p-1" />
+                إجمالي الديون (عليك)
               </p>
-              <p className="text-3xl font-bold font-display text-ink mt-2">{totalLiabilities.toLocaleString()} <span className="text-sm font-normal text-ink-muted">ج.م</span></p>
             </div>
-            <div className="text-left">
-              <p className="text-xs text-ink-muted mt-1">موردين: {totalSupplierDebt.toLocaleString()}</p>
-              <p className="text-xs text-ink-muted">مقاولين: {totalContractorDebt.toLocaleString()}</p>
+            <div>
+              <p className="text-3xl font-bold font-display text-danger">{formatMoney(totalLiabilities)}</p>
+              <div className="flex gap-4 mt-3 pt-3 border-t border-danger/10">
+                <p className="text-xs text-danger/70">موردين: <span className="font-bold">{totalSupplierDebt.toLocaleString()}</span></p>
+                <p className="text-xs text-danger/70">مقاولين: <span className="font-bold">{totalContractorDebt.toLocaleString()}</span></p>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-paper border border-success/20 rounded-2xl p-5 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-1.5 h-full bg-success"></div>
-          <div>
-            <p className="text-sm text-success font-bold flex items-center gap-2">
-              <ArrowDownRight className="w-4 h-4" />
-              إجمالي ديون مستحقة للتحصيل (لك)
-            </p>
-            <p className="text-3xl font-bold font-display text-ink mt-2">{totalAssets.toLocaleString()} <span className="text-sm font-normal text-ink-muted">ج.م</span></p>
-            <p className="text-xs text-ink-muted mt-1">عند العملاء</p>
-          </div>
-        </div>
+        <Card className="bg-success/5 border-success/10">
+          <CardContent className="p-5 flex flex-col justify-between">
+            <div className="flex justify-between items-start mb-4">
+              <p className="text-sm text-success font-bold flex items-center gap-2">
+                <ArrowDownRight className="w-5 h-5 bg-success/10 rounded-full p-1" />
+                إجمالي الديون (لك)
+              </p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold font-display text-success">{formatMoney(totalAssets)}</p>
+              <div className="flex gap-4 mt-3 pt-3 border-t border-success/10">
+                <p className="text-xs text-success/70">عند العملاء: <span className="font-bold">{totalAssets.toLocaleString()}</span></p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
+      {/* Search Bar */}
+      {payments.length > 0 && (
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-faint" />
+          <Input 
+            type="text" 
+            placeholder="ابحث بالتاريخ، الملاحظات، أو اسم الجهة..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-4 pr-10 py-6 bg-paper shadow-sm rounded-xl text-lg"
+          />
+        </div>
+      )}
+
       {/* List */}
-      <div className="bg-paper border border-border rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-ink mb-6">سجل المدفوعات والتحصيلات</h2>
-        
-        <div className="space-y-4">
-          {payments.length === 0 ? (
-            <div className="text-center py-16 border border-border border-dashed rounded-xl">
-              <FileText className="w-12 h-12 text-ink-muted mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium text-ink">لا توجد حركات سداد</p>
-              <p className="text-ink-muted mt-1">أضف حركة سداد لتسجيل الدفعات.</p>
-            </div>
-          ) : (
-            payments.map((payment) => {
+      <Card className="bg-paper border-border shadow-sm">
+        <CardContent className="p-6">
+          <h2 className="text-lg font-bold text-ink mb-6">سجل الحركات المالية</h2>
+          
+          <div className="space-y-4">
+            {payments.length === 0 ? (
+              <div className="text-center py-16 border border-border border-dashed rounded-xl bg-paper-sunken">
+                <FileText className="w-12 h-12 text-ink-muted mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium text-ink">لا توجد حركات سداد</p>
+                <p className="text-ink-muted mt-1">أضف حركة سداد لتسجيل الدفعات.</p>
+              </div>
+            ) : (
+              payments.filter(p => {
+                const searchLower = searchQuery.toLowerCase();
+                if (p.notes && p.notes.toLowerCase().includes(searchLower)) return true;
+                if (p.date.includes(searchLower)) return true;
+                
+                let entityName = "";
+                if (p.type === "pay_supplier") entityName = suppliers.find(s => s.id === p.supplierId)?.name || "";
+                else if (p.type === "pay_contractor") entityName = contractors.find(c => c.id === p.contractorId)?.name || "";
+                else if (p.type === "receive_from_customer") entityName = customers.find(c => c.id === p.customerId)?.name || "";
+                
+                return entityName.toLowerCase().includes(searchLower);
+              }).map((payment) => {
               const isPaymentOut = payment.type === "pay_supplier" || payment.type === "pay_contractor";
               let entityName = "";
               let EntityIcon = Users;
@@ -188,7 +226,7 @@ export function DebtsList({
                   <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-6 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-border">
                     <div className="text-right">
                       <p className={`text-xl font-bold font-display ${isPaymentOut ? 'text-danger' : 'text-success'}`}>
-                        {isPaymentOut ? '-' : '+'}{(payment.amount || 0).toLocaleString()} <span className="text-xs font-normal text-ink-muted">ج.م</span>
+                        {isPaymentOut ? '-' : '+'}{formatMoney((payment.amount || 0))}
                       </p>
                     </div>
                     
@@ -216,7 +254,8 @@ export function DebtsList({
             })
           )}
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {(isAddOpen || editingItem) && (
         <PaymentForm

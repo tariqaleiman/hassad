@@ -8,7 +8,7 @@ export function Logo({ className, showText = true }: { className?: string; showT
       <div className="relative flex items-center justify-center h-6 w-6 shrink-0">
         <Image
           src={logoImg}
-          alt="شعار نظام حصاد"
+          alt="شعار نظام حصادي"
           fill
           sizes="16px"
           style={{ objectFit: "contain" }}
@@ -21,7 +21,7 @@ export function Logo({ className, showText = true }: { className?: string; showT
           className="text-[1.7rem] font-bold text-ink tracking-tight"
           style={{ fontFamily: "var(--font-cairo, sans-serif)" }}
         >
-          حصاد
+          حصادي
         </span>
       )}
     </div>

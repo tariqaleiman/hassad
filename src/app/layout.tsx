@@ -19,12 +19,21 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "حصاد | نظام إدارة المزارع",
-  description: "نظام ERP زراعي متكامل لإدارة المزارع والمحاسبة الزراعية",
+  title: "حصادي | النظام الزراعي الذكي",
+  description: "نظام حصادي الزراعي المتكامل لإدارة المزارع والمحاسبة والمقاولين",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "حصادي",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e3f1e7ff",
+  themeColor: "#10b981",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

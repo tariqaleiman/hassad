@@ -15,6 +15,8 @@ import type { Supplier } from "@/lib/types/supplier";
 import type { Contractor } from "@/lib/types/contractor";
 import type { Customer } from "@/lib/types/customer";
 import type { Season } from "@/lib/types/season";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MapPin } from "lucide-react";
 
 export default function DebtsPage() {
   const { user } = useAuth();
@@ -81,14 +83,12 @@ export default function DebtsPage() {
 
   if (activeFarms.length === 0) {
     return (
-      <div className="p-6 text-center text-ink-muted">
-        يرجى إضافة مزرعة أولاً للوصول إلى قسم الديون والمدفوعات.
-      </div>
+      <EmptyState icon={MapPin} title="لا توجد مزارع" description="يرجى إضافة مزرعة أولاً للوصول إلى هذا القسم." />
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {loading ? (
         <div className="flex justify-center py-12">
           <Spinner className="h-8 w-8" />

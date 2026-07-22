@@ -11,13 +11,28 @@ export const ownerRepository = {
     if (!snap.exists()) return null;
     const data = snap.data();
     return {
+      // User Profile
       name: data.name ?? "",
       email: data.email ?? "",
       phone: data.phone ?? "",
-      address: data.address ?? "",
+      gender: data.gender ?? "",
+      dateOfBirth: data.dateOfBirth ?? "",
+      userLocation: data.userLocation ?? data.address ?? "",
+      avatar: data.avatar ?? "",
+      
+      // Company Profile
+      companyName: data.companyName ?? "",
+      taxId: data.taxId ?? "",
+      commercialRegister: data.commercialRegister ?? "",
+      establishmentDate: data.establishmentDate ?? "",
+      companyLocation: data.companyLocation ?? data.address ?? "",
+      companyPhone: data.companyPhone ?? "",
+      companyEmail: data.companyEmail ?? "",
+      logo: data.logo ?? "",
+      
       updatedAt:
         data.updatedAt?.toDate?.().toISOString() ?? data.updatedAt ?? null,
-    };
+    } as OwnerProfile;
   },
 
   async save(profile: OwnerProfile, userId: string): Promise<void> {

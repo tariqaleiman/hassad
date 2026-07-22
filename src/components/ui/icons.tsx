@@ -14,6 +14,7 @@ import {
   Receipt,
   FileBarChart,
   Settings,
+  BookOpen,
   Bell,
   User as UserIcon,
   ChevronDown,
@@ -34,15 +35,27 @@ import {
   Trash2,
   Home,
   Key,
+  Wallet,
+  Info,
+  ShoppingCart,
+  Building,
+  Loader2,
+  Activity,
+  TrendingUp,
+  Download,
+  Printer,
+  FileText
 } from "lucide-react";
 
 export const Icons = {
   // Navigation & Sidebar
+  ShoppingCart: ShoppingCart,
   Dashboard: LayoutDashboard,
   Farms: Sprout,
   Lands: MapPin,
   Seasons: CalendarRange,
   Crops: Wheat,
+  CropPrograms: BookOpen,
   Operations: ClipboardList,
   Inventory: Boxes,
   Suppliers: Truck,
@@ -88,7 +101,16 @@ export const Icons = {
   Home: Home,
   Key: Key,
   Users: Users,
-  Trash: Trash2,
+  Sprout: Sprout,
+  Wallet: Wallet,
+  Info: Info,
+  Close: Trash2,
+  Building: Building,
+  Spinner: Loader2,
+  Activity,
+  Download,
+  Printer,
+  FileText
 };
 
 export type IconType = typeof Icons[keyof typeof Icons];

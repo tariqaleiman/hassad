@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useCurrency } from "@/lib/hooks/use-currency";
 import { seasonSchema, type SeasonSchema } from "./season-schema";
 import type { Season } from "@/lib/types/season";
 import type { Farm } from "@/lib/types/farm";
@@ -25,6 +26,7 @@ export function SeasonForm({
   loading?: boolean;
   onCancel: () => void;
 }) {
+  const { currency } = useCurrency();
   const {
     register,
     handleSubmit,
@@ -80,14 +82,14 @@ export function SeasonForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="expectedBudget">الميزانية التقديرية (ج.م) - المصروفات</Label>
+          <Label htmlFor="expectedBudget">الميزانية التقديرية ({currency}) - المصروفات</Label>
           <Input id="expectedBudget" type="number" step="0.01" {...register("expectedBudget", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 50000" />
           {errors.expectedBudget && (
             <p className="mt-1 text-xs text-danger">{errors.expectedBudget.message}</p>
           )}
         </div>
         <div>
-          <Label htmlFor="expectedRevenue">الإيراد المتوقع (ج.م) - المبيعات</Label>
+          <Label htmlFor="expectedRevenue">الإيراد المتوقع ({currency}) - المبيعات</Label>
           <Input id="expectedRevenue" type="number" step="0.01" {...register("expectedRevenue", { valueAsNumber: true })} className="mt-1.5" placeholder="مثال: 80000" />
           {errors.expectedRevenue && (
             <p className="mt-1 text-xs text-danger">{errors.expectedRevenue.message}</p>

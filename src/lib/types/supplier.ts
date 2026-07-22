@@ -4,6 +4,8 @@ export interface Supplier extends BaseEntity {
   farmId: string;
   name: string;
   supplierType?: "company" | "individual";
+  supplierCategories?: string[];
+  customCategory?: string;
   companyName?: string;
   taxId?: string;
   commercialRegister?: string;
@@ -13,5 +15,22 @@ export interface Supplier extends BaseEntity {
   status?: "active" | "inactive";
   initialBalance: number;
   balance: number; // الرصيد الحالي (الدين المستحق للمورد)
+  notes?: string;
+}
+
+export interface SupplierFormValues {
+  farmId: string;
+  name: string;
+  supplierType?: "company" | "individual";
+  supplierCategories?: string[];
+  customCategory?: string;
+  companyName?: string;
+  taxId?: string;
+  commercialRegister?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  status?: "active" | "inactive";
+  initialBalance?: number;
   notes?: string;
 }

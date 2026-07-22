@@ -11,6 +11,7 @@ export interface CropVariety {
 export interface Crop extends BaseEntity {
   name: string;
   category?: string;
+  imageUrl?: string; // رابط صورة المحصول
   harvestType: HarvestType;
   harvestBatchName?: string; // مسمى الدفعة: حشة، بطن، جنية، قطفة
   productUnit: string; // وحدة الإنتاج
@@ -22,6 +23,7 @@ export interface Crop extends BaseEntity {
 export interface CropFormValues {
   name: string;
   category?: string;
+  imageUrl?: string;
   harvestType: HarvestType;
   harvestBatchName?: string;
   productUnit: string;

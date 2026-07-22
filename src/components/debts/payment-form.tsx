@@ -15,6 +15,7 @@ import type { Season } from "@/lib/types/season";
 import type { Supplier } from "@/lib/types/supplier";
 import type { Contractor } from "@/lib/types/contractor";
 import type { Customer } from "@/lib/types/customer";
+import { useCurrency } from "@/lib/hooks/use-currency";
 
 interface PaymentFormProps {
   open: boolean;
@@ -41,6 +42,7 @@ export function PaymentForm({
   defaultValues,
   isSubmitting
 }: PaymentFormProps) {
+  const { formatMoney, currency } = useCurrency();
   const form = useForm<PaymentSchema>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
@@ -203,12 +205,12 @@ export function PaymentForm({
                   <span className="font-bold text-sm">
                     {paymentType === 'receive_from_customer' ? 'إجمالي المستحق عليه:' : 'إجمالي المستحق له:'}
                   </span>
-                  <span className="font-bold">{currentDebt.toLocaleString()} ج.م</span>
+                  <span className="font-bold">{formatMoney(currentDebt)}</span>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label>المبلغ (ج.م) *</Label>
+                <Label>المبلغ ({currency}) *</Label>
                 <Input type="number" step="0.01" {...form.register("amount", { valueAsNumber: true })} />
                 {form.formState.errors.amount && <p className="text-xs text-danger">{form.formState.errors.amount.message}</p>}
               </div>

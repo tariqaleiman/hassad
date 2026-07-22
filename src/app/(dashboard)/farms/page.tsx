@@ -40,11 +40,16 @@ export default function FarmProfilePage() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1 md:px-0">
         <div>
-          <h2 className="font-display text-2xl font-bold text-ink">بيانات المزرعة</h2>
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-crop-500/10 text-crop-600">
+              <Icons.Farms className="h-5 w-5" />
+            </div>
+            بيانات المزرعة
+          </h1>
           <p className="text-ink-muted mt-1 text-sm">إدارة معلومات الكيان التجاري أو المزرعة الخاصة بك والشركاء</p>
         </div>
         {myFarm && (

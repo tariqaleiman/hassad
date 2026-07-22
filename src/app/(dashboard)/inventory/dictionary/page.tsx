@@ -94,7 +94,7 @@ export default function DictionaryPage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Link href="/inventory" className="inline-flex items-center justify-center h-10 w-10 text-ink hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors">

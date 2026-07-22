@@ -19,6 +19,7 @@ export const farmSchema = z.object({
   commercialName: z.string().optional(),
   mainLocation: z.string().optional(),
   phone: z.string().optional(),
+  currency: z.string().optional(),
   notes: z.string().optional(),
   partners: z.array(partnerSchema).optional(),
 });

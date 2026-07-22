@@ -117,7 +117,7 @@ export const Select = forwardRef<
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative w-full" ref={containerRef}>
       {/* Hidden native select for native form integration & accessibility */}
       <select
         ref={selectRef}
@@ -140,8 +140,8 @@ export const Select = forwardRef<
         disabled={props.disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-xl border border-border/80 bg-paper px-3.5 text-sm text-ink transition-all shadow-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:bg-paper-sunken/50 disabled:opacity-70",
-          isOpen && "border-sky-500 ring-2 ring-sky-500/20",
+          "flex h-11 w-full items-center justify-between rounded-xl border border-border/80 bg-paper-raised px-4 text-sm text-ink transition-all shadow-sm focus:outline-none focus:border-crop-600 focus:ring-4 focus:ring-crop-600/20 disabled:cursor-not-allowed disabled:bg-paper-sunken/50 disabled:opacity-70 hover:border-border",
+          isOpen && "border-crop-600 ring-4 ring-crop-600/20",
           className
         )}
       >
@@ -151,7 +151,7 @@ export const Select = forwardRef<
 
       {/* Custom Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 mt-1.5 max-h-64 w-full overflow-y-auto overflow-x-hidden rounded-xl border border-border/60 bg-paper-raised p-1.5 shadow-xl shadow-black/5 dark:shadow-black/20 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto overflow-x-hidden rounded-2xl border border-glass-border bg-paper-raised/95 backdrop-blur-xl p-1.5 shadow-xl shadow-black/5 dark:shadow-black/20 animate-in fade-in zoom-in-95 duration-200">
           {options.length === 0 ? (
             <div className="p-3 text-center text-sm text-ink-muted">لا توجد خيارات</div>
           ) : (
@@ -170,14 +170,14 @@ export const Select = forwardRef<
                     "relative flex w-full cursor-default select-none items-center rounded-lg py-2.5 px-3 text-sm outline-none transition-colors hover:bg-paper-sunken focus:bg-paper-sunken",
                     opt.disabled && "opacity-50 cursor-not-allowed",
                     opt.value === String(internalValue) 
-                      ? "text-sky-600 bg-sky-50/60 dark:bg-sky-500/10 font-bold" 
+                      ? "text-crop-600 bg-crop-50/60 dark:bg-crop-500/10 font-bold" 
                       : "text-ink",
                     opt.group && "ps-6" // Indent items inside a group
                   )}
                 >
                   <span className="truncate text-start pe-6">{opt.label}</span>
                   {opt.value === String(internalValue) && (
-                    <Check className="absolute end-3 h-4 w-4 text-sky-500" />
+                    <Check className="absolute end-3 h-4 w-4 text-crop-600" />
                   )}
                 </button>
               )

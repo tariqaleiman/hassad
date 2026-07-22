@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { Check } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,17 @@ const CONTRACTOR_TYPES: ContractorType[] = [
 const contractorSchema = z.object({
   farmId: z.string().min(1, "اختر المزرعة"),
   name: z.string().min(2, "اسم المقاول مطلوب"),
-  phone: z.string().optional(),
-  type: z.enum(["عمالة", "جرار زراعي", "آلات حصاد", "نقل", "أخرى"] as const, {
-    error: "اختر نوع المقاول",
-  }),
+  legalType: z.enum(["شركة", "فرد"]).default("فرد"),
+  types: z.array(z.enum(["عمالة", "جرار زراعي", "آلات حصاد", "نقل", "أخرى"] as const)).min(1, "اختر نوعاً واحداً على الأقل"),
   customType: z.string().optional(),
-  initialBalance: z.number().min(0).default(0),
+  companyName: z.string().optional(),
+  taxId: z.string().optional(),
+  commercialRegister: z.string().optional(),
+  email: z.string().email("بريد إلكتروني غير صالح").optional().or(z.literal("")),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  initialBalance: z.number().min(0).optional().default(0),
+  status: z.enum(["active", "inactive"]).default("active"),
   notes: z.string().optional(),
 });
 
@@ -50,105 +56,174 @@ export function ContractorForm({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ContractorFormValues>({
-    resolver: zodResolver(contractorSchema),
+    resolver: zodResolver(contractorSchema) as any,
     defaultValues: defaultValues || {
       farmId: farms.length === 1 ? farms[0].id : "",
       name: "",
-      phone: "",
-      type: "عمالة",
+      legalType: "فرد",
+      types: ["عمالة"],
       customType: "",
+      companyName: "",
+      taxId: "",
+      commercialRegister: "",
+      email: "",
+      phone: "",
+      address: "",
+      status: "active",
       initialBalance: 0,
       notes: "",
     },
   });
 
-  const selectedType = watch("type");
+  const legalType = watch("legalType");
+  const types = watch("types") || [];
+
+  const toggleType = (t: ContractorType) => {
+    if (types.includes(t)) {
+      setValue("types", types.filter(type => type !== t), { shouldDirty: true });
+    } else {
+      setValue("types", [...types, t], { shouldDirty: true });
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* المزرعة */}
-      <div className={farms.length === 1 ? "hidden" : "block"}>
-        <Label htmlFor="farmId">المزرعة *</Label>
-        <Select id="farmId" {...register("farmId")}>
-          <option value="">اختر المزرعة</option>
-          {farms.map((f) => (
-            <option key={f.id} value={f.id}>{f.name}</option>
-          ))}
-        </Select>
-        {errors.farmId && <p className="mt-1 text-xs text-danger">{errors.farmId.message}</p>}
-      </div>
-
-      {/* المعلومات الأساسية */}
-      <div className="bg-paper-sunken/30 p-5 rounded-2xl border border-border space-y-4">
-        <h3 className="font-bold text-base text-ink border-b border-border pb-2">بيانات المقاول</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="name">اسم المقاول *</Label>
-            <Input id="name" {...register("name")} placeholder="مثال: محمد زين" />
-            {errors.name && <p className="mt-1 text-xs text-danger">{errors.name.message}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="phone">رقم الهاتف</Label>
-            <Input id="phone" {...register("phone")} placeholder="01xxxxxxxxx" dir="ltr" className="text-left" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="type">نوع المقاول *</Label>
-            <Select id="type" {...register("type")}>
-              {CONTRACTOR_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Row 1: Farm and Type */}
+        {farms.length > 1 && (
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="farmId">المزرعة *</Label>
+            <Select id="farmId" {...register("farmId")}>
+              <option value="">اختر المزرعة</option>
+              {farms.map((farm) => (
+                <option key={farm.id} value={farm.id}>
+                  {farm.name}
+                </option>
               ))}
             </Select>
-            {errors.type && <p className="mt-1 text-xs text-danger">{errors.type.message}</p>}
+            {errors.farmId && <p className="text-xs text-danger">{errors.farmId.message}</p>}
           </div>
+        )}
 
-          {selectedType === "أخرى" && (
-            <div>
-              <Label htmlFor="customType">حدد النوع</Label>
-              <Input id="customType" {...register("customType")} placeholder="مثال: مقاول حفر آبار" />
+        <div className="space-y-1.5">
+          <Label htmlFor="legalType">الكيان القانوني</Label>
+          <Select id="legalType" {...register("legalType")}>
+            <option value="فرد">فرد / شخص</option>
+            <option value="شركة">شركة / مؤسسة</option>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5 md:col-span-2">
+          <Label>تخصص المقاول (يمكنك اختيار أكثر من تخصص) *</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {CONTRACTOR_TYPES.map(t => {
+              const isSelected = types.includes(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => toggleType(t)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${isSelected ? 'bg-amber-100 border-amber-200 text-amber-800' : 'bg-paper border-border text-ink-muted hover:bg-black/5'}`}
+                >
+                  {isSelected && <Check className="w-3.5 h-3.5" />}
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+          {errors.types && <p className="text-xs text-danger">{errors.types.message}</p>}
+        </div>
+
+        {types.includes("أخرى") && (
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="customType">حدد التخصصات الأخرى</Label>
+            <Input id="customType" {...register("customType")} placeholder="مثال: مقاول حفر آبار" />
+          </div>
+        )}
+
+        <div className="space-y-1.5 md:col-span-2">
+          <Label htmlFor="status">حالة المقاول</Label>
+          <Select id="status" {...register("status")}>
+            <option value="active">نشط (يتعامل معنا)</option>
+            <option value="inactive">غير نشط (موقوف)</option>
+          </Select>
+        </div>
+
+        {/* Row 2: Names */}
+        <div className="space-y-1.5 md:col-span-2">
+          <Label htmlFor="name">اسم المقاول (المسؤول) *</Label>
+          <Input id="name" {...register("name")} placeholder="مثال: محمد زين" />
+          {errors.name && <p className="text-xs text-danger">{errors.name.message}</p>}
+        </div>
+
+        {legalType === "شركة" && (
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="companyName">اسم الشركة / المؤسسة</Label>
+            <Input id="companyName" {...register("companyName")} placeholder="مثال: شركة المعدات الحديثة" />
+          </div>
+        )}
+
+        {/* Row 3: Contact */}
+        <div className="space-y-1.5">
+          <Label htmlFor="phone">رقم الهاتف</Label>
+          <Input id="phone" {...register("phone")} dir="ltr" className="text-right" placeholder="01xxxxxxxxx" />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="email">البريد الإلكتروني</Label>
+          <Input id="email" type="email" {...register("email")} dir="ltr" className="text-right" placeholder="example@domain.com" />
+          {errors.email && <p className="text-xs text-danger">{errors.email.message}</p>}
+        </div>
+
+        <div className="space-y-1.5 md:col-span-2">
+          <Label htmlFor="address">العنوان</Label>
+          <Input id="address" {...register("address")} placeholder="المحافظة، المدينة، الشارع..." />
+        </div>
+
+        {/* Row 4: Legal (Only for companies) */}
+        {legalType === "شركة" && (
+          <>
+            <div className="space-y-1.5">
+              <Label htmlFor="taxId">الرقم الضريبي</Label>
+              <Input id="taxId" {...register("taxId")} dir="ltr" className="text-right" />
             </div>
-          )}
-        </div>
-      </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="commercialRegister">رقم السجل التجاري</Label>
+              <Input id="commercialRegister" {...register("commercialRegister")} dir="ltr" className="text-right" />
+            </div>
+          </>
+        )}
 
-      {/* الرصيد الافتتاحي */}
-      {!isEdit && (
-        <div className="bg-paper-sunken/30 p-5 rounded-2xl border border-border space-y-3">
-          <h3 className="font-bold text-base text-ink border-b border-border pb-2">الرصيد الافتتاحي (اختياري)</h3>
-          <p className="text-xs text-ink-muted">
-            إذا كان لديك دين سابق لهذا المقاول قبل استخدام النظام، أدخل المبلغ المستحق له.
-          </p>
-          <div className="max-w-xs">
-            <Label htmlFor="initialBalance">المبلغ المستحق (ج.م)</Label>
-            <Input
-              id="initialBalance"
-              type="number"
-              step="0.01"
-              {...register("initialBalance", { valueAsNumber: true })}
+        {/* Row 5: Balance */}
+        {!isEdit && (
+          <div className="space-y-1.5 md:col-span-2 bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-border">
+            <Label htmlFor="initialBalance" className="text-danger font-bold">الرصيد الافتتاحي (مديونية سابقة للمقاول ج.م)</Label>
+            <Input 
+              id="initialBalance" 
+              type="number" 
+              step="0.01" 
+              className="bg-paper mt-2 font-bold"
+              {...register("initialBalance", { valueAsNumber: true })} 
             />
+            <p className="text-xs text-ink-muted mt-1">إذا كان للمقاول دين سابق عليكم قبل النظام، أدخله هنا.</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ملاحظات */}
-      <div>
-        <Label htmlFor="notes">ملاحظات (اختياري)</Label>
-        <Textarea id="notes" {...register("notes")} placeholder="أي ملاحظات إضافية عن المقاول..." />
+        <div className="space-y-1.5 md:col-span-2">
+          <Label htmlFor="notes">ملاحظات إضافية</Label>
+          <Textarea id="notes" {...register("notes")} rows={2} />
+        </div>
       </div>
 
-      {/* الأزرار */}
-      <div className="flex gap-3 justify-end pt-2 border-t border-border">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          إلغاء
-        </Button>
-        <Button type="submit" loading={loading}>
+      <div className="flex gap-3 pt-4 border-t border-border">
+        <Button type="submit" loading={loading} className="px-8">
           {isEdit ? "حفظ التعديلات" : "إضافة المقاول"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="px-8">
+          إلغاء
         </Button>
       </div>
     </form>

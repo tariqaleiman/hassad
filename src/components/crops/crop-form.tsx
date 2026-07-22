@@ -34,6 +34,7 @@ export function CropForm({
     defaultValues: {
       name: defaultValues?.name ?? "",
       category: defaultValues?.category ?? "",
+      imageUrl: defaultValues?.imageUrl ?? "",
       harvestType: defaultValues?.harvestType ?? "حصاد واحد",
       harvestBatchName: defaultValues?.harvestBatchName ?? "",
       productUnit: defaultValues?.productUnit ?? "كيلوجرام",
@@ -55,6 +56,7 @@ export function CropForm({
     reset({
       name: defaultValues?.name ?? "",
       category: defaultValues?.category ?? "",
+      imageUrl: defaultValues?.imageUrl ?? "",
       harvestType: defaultValues?.harvestType ?? "حصاد واحد",
       harvestBatchName: defaultValues?.harvestBatchName ?? "",
       productUnit: defaultValues?.productUnit ?? "كيلوجرام",
@@ -95,6 +97,14 @@ export function CropForm({
             <Label htmlFor="category">التصنيف</Label>
             <Input id="category" {...register("category")} placeholder="مثال: حبوب" />
           </div>
+          <div>
+            <Label htmlFor="imageUrl">رابط صورة المحصول (اختياري)</Label>
+            <Input id="imageUrl" {...register("imageUrl")} placeholder="https://example.com/image.jpg" dir="ltr" className="text-end" />
+            {errors.imageUrl && <p className="mt-1 text-xs text-danger">{errors.imageUrl.message}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
           <div>
             <Label htmlFor="harvestType">نوع الحصاد *</Label>
             <Select id="harvestType" {...register("harvestType")}>

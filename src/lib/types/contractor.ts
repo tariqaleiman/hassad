@@ -10,9 +10,15 @@ export type ContractorType =
 export interface Contractor extends BaseEntity {
   farmId: string;
   name: string;
+  legalType?: "شركة" | "فرد";
+  types: ContractorType[];
+  customType?: string; // إذا كان من ضمن الأنواع "أخرى"
+  companyName?: string;
+  taxId?: string;
+  commercialRegister?: string;
+  email?: string;
   phone?: string;
-  type: ContractorType;
-  customType?: string; // إذا كان النوع "أخرى"
+  address?: string;
   initialBalance: number; // رصيد افتتاحي (ديون سابقة)
   balance: number; // الرصيد الحالي المستحق للمقاول
   status?: "active" | "inactive";
@@ -22,9 +28,16 @@ export interface Contractor extends BaseEntity {
 export interface ContractorFormValues {
   farmId: string;
   name: string;
-  phone?: string;
-  type: ContractorType;
+  legalType?: "شركة" | "فرد";
+  types: ContractorType[];
   customType?: string;
-  initialBalance: number;
+  companyName?: string;
+  taxId?: string;
+  commercialRegister?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  initialBalance?: number;
+  status?: "active" | "inactive";
   notes?: string;
 }
