@@ -110,7 +110,10 @@ export const Icons = {
   Activity,
   Download,
   Printer,
-  FileText
+  FileText,
+  ArrowRight: ArrowUpRight,
+  MessageSquare: Info,
+  ShieldCheck: Key,
 };
 
 export type IconType = typeof Icons[keyof typeof Icons];

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cairo, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { Toaster } from "sonner";
 import { AppProviders } from "@/lib/providers/app-providers";
+import { FeedbackSheet } from "@/components/feedback/feedback-sheet";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -46,6 +47,7 @@ export default function RootLayout({
       <body suppressHydrationWarning className={`${cairo.variable} ${plexArabic.variable} antialiased`}>
         <AppProviders>
           {children}
+          <FeedbackSheet />
           <Toaster
             position="top-center"
             richColors
