@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
 import { navItems } from "./nav-items";
 import { useSettingsStore } from "@/lib/store/settings-store";
+import { Icons } from "@/components/ui/icons";
+import { FeedbackSheet } from "@/components/feedback/feedback-sheet";
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -67,8 +69,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="border-t border-border/50 p-4 text-center text-xs text-ink-faint">
-        الإصدار الأول (MVP) — حصاد
+      <div className="border-t border-border/50 p-3 space-y-2">
+        <FeedbackSheet
+          trigger={
+            <button className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-ink-muted hover:text-ink hover:bg-black/5 dark:hover:bg-white/10 transition-all border border-border/50">
+              <Icons.MessageSquare className="h-4 w-4 text-crop-600 shrink-0" />
+              <span>إرسال اقتراح أو بلاغ</span>
+            </button>
+          }
+        />
+        <div className="text-center text-[11px] text-ink-faint">
+          منظومة حصادي الذكية — v2.0
+        </div>
       </div>
     </aside>
   );

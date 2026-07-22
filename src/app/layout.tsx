@@ -47,7 +47,6 @@ export default function RootLayout({
       <body suppressHydrationWarning className={`${cairo.variable} ${plexArabic.variable} antialiased`}>
         <AppProviders>
           {children}
-          <FeedbackSheet />
           <Toaster
             position="top-center"
             richColors

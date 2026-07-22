@@ -6,8 +6,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Icons } from "@/components/ui/icons";
 import { toast } from "sonner";
 
-export function FeedbackSheet() {
-  const [open, setOpen] = useState(false);
+interface FeedbackSheetProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
+}
+
+export function FeedbackSheet({ open: externalOpen, onOpenChange, trigger }: FeedbackSheetProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  const setOpen = (val: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(val);
+    } else {
+      setInternalOpen(val);
+    }
+  };
+
   const [type, setType] = useState<"suggestion" | "bug">("suggestion");
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -52,15 +69,12 @@ export function FeedbackSheet() {
 
   return (
     <>
-      {/* Floating Action Trigger Button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-20 md:bottom-6 end-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-crop-600 hover:bg-crop-700 text-white font-bold text-sm shadow-xl shadow-crop-600/30 hover:scale-105 transition-all duration-300 border-2 border-white/20"
-        title="إرسال اقتراح أو الإبلاغ عن مشكلة"
-      >
-        <Icons.MessageSquare className="w-5 h-5" />
-        <span className="hidden sm:inline">اقتراح أو بلاغ</span>
-      </button>
+      {/* Optional Trigger */}
+      {trigger && (
+        <div onClick={() => setOpen(true)} className="inline-block cursor-pointer">
+          {trigger}
+        </div>
+      )}
 
       {/* Modal / Sheet Overlay */}
       {open && (
