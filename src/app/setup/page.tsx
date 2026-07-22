@@ -82,11 +82,11 @@ export default function SetupPage() {
   };
 
   return (
-    <Card className="w-full max-w-xl bg-paper shadow-lg border-border animate-in fade-in zoom-in-95 duration-300">
+    <Card className="w-full max-w-xl bg-paper shadow-xl border-border animate-in fade-in zoom-in-95 duration-300">
       <CardContent className="p-8">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="p-3 bg-crop-50 dark:bg-crop-900/30 rounded-2xl border border-crop-200/60 mb-4 shadow-sm">
-            <Logo showText={true} className="scale-125" />
+          <div className="mb-6 pt-2">
+            <Logo showText={false} className="scale-150" />
           </div>
           <h1 className="text-2xl font-bold font-display text-ink mb-2">{steps[step].title}</h1>
           <p className="text-ink-muted">{steps[step].subtitle}</p>
