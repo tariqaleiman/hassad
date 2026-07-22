@@ -35,48 +35,45 @@ export default function SetupPage() {
     { title: "تفضيلات الواجهة", subtitle: "كيف تفضل أن يكون شكل النظام؟" },
   ];
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (step < steps.length - 1) {
-      setStep(step + 1);
+      setStep((prev) => prev + 1);
     } else {
-      await handleComplete();
+      handleComplete();
     }
   };
 
   const handleComplete = async () => {
     setLoading(true);
     try {
-      // 1. Save Owner/Company Profile
-      await saveOwner.mutateAsync({
-        id: user?.uid || "local_owner",
-        email: user?.email || "owner@hassady.local",
-        name: user?.displayName || "مدير النظام",
-        companyName: companyName || "إدارة المزارع",
-      });
-
-      // 2. Create the first Farm
-      await createFarm.mutateAsync({
-        name: farmName || "مزرعتي",
-        currency: currency || "ج.م",
-      });
-
-      // 3. Update Settings Store
       storeSetAppMode(appMode);
       storeSetCurrency(currency);
 
-      // Redirect to dashboard
-      router.push("/dashboard");
+      const ownerUid = user?.uid || "local_owner";
+      await saveOwner.mutateAsync({
+        id: ownerUid,
+        email: user?.email || "owner@hassady.local",
+        name: user?.displayName || "مدير النظام",
+        companyName: companyName || "إدارة المزارع",
+      }).catch((e) => console.log("Owner profile save error:", e));
+
+      await createFarm.mutateAsync({
+        name: farmName || "مزرعتي",
+        currency: currency || "ج.م",
+      }).catch((e) => console.log("Create farm error:", e));
+
     } catch (error) {
       console.error("Setup failed", error);
-      // Fallback redirect to dashboard
-      router.push("/dashboard");
     } finally {
       setLoading(false);
+      router.push("/dashboard");
     }
   };
 
   const handleSkip = () => {
-    handleComplete();
+    storeSetAppMode("simple");
+    storeSetCurrency("ج.م");
+    router.push("/dashboard");
   };
 
   return (

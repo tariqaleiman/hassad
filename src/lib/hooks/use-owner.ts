@@ -20,13 +20,13 @@ export function useOwnerProfile() {
 export function useSaveOwnerProfile() {
   const qc = useQueryClient();
   const { user } = useAuth();
+  const ownerUid = user?.uid || "local_owner";
   return useMutation({
     mutationFn: (profile: OwnerProfile) => {
-      if (!user?.uid) throw new Error("غير مصرح");
-      return ownerService.save(profile, user.uid);
+      return ownerService.save(profile, ownerUid);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [...OWNER_KEY, user?.uid] });
+      qc.invalidateQueries({ queryKey: [...OWNER_KEY, ownerUid] });
       toast.success("تم حفظ بيانات المالك");
     },
     onError: () => toast.error("حدث خطأ أثناء الحفظ"),
