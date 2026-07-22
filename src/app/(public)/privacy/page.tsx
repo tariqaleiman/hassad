@@ -2,34 +2,61 @@ import { Icons } from "@/components/ui/icons";
 
 export default function PrivacyPage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 font-sans">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
       
-      <div className="border-b border-border/50 pb-6 text-start">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-crop-100 dark:bg-crop-900/40 text-crop-800 dark:text-crop-300 text-xs font-bold border border-crop-200">
-          <Icons.ShieldCheck className="w-4 h-4 text-crop-600" />
-          <span>الخصوصية وأمان البيانات</span>
+      <div className="space-y-4 border-b border-border pb-8">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold border border-emerald-200">
+          <Icons.ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <span>سياسة الخصوصية والحفظ المحلي الشاملة</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold font-display text-ink mt-3">
-          سياسة الخصوصية والتزام التخزين المحلي
+        <h1 className="text-3xl sm:text-5xl font-extrabold font-display text-slate-900 dark:text-white">
+          خصوصية بياناتك ومزرعتك أمانة مقدسة
         </h1>
-        <p className="text-sm text-ink-muted mt-2">آخر تحديث: 22 يوليو 2026</p>
+        <p className="text-slate-600 dark:text-slate-300 text-base font-medium">
+          آخر تحديث: يوليو 2026 — نلتزم بأعلى معايير الحماية والأمان البياني لكافة مزارعي مستخدمي منصة حصادي.
+        </p>
       </div>
 
-      <div className="space-y-6 text-ink-muted leading-relaxed text-base">
-        <h2 className="text-xl font-bold text-ink">1. الالتزام بخصوصية بيانات المزارع</h2>
-        <p>
-          تلتزم منصة <strong>حصادي (Hassady)</strong> بأعلى معايير حماية البيانات المالية والعمليات الزراعية الخاصة بك. نحن نؤمن بأن بيانات أرباحك ومحاصيلك وديونك هي ملك خالص لك وحدك.
-        </p>
+      <div className="space-y-8 text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
+        <section className="space-y-3">
+          <h2 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="w-2 h-6 rounded-full bg-emerald-500 inline-block" />
+            1. الحفظ المحلي الملكية الخاصة 100% (Local Storage & IndexedDB)
+          </h2>
+          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300">
+            بيانات مزرعتك، سجلات العمالة، دفتر النوتة، والمصروفات تُحفظ بدايةً على ذاكرة متصفحك أو جهازك المحمول بأسلوب تشفير محلي. لا يتم إجبارك على نقل بياناتك لأي خادم خارجي إلا عند اختيارك صراحةً للمزامنة السحابية.
+          </p>
+        </section>
 
-        <h2 className="text-xl font-bold text-ink">2. الحفظ المحلي والعمل بدون إنترنت (Local-First)</h2>
-        <p>
-          يعمل التطبيق على حفظ بياناتك محلياً على جهاز الكمبيوتر أو الهاتف الخاص بك بدون إجبار على رفع البيانات إلى السحابة. يمكنك اختيار مجلد حفظ البيانات التفضيل على جهازك.
-        </p>
+        <section className="space-y-3">
+          <h2 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="w-2 h-6 rounded-full bg-emerald-500 inline-block" />
+            2. حماية البيانات المشفرة
+          </h2>
+          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300">
+            عند تفعيل المزامنة السحابية للنسخ الاحتياطي، يتم نقل البيانات عبر بروتوكولات مشفرة عالي الضمان (SSL/TLS 256-bit). نحن لا نبيع ولا نشارك أي معلومات مالية أو إنتاجية لأي طرف ثالث نهائياً.
+          </p>
+        </section>
 
-        <h2 className="text-xl font-bold text-ink">3. عدم مشاركة البيانات مع أي طرف ثالث</h2>
-        <p>
-          لا تقوم منصة حصادي ببيع، تأجير، أو مشاركة أي من بيانات مزارعك، حساباتك المالية، أسماء تجارك، أو إنتاجية أراضيك مع أي جهة تجارية أو حكومية أو إعلانية نهائياً.
-        </p>
+        <section className="space-y-3">
+          <h2 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="w-2 h-6 rounded-full bg-emerald-500 inline-block" />
+            3. حقوق المستخرج والتصدير (Full Export Rights)
+          </h2>
+          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300">
+            لك كامل الحق في تصدير جميع بياناتك في أي وقت بصيغة ملفات إكسيل (XLSX) أو تقارير PDF أو حذف حسابك وبياناتك كلياً بضغطة زر واحدة من شاشة الإعدادات.
+          </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
+            <span className="w-2 h-6 rounded-full bg-emerald-500 inline-block" />
+            4. التواصل والاستفسار
+          </h2>
+          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300">
+            لأي استفسار حول سياسة الخصوصية وأمان البيانات، يمكنك التواصل المباشر مع فريق الدعم الفني عبر الواتساب الرسمي أو صفحة تواصل معنا.
+          </p>
+        </section>
       </div>
 
     </div>

@@ -81,10 +81,7 @@ export default function PublicLayout({
             {/* Column 1: Brand Info */}
             <div className="space-y-4 md:col-span-1">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-crop-500 flex items-center justify-center text-white">
-                  <Icons.Sprout className="w-5 h-5" />
-                </div>
-                <span className="text-2xl font-bold font-display tracking-tight text-white">حصادي</span>
+                <Logo showText={true} />
               </div>
               <p className="text-sm text-emerald-100/90 leading-relaxed font-medium">
                 النظام الزراعي الذكي الأسهل للمزارع البسيط والأقوى لشركات الزراعة. دير أرضك، عمالتك، ومصروفاتك في مكان واحد.
@@ -122,9 +119,9 @@ export default function PublicLayout({
                   href="https://wa.me/201000000000"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all shadow-md"
+                  className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all shadow-lg hover:scale-105"
                 >
-                  <Icons.MessageSquare className="w-4 h-4" />
+                  <Icons.WhatsApp className="w-5 h-5 fill-current" />
                   <span>تواصل عبر الواتساب</span>
                 </a>
               </div>
@@ -147,7 +144,7 @@ export default function PublicLayout({
         className="fixed bottom-6 start-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-2xl shadow-emerald-600/40 hover:scale-105 transition-all duration-300 border-2 border-white/20"
         title="تواصل مباشر مع فريق الدعم عبر الواتساب"
       >
-        <Icons.MessageSquare className="w-5 h-5 shrink-0" />
+        <Icons.WhatsApp className="w-5 h-5 shrink-0 fill-current" />
         <span className="hidden sm:inline">الدعم الفني عبر الواتساب</span>
       </a>
 
