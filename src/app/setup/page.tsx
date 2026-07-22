@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/providers/auth-provider";
 import { useSaveOwnerProfile } from "@/lib/hooks/use-owner";
 import { useCreateFarm } from "@/lib/hooks/use-farms";
 import { useSettingsStore } from "@/lib/store/settings-store";
+import { Logo } from "@/components/layout/logo";
 import { Select } from "@/components/ui/select";
 
 export default function SetupPage() {
@@ -28,7 +29,7 @@ export default function SetupPage() {
   const [appMode, setAppMode] = useState<"simple" | "enterprise">("simple");
 
   const steps = [
-    { title: "أهلاً بك في حصاد", subtitle: "دعنا نقوم بإعداد نظامك في خطوات بسيطة" },
+    { title: "أهلاً بك في منصة حصادي", subtitle: "دعنا نقوم بإعداد نظامك في خطوات بسيطة" },
     { title: "بيانات المنشأة", subtitle: "ما هو اسم نشاطك التجاري أو شركتك؟" },
     { title: "المزرعة الرئيسية", subtitle: "أضف بيانات مزرعتك الأولى" },
     { title: "تفضيلات الواجهة", subtitle: "كيف تفضل أن يكون شكل النظام؟" },
@@ -84,8 +85,8 @@ export default function SetupPage() {
     <Card className="w-full max-w-xl bg-paper shadow-lg border-border animate-in fade-in zoom-in-95 duration-300">
       <CardContent className="p-8">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-16 h-16 bg-crop-500 text-white rounded-2xl flex items-center justify-center mb-4 shadow-md">
-            <Icons.Sprout className="w-8 h-8" />
+          <div className="p-3 bg-crop-50 dark:bg-crop-900/30 rounded-2xl border border-crop-200/60 mb-4 shadow-sm">
+            <Logo showText={true} className="scale-125" />
           </div>
           <h1 className="text-2xl font-bold font-display text-ink mb-2">{steps[step].title}</h1>
           <p className="text-ink-muted">{steps[step].subtitle}</p>
@@ -94,8 +95,8 @@ export default function SetupPage() {
         <div className="min-h-[200px] flex flex-col justify-center">
           {step === 0 && (
             <div className="text-center space-y-6">
-              <p className="text-ink text-lg">
-                نظام حصاد مصمم ليتكيف مع احتياجاتك، سواء كنت تدير مزرعة صغيرة أو شركة زراعية متكاملة.
+              <p className="text-ink text-lg leading-relaxed">
+                نظام حصادي مصمم ليتكيف مع احتياجاتك، سواء كنت تدير مزرعة صغيرة أو شركة زراعية متكاملة.
               </p>
               <div className="flex justify-center">
                 <Button onClick={handleNext} className="w-full sm:w-auto px-8" size="lg">ابدأ الإعداد</Button>
