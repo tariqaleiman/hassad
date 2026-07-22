@@ -85,7 +85,7 @@ export default function SetupPage() {
     <Card className="w-full max-w-xl bg-paper shadow-xl border-border animate-in fade-in zoom-in-95 duration-300">
       <CardContent className="p-8">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="mb-6 pt-2">
+          <div className="mb-5 pt-1">
             <Logo showText={false} className="scale-150" />
           </div>
           <h1 className="text-2xl font-bold font-display text-ink mb-2">{steps[step].title}</h1>
