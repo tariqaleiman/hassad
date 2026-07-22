@@ -66,14 +66,22 @@ export default function SetupPage() {
       console.error("Setup failed", error);
     } finally {
       setLoading(false);
-      router.push("/dashboard");
+      if (typeof window !== "undefined") {
+        window.location.href = "/dashboard";
+      } else {
+        router.push("/dashboard");
+      }
     }
   };
 
   const handleSkip = () => {
     storeSetAppMode("simple");
     storeSetCurrency("ج.م");
-    router.push("/dashboard");
+    if (typeof window !== "undefined") {
+      window.location.href = "/dashboard";
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   return (
@@ -86,35 +94,41 @@ export default function SetupPage() {
             <Logo showText={false} className="scale-125 sm:scale-150" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold font-display text-ink mb-1.5">{steps[step].title}</h1>
-          <p className="text-xs sm:text-sm text-ink-muted">{steps[step].subtitle}</p>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">{steps[step].subtitle}</p>
         </div>
 
         {/* Dynamic Step Content */}
         <div className="min-h-[220px] flex flex-col justify-center">
           {step === 0 && (
             <div className="text-center space-y-6">
-              <p className="text-ink text-base sm:text-lg leading-relaxed px-2">
+              <p className="text-slate-800 dark:text-slate-200 text-base sm:text-lg leading-relaxed px-2 font-medium">
                 نظام حصادي مصمم ليتكيف مع احتياجاتك، سواء كنت تدير مزرعة صغيرة أو شركة زراعية متكاملة.
               </p>
               
               <div className="space-y-3 pt-2">
-                <Button
+                <button
                   type="button"
-                  onClick={handleNext}
-                  className="w-full h-14 rounded-2xl text-base font-extrabold bg-crop-600 hover:bg-crop-700 text-white shadow-lg shadow-crop-600/30 active:scale-[0.98] transition-all"
-                  size="lg"
+                  onClick={() => handleNext()}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleNext();
+                  }}
+                  className="w-full h-14 rounded-2xl text-base font-extrabold bg-crop-600 hover:bg-crop-700 active:bg-crop-800 text-white shadow-lg shadow-crop-600/30 cursor-pointer flex items-center justify-center touch-manipulation select-none transition-all"
                 >
                   ابدأ الإعداد الآن
-                </Button>
+                </button>
 
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  onClick={handleSkip}
-                  className="w-full h-12 rounded-xl text-xs sm:text-sm text-ink-muted hover:text-ink font-medium"
+                  onClick={() => handleSkip()}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleSkip();
+                  }}
+                  className="w-full h-12 rounded-xl text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:text-ink font-bold cursor-pointer flex items-center justify-center touch-manipulation select-none"
                 >
                   تخطي واستخدام الإعدادات الافتراضية
-                </Button>
+                </button>
               </div>
             </div>
           )}
@@ -173,7 +187,7 @@ export default function SetupPage() {
                   </div>
                   <h3 className="font-bold text-ink text-base">الوضع البسيط</h3>
                 </div>
-                <p className="text-xs text-ink-muted leading-relaxed">مثالي للمزارع الفردية. يركز على المهام، الإيرادات والمصروفات دون تعقيدات محاسبية.</p>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">مثالي للمزارع الفردية. يركز على المهام، الإيرادات والمصروفات دون تعقيدات محاسبية.</p>
               </div>
 
               <div 
@@ -186,7 +200,7 @@ export default function SetupPage() {
                   </div>
                   <h3 className="font-bold text-ink text-base">الوضع المؤسسي (ERP)</h3>
                 </div>
-                <p className="text-xs text-ink-muted leading-relaxed">مصمم للشركات الزراعية. يتضمن دليل حسابات، شجرة أصول، تعدد فروع وإدارات.</p>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">مصمم للشركات الزراعية. يتضمن دليل حسابات، شجرة أصول، تعدد فروع وإدارات.</p>
               </div>
             </div>
           )}
@@ -195,24 +209,31 @@ export default function SetupPage() {
         {/* Footer Navigation Buttons */}
         {step > 0 && (
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-border/50 gap-4">
-            <Button
+            <button
               type="button"
-              variant="outline"
               onClick={() => setStep(step - 1)}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                setStep(step - 1);
+              }}
               disabled={loading}
-              className="h-12 rounded-xl px-6 font-bold text-sm"
+              className="h-12 rounded-xl px-6 font-bold text-sm border border-border text-ink bg-transparent hover:bg-black/5 dark:hover:bg-white/10 touch-manipulation cursor-pointer"
             >
               السابق
-            </Button>
+            </button>
 
-            <Button
+            <button
               type="button"
-              onClick={handleNext}
+              onClick={() => handleNext()}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleNext();
+              }}
               disabled={loading}
-              className="h-12 rounded-xl px-8 font-extrabold text-sm min-w-[130px] bg-crop-600 hover:bg-crop-700 text-white shadow-md shadow-crop-600/30"
+              className="h-12 rounded-xl px-8 font-extrabold text-sm min-w-[130px] bg-crop-600 hover:bg-crop-700 active:bg-crop-800 text-white shadow-md shadow-crop-600/30 touch-manipulation cursor-pointer flex items-center justify-center"
             >
               {loading ? <Icons.Spinner className="w-5 h-5 animate-spin" /> : step === steps.length - 1 ? "إنهاء والبدء" : "التالي"}
-            </Button>
+            </button>
           </div>
         )}
 

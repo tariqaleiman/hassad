@@ -23,26 +23,26 @@ export default function PublicLayout({
           </Link>
 
           {/* Nav Links - Desktop */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-ink-muted">
-            <Link href="/" className="hover:text-crop-600 transition-colors">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-700 dark:text-slate-200">
+            <Link href="/" className="hover:text-crop-600 dark:hover:text-crop-400 transition-colors">
               الرئيسية
             </Link>
-            <Link href="/#features" className="hover:text-crop-600 transition-colors">
+            <Link href="/#features" className="hover:text-crop-600 dark:hover:text-crop-400 transition-colors">
               المميزات
             </Link>
-            <Link href="/#modes" className="hover:text-crop-600 transition-colors">
+            <Link href="/#modes" className="hover:text-crop-600 dark:hover:text-crop-400 transition-colors">
               الوضع البسيط والاحترافي
             </Link>
-            <Link href="/pricing" className="hover:text-crop-600 transition-colors">
+            <Link href="/pricing" className="hover:text-crop-600 dark:hover:text-crop-400 transition-colors">
               باقات الأسعار
             </Link>
-            <Link href="/blog" className="hover:text-crop-600 transition-colors">
+            <Link href="/blog" className="hover:text-crop-600 dark:hover:text-crop-400 transition-colors">
               المدونة والشروحات
             </Link>
-            <Link href="/about" className="hover:text-crop-600 transition-colors">
+            <Link href="/about" className="hover:text-crop-600 dark:hover:text-crop-400 transition-colors">
               عن حصادي
             </Link>
-            <Link href="/contact" className="hover:text-crop-600 transition-colors">
+            <Link href="/contact" className="hover:text-crop-600 dark:hover:text-crop-400 transition-colors">
               تواصل معنا
             </Link>
           </nav>
@@ -86,7 +86,7 @@ export default function PublicLayout({
                 </div>
                 <span className="text-2xl font-bold font-display tracking-tight text-white">حصادي</span>
               </div>
-              <p className="text-sm text-crop-200/70 leading-relaxed">
+              <p className="text-sm text-emerald-100/90 leading-relaxed font-medium">
                 النظام الزراعي الذكي الأسهل للمزارع البسيط والأقوى لشركات الزراعة. دير أرضك، عمالتك، ومصروفاتك في مكان واحد.
               </p>
             </div>
@@ -94,7 +94,7 @@ export default function PublicLayout({
             {/* Column 2: Quick Links */}
             <div>
               <h4 className="font-bold text-white mb-4 text-base">روابط سريعة</h4>
-              <ul className="space-y-2.5 text-sm text-crop-200/70">
+              <ul className="space-y-2.5 text-sm text-emerald-100/90 font-medium">
                 <li><Link href="/" className="hover:text-crop-400 transition-colors">الرئيسية</Link></li>
                 <li><Link href="/pricing" className="hover:text-crop-400 transition-colors">باقات الأسعار</Link></li>
                 <li><Link href="/blog" className="hover:text-crop-400 transition-colors">مدونة وشروحات حصادي</Link></li>
@@ -105,7 +105,7 @@ export default function PublicLayout({
             {/* Column 3: Legal & Support */}
             <div>
               <h4 className="font-bold text-white mb-4 text-base">الدعم والسياسات</h4>
-              <ul className="space-y-2.5 text-sm text-crop-200/70">
+              <ul className="space-y-2.5 text-sm text-emerald-100/90 font-medium">
                 <li><Link href="/contact" className="hover:text-crop-400 transition-colors">تواصل معنا والدعم الفني</Link></li>
                 <li><Link href="/faq" className="hover:text-crop-400 transition-colors">الأسئلة الشائعة</Link></li>
                 <li><Link href="/privacy" className="hover:text-crop-400 transition-colors">سياسة الخصوصية والحفظ المحلي</Link></li>
@@ -116,7 +116,7 @@ export default function PublicLayout({
             {/* Column 4: Contact & Social */}
             <div className="space-y-4">
               <h4 className="font-bold text-white text-base">تواصل فوري</h4>
-              <p className="text-sm text-crop-200/70">فريق الدعم الفني جاهز للرد على جميع استفساراتك.</p>
+              <p className="text-sm text-emerald-100/90 font-medium">فريق الدعم الفني جاهز للرد على جميع استفساراتك.</p>
               <div className="pt-2">
                 <a
                   href="https://wa.me/201000000000"
@@ -132,7 +132,7 @@ export default function PublicLayout({
 
           </div>
 
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-crop-300/60 gap-4 text-center">
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-emerald-200/80 font-medium gap-4 text-center">
             <p>© {new Date().getFullYear()} منصة حصادي (Hassady). جميع الحقوق محفوظة.</p>
             <p>صُمم بأعلى معايير الجودة لتسهيل حياة المزارع العربي.</p>
           </div>
