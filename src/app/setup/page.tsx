@@ -47,6 +47,8 @@ export default function SetupPage() {
     try {
       // 1. Save Owner/Company Profile
       await saveOwner.mutateAsync({
+        id: user?.uid || "local_owner",
+        email: user?.email || "owner@hassady.local",
         name: user?.displayName || "مدير النظام",
         companyName: companyName,
       });

@@ -26,7 +26,9 @@ export function CompanyTab() {
       {
         ...profile,
         ...values,
-        email: user?.email ?? "",
+        id: user?.uid ?? profile?.id ?? "local_owner",
+        name: values.name || profile?.name || user?.displayName || "مدير النظام",
+        email: user?.email ?? profile?.email ?? "owner@hassady.local",
       },
       {
         onSuccess: () => {

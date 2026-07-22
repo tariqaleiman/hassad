@@ -4,6 +4,7 @@ export const ownerProfileSchema = z.object({
   // User Data
   name: z.string().min(2, "الاسم مطلوب (حرفين على الأقل)"),
   phone: z.string().optional(),
+  address: z.string().optional(),
   gender: z.enum(["male", "female"]).optional(),
   dateOfBirth: z.string().optional(),
   userLocation: z.string().optional(),

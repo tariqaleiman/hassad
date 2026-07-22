@@ -3,6 +3,7 @@ export interface OwnerProfile {
   email: string;
   name: string;
   phone?: string;
+  address?: string;
   gender?: "male" | "female";
   dateOfBirth?: string;
   userLocation?: string;
